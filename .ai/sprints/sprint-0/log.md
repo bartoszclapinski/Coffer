@@ -26,3 +26,11 @@
 - krok 0.13 ukończony — `dotnet test Coffer.sln --no-build` zielono, 3 testy (po jednym smoke teście w każdym projekcie), wszystkie pass
 - problem: `Coffer.Infrastructure.Tests.csproj` mimo zgłoszonego "updated successfully" w batch Write zachował template content (możliwy bug narzędzia lub race condition) → rozwiązanie: ponowny Write naprawił, kolejne builds OK
 - krok 0.14 ukończony — `dotnet format Coffer.sln` naprawił CRLF/BOM/imports w wygenerowanych przez template plikach Avalonia (App.axaml.cs, MainWindow.axaml.cs, Program.cs); `dotnet format --verify-no-changes --severity warn` przeszło zielono
+- krok 0.15 ukończony — commit `076f530` `chore(build): bootstrap Coffer.sln with 5 projects and 3 test projects` (23 pliki, 439 wstawień)
+- krok 0.16 ukończony — `gh repo create Coffer --public --source=. --remote=origin --push` utworzyło publiczne repo na https://github.com/bartoszclapinski/Coffer i wypchnęło branch `main`
+- krok 0.17 ukończony — CI run `25750058425` zielony (`success`, 40s) na commicie `076f530`
+- krok 0.18 ukończony — badge `[![build](...)]` dodany pod nagłówkiem README, redundantna linia "Build status: see badge at top" usunięta z sekcji Status
+- krok 0.19 ukończony — commit `ac9d540` `docs: add CI badge to README` + push; CI run `25750226446` również zielony (`success`)
+- obserwacja: CI annotations ostrzegają o deprecation `actions/checkout@v4`, `actions/setup-dotnet@v4`, `actions/upload-artifact@v4` (Node.js 20 deprecation; Node.js 24 default od 2026-06-02, Node.js 20 usuwane 2026-09-16). To warning, nie failure — TODO do osobnego sprintu (chore CI bump actions versions). Nie blokuje Sprintu 0.
+- krok 0.20 — sprint zamknięty: wszystkie 20 kroków done, DoD spełnione (świeży `git clone` + `dotnet build` + `dotnet test` zielono lokalnie i w CI; badge zielony w README)
+- sprint zamknięty 2026-05-12

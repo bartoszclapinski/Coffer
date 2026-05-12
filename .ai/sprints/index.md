@@ -4,7 +4,7 @@ Status na: 2026-05-12
 
 | Sprint | Faza | Cel | Status |
 |---|---|---|---|
-| [sprint-0](sprint-0/sprint-0.md) | 0 | Repo na GitHubie, `Coffer.sln` z 5 projektami + 3 testowymi, `dotnet build` zielono, CI zielony | Planowany |
+| [sprint-0](sprint-0/sprint-0.md) | 0 | Repo na GitHubie, `Coffer.sln` z 5 projektami + 3 testowymi, `dotnet build` zielono, CI zielony | Zamknięty (2026-05-12) |
 
 ## Zaplanowane sprinty Fazy 0 (pełne plany powstają na początku każdego sprintu)
 

@@ -1,7 +1,7 @@
 # Sprint 0 — Repo + solution + CI zielono
 
 **Faza:** 0 (Foundation)
-**Status:** W toku
+**Status:** Zamknięty
 **Zależności:** brak
 
 ## Cel
@@ -42,12 +42,12 @@ Wszystkie kroki konfiguracji wykonujemy lokalnie, walidujemy `dotnet build/test/
 - [x] 0.12 `dotnet build` lokalnie zielono
 - [x] 0.13 `dotnet test` lokalnie zielono (puste projekty testowe — OK, ale dodać po jednym smoke teście na każdy projekt żeby `dotnet test` miał co znaleźć)
 - [x] 0.14 `dotnet format --verify-no-changes --severity warn` zielono
-- [ ] 0.15 Drugi commit (`chore(build): bootstrap Coffer.sln with 5 projects and 3 test projects`)
-- [ ] 0.16 `gh repo create Coffer --public --source=. --remote=origin --push` — tworzy publiczne repo i pushuje branch `main`
-- [ ] 0.17 Weryfikacja: CI workflow na GitHubie kończy się zielono (lokalnie już sprawdzone, ale CI używa innego SDK + Linux — warto upewnić się)
-- [ ] 0.18 Dodać badge CI do [README.md](../../../README.md) (zastąpić frazę "see badge at top of repo" linkiem do workflow)
-- [ ] 0.19 Trzeci commit + push (`docs: add CI badge to README`)
-- [ ] 0.20 Zaktualizować [index.md](../index.md) — status Sprint 0 na "Zamknięty", finalny wpis do [log.md](log.md)
+- [x] 0.15 Drugi commit (`chore(build): bootstrap Coffer.sln with 5 projects and 3 test projects`)
+- [x] 0.16 `gh repo create Coffer --public --source=. --remote=origin --push` — tworzy publiczne repo i pushuje branch `main`
+- [x] 0.17 Weryfikacja: CI workflow na GitHubie kończy się zielono (lokalnie już sprawdzone, ale CI używa innego SDK + Linux — warto upewnić się)
+- [x] 0.18 Dodać badge CI do [README.md](../../../README.md) (zastąpić frazę "see badge at top of repo" linkiem do workflow)
+- [x] 0.19 Trzeci commit + push (`docs: add CI badge to README`)
+- [x] 0.20 Zaktualizować [index.md](../index.md) — status Sprint 0 na "Zamknięty", finalny wpis do [log.md](log.md)
 
 ## Definition of Done
 
