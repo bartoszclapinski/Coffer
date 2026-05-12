@@ -1,0 +1,192 @@
+# =============================================================================
+# Build output
+# =============================================================================
+
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Bb]uild/
+[Pp]ublish/
+[Pp]ublishOutput/
+*.binlog
+
+# =============================================================================
+# Visual Studio / Rider / VS Code / Cursor / Claude Code
+# =============================================================================
+
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.dbmdl
+*.jfm
+
+.cursor/
+
+# Claude Code per-machine local overrides (team-shared settings.json stays tracked)
+.claude/settings.local.json
+
+# =============================================================================
+# .NET
+# =============================================================================
+
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.tlog
+*.log
+*.binlog
+*.tmp_proj
+*_wpftmp.csproj
+*.cache
+*.docstates
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Test results
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# =============================================================================
+# Avalonia
+# =============================================================================
+
+# Avalonia-specific build output (covered by bin/obj already)
+
+# =============================================================================
+# MAUI / Mobile
+# =============================================================================
+
+# Android
+*.apk
+*.aab
+*.keystore
+*.jks
+local.properties
+
+# iOS
+*.ipa
+*.xcuserstate
+*.xcworkspace
+xcuserdata/
+DerivedData/
+ProfileGenerator.app/
+
+# Resource bundles
+[Rr]esources/[Rr]aw/Generated/
+
+# =============================================================================
+# Project secrets and user data — CRITICAL
+# =============================================================================
+
+# Real bank statements — never commit
+*.real.pdf
+*real-statement*.pdf
+samples/private/
+
+# Real receipt photos
+*.real.jpg
+*.real.png
+*.real.heic
+
+# Local databases and backups
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+backups/
+
+# DEK and key material
+*.dpapi.cache
+dek.encrypted
+master-key.*
+recovery-seed.*
+*.encrypted
+
+# OAuth tokens
+google-token.json
+google-refresh-token.*
+oauth-credentials.json
+client_secret*.json
+
+# API keys
+appsettings.Development.json
+appsettings.Local.json
+appsettings.Production.json
+secrets.json
+.env
+.env.local
+.env.*.local
+
+# AI prompt diagnostic dumps
+ai-diagnostic-*/
+prompts-debug/
+
+# =============================================================================
+# Logs
+# =============================================================================
+
+*.log
+logs/
+serilog-*.txt
+
+# =============================================================================
+# Operating system
+# =============================================================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# =============================================================================
+# Tools
+# =============================================================================
+
+# dotnet-tools manifests are kept; just ignore the install location
+.tools/
+
+# =============================================================================
+# Documentation builds
+# =============================================================================
+
+_site/
+.sass-cache/

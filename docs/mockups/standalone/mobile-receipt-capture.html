@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffer Mobile — Paragon</title>
+<style>
+/* ============================================================
+   COFFER DESIGN TOKENS
+   Apple-inspired design system, light + dark themes.
+   Inspired by macOS Sonoma + iOS 17 system UI.
+   ============================================================ */
+
+:root {
+  /* === Typography === */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+  --font-tabular: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+
+  /* Font sizes — Apple HIG inspired */
+  --fs-largeTitle: 34px;     /* Page hero numbers (e.g., balance) */
+  --fs-title1: 28px;         /* Section primary headings */
+  --fs-title2: 22px;         /* Subsection headings */
+  --fs-title3: 18px;         /* Card titles */
+  --fs-headline: 16px;       /* Emphasized body */
+  --fs-body: 14px;           /* Default body text */
+  --fs-callout: 13px;        /* Secondary body */
+  --fs-subhead: 12px;        /* Small labels */
+  --fs-footnote: 11px;       /* Captions, micro-labels */
+
+  /* Font weights */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Line heights */
+  --lh-tight: 1.2;
+  --lh-snug: 1.35;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.625;
+
+  /* === Spacing scale === */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+  --sp-9: 48px;
+  --sp-10: 64px;
+
+  /* === Border radius === */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-2xl: 28px;
+  --r-full: 9999px;
+
+  /* === Transitions === */
+  --t-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow: 320ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* === Z-index === */
+  --z-base: 0;
+  --z-elevated: 10;
+  --z-overlay: 100;
+  --z-modal: 1000;
+  --z-toast: 10000;
+}
+
+/* ============================================================
+   LIGHT THEME (default)
+   ============================================================ */
+:root,
+[data-theme="light"] {
+  /* Backgrounds — three layers of depth */
+  --bg-base: #F5F5F7;          /* Page background, slightly off-white */
+  --bg-surface: #FFFFFF;        /* Cards, panels */
+  --bg-elevated: #FFFFFF;       /* Modals, popovers (with shadow) */
+  --bg-sunken: #EBEBED;         /* Sub-areas, input wells */
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.08);
+
+  /* Text */
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-tertiary: #8E8E93;
+  --text-quaternary: #C7C7CC;
+  --text-on-accent: #FFFFFF;
+
+  /* Borders — very subtle, Apple uses these sparingly */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-strong: rgba(0, 0, 0, 0.18);
+
+  /* Accent — Coffer's brand color, deep navy with character */
+  --accent: #1D4ED8;            /* Indigo-600 — feels modern, fintech, not clichéd blue */
+  --accent-hover: #1E40AF;
+  --accent-active: #1E3A8A;
+  --accent-soft: rgba(29, 78, 216, 0.12);
+  --accent-bg: rgba(29, 78, 216, 0.08);
+
+  /* Semantic colors */
+  --success: #16A34A;
+  --success-soft: rgba(22, 163, 74, 0.12);
+  --success-bg: rgba(22, 163, 74, 0.08);
+
+  --warning: #EA580C;
+  --warning-soft: rgba(234, 88, 12, 0.12);
+  --warning-bg: rgba(234, 88, 12, 0.08);
+
+  --danger: #DC2626;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+  --danger-bg: rgba(220, 38, 38, 0.08);
+
+  --info: #0891B2;
+  --info-soft: rgba(8, 145, 178, 0.12);
+  --info-bg: rgba(8, 145, 178, 0.08);
+
+  /* Money colors — restrained, used only for deltas not amounts */
+  --money-positive: #16A34A;
+  --money-negative: #6E6E73;     /* Negative is just secondary text — money is normal */
+  --money-emphasis-negative: #DC2626;  /* Only for alerts/anomalies */
+
+  /* Category colors — soft, palette-aware */
+  --cat-food: #F97316;          /* orange */
+  --cat-fuel: #6366F1;          /* indigo */
+  --cat-restaurants: #EC4899;   /* pink */
+  --cat-subscriptions: #8B5CF6; /* violet */
+  --cat-housing: #0EA5E9;       /* sky */
+  --cat-mortgage: #14B8A6;      /* teal */
+  --cat-entertainment: #F59E0B; /* amber */
+  --cat-transport: #3B82F6;     /* blue */
+  --cat-health: #10B981;        /* emerald */
+  --cat-shopping: #A855F7;      /* purple */
+  --cat-income: #16A34A;        /* green */
+  --cat-other: #71717A;         /* zinc */
+
+  /* Shadows — Apple-style, very subtle elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 3px rgba(29, 78, 216, 0.3);
+
+  /* Sidebar specific */
+  --sidebar-bg: rgba(245, 245, 247, 0.85);
+}
+
+/* ============================================================
+   DARK THEME
+   ============================================================ */
+[data-theme="dark"] {
+  --bg-base: #000000;          /* True black like iOS — works great on OLED */
+  --bg-surface: #1C1C1E;        /* Cards */
+  --bg-elevated: #2C2C2E;       /* Modals, popovers */
+  --bg-sunken: #0A0A0A;         /* Sub-areas */
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.10);
+
+  --text-primary: #F5F5F7;
+  --text-secondary: #98989D;
+  --text-tertiary: #636366;
+  --text-quaternary: #48484A;
+  --text-on-accent: #FFFFFF;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --accent: #3B82F6;            /* Brighter blue in dark mode for contrast */
+  --accent-hover: #60A5FA;
+  --accent-active: #2563EB;
+  --accent-soft: rgba(59, 130, 246, 0.18);
+  --accent-bg: rgba(59, 130, 246, 0.12);
+
+  --success: #22C55E;
+  --success-soft: rgba(34, 197, 94, 0.18);
+  --success-bg: rgba(34, 197, 94, 0.12);
+
+  --warning: #FB923C;
+  --warning-soft: rgba(251, 146, 60, 0.18);
+  --warning-bg: rgba(251, 146, 60, 0.12);
+
+  --danger: #EF4444;
+  --danger-soft: rgba(239, 68, 68, 0.18);
+  --danger-bg: rgba(239, 68, 68, 0.12);
+
+  --info: #06B6D4;
+  --info-soft: rgba(6, 182, 212, 0.18);
+  --info-bg: rgba(6, 182, 212, 0.12);
+
+  --money-positive: #22C55E;
+  --money-negative: #98989D;
+  --money-emphasis-negative: #EF4444;
+
+  /* Categories — slightly brighter for dark backgrounds */
+  --cat-food: #FB923C;
+  --cat-fuel: #818CF8;
+  --cat-restaurants: #F472B6;
+  --cat-subscriptions: #A78BFA;
+  --cat-housing: #38BDF8;
+  --cat-mortgage: #2DD4BF;
+  --cat-entertainment: #FBBF24;
+  --cat-transport: #60A5FA;
+  --cat-health: #34D399;
+  --cat-shopping: #C084FC;
+  --cat-income: #22C55E;
+  --cat-other: #A1A1AA;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.5);
+
+  --sidebar-bg: rgba(28, 28, 30, 0.85);
+}
+
+/* ============================================================
+   AUTO THEME — respects user's OS preference
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg-base: #000000;
+    --bg-surface: #1C1C1E;
+    --bg-elevated: #2C2C2E;
+    --bg-sunken: #0A0A0A;
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(255, 255, 255, 0.10);
+    --text-primary: #F5F5F7;
+    --text-secondary: #98989D;
+    --text-tertiary: #636366;
+    --text-quaternary: #48484A;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-default: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --accent: #3B82F6;
+    --accent-hover: #60A5FA;
+    --accent-soft: rgba(59, 130, 246, 0.18);
+    --accent-bg: rgba(59, 130, 246, 0.12);
+    --success: #22C55E;
+    --warning: #FB923C;
+    --danger: #EF4444;
+    --info: #06B6D4;
+    --money-positive: #22C55E;
+    --money-negative: #98989D;
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+    --sidebar-bg: rgba(28, 28, 30, 0.85);
+  }
+}
+
+/* ============================================================
+   GLOBAL RESET + BASE
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  color: var(--text-primary);
+  background: var(--bg-base);
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Tabular figures for numbers — critical for financial UI */
+.num, .tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "kern" 1;
+}
+
+/* Scrollbar — subtle Apple-style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--r-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ============================================================
+   THEME TOGGLE WIDGET — top-right corner of every mockup
+   ============================================================ */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-toggle button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--text-secondary);
+  transition: var(--t-fast);
+}
+
+.theme-toggle button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.theme-toggle button.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+</style>
+<style>
+
+body {
+  background: var(--bg-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+  gap: 32px;
+}
+
+/* === DEVICE FRAME (mockup of iPhone) === */
+.device {
+  width: 390px;
+  height: 844px;
+  background: #000;
+  border-radius: 56px;
+  padding: 14px;
+  box-shadow: var(--shadow-xl), 0 0 0 2px rgba(0, 0, 0, 0.5);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.device-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 44px;
+  overflow: hidden;
+  background: var(--bg-base);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* iPhone Dynamic Island */
+.dynamic-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 36px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+}
+
+/* iOS status bar */
+.status-bar {
+  height: 54px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 28px 6px;
+  font-size: 17px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.status-bar .icons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.status-bar .icons svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--text-primary);
+}
+
+/* === SCREEN CONTENT === */
+.screen-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === CAMERA SCREEN === */
+.camera-screen {
+  background: #0A0A0A;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  color: white;
+}
+
+.camera-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.camera-title {
+  font-size: 17px;
+  font-weight: var(--fw-semibold);
+}
+
+.camera-close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+}
+
+.camera-viewfinder {
+  flex: 1;
+  background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Detected receipt outline (mock) */
+.receipt-detected {
+  position: absolute;
+  width: 220px;
+  height: 380px;
+  background: linear-gradient(180deg, #f9f9f7 0%, #f0eee8 100%);
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  transform: rotate(-3deg);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.4;
+  color: #333;
+}
+
+.receipt-detected .receipt-store {
+  text-align: center;
+  font-weight: var(--fw-bold);
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.receipt-detected .receipt-line {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed #ccc;
+  padding: 1px 0;
+}
+
+.receipt-detected .receipt-total {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  font-weight: var(--fw-bold);
+  font-size: 11px;
+}
+
+/* Animated detection corners */
+.detection-frame {
+  position: absolute;
+  width: 240px;
+  height: 400px;
+  pointer-events: none;
+}
+
+.corner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 3px solid #3B82F6;
+}
+
+.corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; border-radius: 8px 0 0 0; }
+.corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; border-radius: 0 8px 0 0; }
+.corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; border-radius: 0 0 0 8px; }
+.corner.br { bottom: 0; right: 0; border-left: none; border-top: none; border-radius: 0 0 8px 0; }
+
+.detection-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px);
+  color: white;
+  padding: 8px 16px;
+  border-radius: var(--r-full);
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detection-hint .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.camera-controls {
+  padding: 24px 20px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+}
+
+.camera-control-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+}
+
+.camera-shutter {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--r-full);
+  background: white;
+  border: 5px solid white;
+  outline: 3px solid white;
+  outline-offset: 4px;
+  cursor: pointer;
+  position: relative;
+}
+
+.camera-shutter::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-full);
+  background: white;
+}
+
+/* === DEVICE LABEL === */
+.device-label {
+  text-align: center;
+  font-size: var(--fs-callout);
+  color: var(--text-secondary);
+  font-weight: var(--fw-medium);
+  margin-bottom: -16px;
+}
+
+/* === DEVICE GROUP (3 phones side-by-side) === */
+.devices-row {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.device-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* === PROCESSING SCREEN === */
+.processing-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  text-align: center;
+  background: var(--bg-base);
+}
+
+.processing-image {
+  width: 180px;
+  height: 240px;
+  border-radius: var(--r-lg);
+  background: var(--bg-sunken);
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-secondary);
+  padding: 12px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.processing-image::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.15) 30%,
+    rgba(59, 130, 246, 0.4) 50%,
+    rgba(59, 130, 246, 0.15) 70%,
+    transparent 100%
+  );
+  animation: scanline 2s ease-in-out infinite;
+}
+
+@keyframes scanline {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.processing-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: var(--fw-medium);
+  margin-bottom: 8px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--bg-sunken);
+  border-top-color: var(--accent);
+  border-radius: var(--r-full);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.processing-meta {
+  font-size: var(--fs-callout);
+  color: var(--text-tertiary);
+  margin-bottom: 32px;
+}
+
+.processing-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+  text-align: left;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-callout);
+  color: var(--text-secondary);
+}
+
+.step.done { color: var(--text-primary); }
+.step.active { color: var(--accent); }
+
+.step-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--r-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  flex-shrink: 0;
+}
+
+.step.done .step-marker {
+  background: var(--success);
+  color: white;
+}
+
+.step.active .step-marker {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 2px solid var(--accent);
+}
+
+.step.pending .step-marker {
+  background: var(--bg-sunken);
+  color: var(--text-tertiary);
+  border: 1.5px solid var(--border-default);
+}
+
+/* === RESULTS SCREEN === */
+.results-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+}
+
+.results-header {
+  padding: 16px 20px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.results-back {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.results-title {
+  font-size: 17px;
+  font-weight: var(--fw-semibold);
+}
+
+.results-edit {
+  color: var(--accent);
+  font-size: 17px;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.results-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.results-merchant {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.results-merchant-name {
+  font-size: var(--fs-title2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.015em;
+  margin-bottom: 4px;
+}
+
+.results-merchant-meta {
+  font-size: var(--fs-callout);
+  color: var(--text-secondary);
+}
+
+.results-amount {
+  font-size: 40px;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  margin: 16px 0 8px;
+}
+
+.results-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--info-bg);
+  color: var(--info);
+  border-radius: var(--r-full);
+  font-size: var(--fs-footnote);
+  font-weight: var(--fw-semibold);
+}
+
+.results-status-badge .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--info);
+}
+
+.results-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.results-card-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.results-card-title {
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.results-card-body {
+  padding: 8px 0;
+}
+
+.result-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+}
+
+.result-item:last-child { border-bottom: none; }
+
+.result-item-info {
+  min-width: 0;
+}
+
+.result-item-name {
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.result-item-cat {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.result-item-cat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.result-item-amount {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.result-item-qty {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.results-footer {
+  padding: 16px 20px 28px;
+  background: var(--bg-base);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.results-action {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--r-lg);
+  font-size: 17px;
+  font-weight: var(--fw-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.results-action:hover { background: var(--accent-hover); }
+
+/* === BOTTOM NAV (for results screen since it's a "real" screen) === */
+.bottom-nav {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  padding: 8px 0 28px;
+  display: flex;
+  justify-content: space-around;
+  flex-shrink: 0;
+}
+
+.nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 16px;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.nav-tab.active { color: var(--accent); }
+
+.nav-tab svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.8;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon { width: 18px; height: 18px; stroke-width: 1.8; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(20px);
+}
+
+.theme-toggle button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--text-secondary);
+  transition: var(--t-fast);
+}
+
+.theme-toggle button:hover { background: var(--bg-hover); color: var(--text-primary); }
+.theme-toggle button.active { background: var(--accent); color: var(--text-on-accent); }
+
+.page-title {
+  font-size: var(--fs-title2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.015em;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  font-size: var(--fs-callout);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 8px;
+  margin-top: -8px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="theme-toggle">
+  <button onclick="setTheme('light')" id="t-light"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button>
+  <button onclick="setTheme('dark')" id="t-dark"><svg class="icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+</div>
+
+<h1 class="page-title">Coffer Mobile · Receipt capture flow</h1>
+<p class="page-subtitle">Three states: camera → AI processing → results</p>
+
+<div class="devices-row">
+
+<!-- ===================== DEVICE 1: CAMERA ===================== -->
+<div class="device-wrapper">
+<div class="device">
+  <div class="device-screen">
+    <div class="dynamic-island"></div>
+
+    <div class="camera-screen">
+      <div class="status-bar" style="color: white">
+        <span>14:32</span>
+        <span class="icons">
+          <svg viewBox="0 0 24 24"><path d="M2 12h2v8H2zM6 9h2v11H6zM10 6h2v14h-2zM14 3h2v17h-2zM18 6h2v14h-2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 0-8 8c0 1.5.4 2.9 1.1 4.1l1.4-1.4A6 6 0 0 1 12 6a6 6 0 0 1 5.5 8.7l1.4 1.4A8 8 0 0 0 12 4z"/></svg>
+          <svg viewBox="0 0 24 24"><rect x="2" y="6" width="18" height="12" rx="2"/><rect x="22" y="9" width="2" height="6" fill="white"/></svg>
+        </span>
+      </div>
+
+      <div class="camera-header">
+        <div class="camera-close">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+        <div class="camera-title">Sfotografuj paragon</div>
+        <div class="camera-close">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+      </div>
+
+      <div class="camera-viewfinder">
+        <div class="receipt-detected">
+          <div class="receipt-store">LIDL TORUŃ</div>
+          <div style="text-align:center; font-size:7px; color:#666; margin-bottom:6px">Szosa Lubicka 30, NIP 681...</div>
+
+          <div class="receipt-line"><span>Chleb żytni</span><span>6,49</span></div>
+          <div class="receipt-line"><span>Mleko 3,2% x2</span><span>8,40</span></div>
+          <div class="receipt-line"><span>Marchew luz</span><span>4,80</span></div>
+          <div class="receipt-line"><span>Schab b/k</span><span>25,15</span></div>
+          <div class="receipt-line"><span>Ser Salami</span><span>14,99</span></div>
+          <div class="receipt-line"><span>Jabłka Lobo</span><span>7,49</span></div>
+          <div class="receipt-line"><span>Pomidory</span><span>9,60</span></div>
+          <div class="receipt-line"><span>Ogórki kis.</span><span>4,99</span></div>
+          <div class="receipt-line"><span>Mars 50g x4</span><span>9,96</span></div>
+          <div class="receipt-line"><span>Coca-Cola 2L</span><span>6,49</span></div>
+          <div class="receipt-line"><span>Persil 2kg</span><span>23,99</span></div>
+
+          <div class="receipt-total"><span>RAZEM</span><span>127,40 zł</span></div>
+        </div>
+
+        <div class="detection-frame">
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+
+        <div class="detection-hint">
+          <span class="dot"></span>
+          Paragon wykryty · stuknij aby zrobić zdjęcie
+        </div>
+      </div>
+
+      <div class="camera-controls">
+        <div class="camera-control-btn">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="14.31" y1="8" x2="20.05" y2="17.94"/><line x1="9.69" y1="8" x2="21.17" y2="8"/><line x1="7.38" y1="12" x2="13.12" y2="2.06"/><line x1="9.69" y1="16" x2="3.95" y2="6.06"/><line x1="14.31" y1="16" x2="2.83" y2="16"/><line x1="16.62" y1="12" x2="10.88" y2="21.94"/></svg>
+        </div>
+        <div class="camera-shutter"></div>
+        <div class="camera-control-btn">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="device-label">1 · Camera viewfinder</div>
+</div>
+
+<!-- ===================== DEVICE 2: PROCESSING ===================== -->
+<div class="device-wrapper">
+<div class="device">
+  <div class="device-screen">
+    <div class="dynamic-island"></div>
+
+    <div class="status-bar">
+      <span>14:32</span>
+      <span class="icons">
+        <svg viewBox="0 0 24 24"><path d="M2 12h2v8H2zM6 9h2v11H6zM10 6h2v14h-2zM14 3h2v17h-2zM18 6h2v14h-2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 0-8 8c0 1.5.4 2.9 1.1 4.1l1.4-1.4A6 6 0 0 1 12 6a6 6 0 0 1 5.5 8.7l1.4 1.4A8 8 0 0 0 12 4z"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="2" y="6" width="18" height="12" rx="2"/><rect x="22" y="9" width="2" height="6" fill="currentColor"/></svg>
+      </span>
+    </div>
+
+    <div class="processing-content">
+      <div class="processing-image">
+LIDL TORUŃ
+Szosa Lubicka 30
+─────────────────
+Chleb żytni    6,49
+Mleko 3,2% x2  8,40
+Marchew luz    4,80
+Schab b/k     25,15
+Ser Salami    14,99
+Jabłka Lobo    7,49
+Pomidory       9,60
+Ogórki kis.    4,99
+Mars 50g x4    9,96
+Coca-Cola 2L   6,49
+Persil 2kg    23,99
+Papier toaleto 5,99
+Olej rzepak.   8,49
+─────────────────
+RAZEM    127,40 zł
+      </div>
+
+      <div class="processing-status">
+        <div class="spinner"></div>
+        <span>Analizuję paragon</span>
+      </div>
+      <div class="processing-meta">Claude Sonnet 4.6 vision · ~5 sek.</div>
+
+      <div class="processing-steps">
+        <div class="step done">
+          <div class="step-marker">✓</div>
+          <span>Zdjęcie zoptymalizowane</span>
+        </div>
+        <div class="step done">
+          <div class="step-marker">✓</div>
+          <span>Wykryto sklep i datę</span>
+        </div>
+        <div class="step active">
+          <div class="step-marker">3</div>
+          <span>Odczytuję pozycje (24/27)</span>
+        </div>
+        <div class="step pending">
+          <div class="step-marker">4</div>
+          <span>Kategoryzuję pozycje</span>
+        </div>
+        <div class="step pending">
+          <div class="step-marker">5</div>
+          <span>Synchronizuję z desktopem</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="device-label">2 · AI processing</div>
+</div>
+
+<!-- ===================== DEVICE 3: RESULTS ===================== -->
+<div class="device-wrapper">
+<div class="device">
+  <div class="device-screen">
+    <div class="dynamic-island"></div>
+
+    <div class="status-bar">
+      <span>14:33</span>
+      <span class="icons">
+        <svg viewBox="0 0 24 24"><path d="M2 12h2v8H2zM6 9h2v11H6zM10 6h2v14h-2zM14 3h2v17h-2zM18 6h2v14h-2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 0-8 8c0 1.5.4 2.9 1.1 4.1l1.4-1.4A6 6 0 0 1 12 6a6 6 0 0 1 5.5 8.7l1.4 1.4A8 8 0 0 0 12 4z"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="2" y="6" width="18" height="12" rx="2"/><rect x="22" y="9" width="2" height="6" fill="currentColor"/></svg>
+      </span>
+    </div>
+
+    <div class="results-screen">
+      <div class="results-header">
+        <div class="results-back">
+          <svg class="icon" viewBox="0 0 24 24" width="22" height="22" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </div>
+        <div class="results-title">Paragon</div>
+        <div class="results-edit">Edytuj</div>
+      </div>
+
+      <div class="results-body">
+        <div class="results-merchant">
+          <div class="results-merchant-name">Lidl Toruń</div>
+          <div class="results-merchant-meta">28 listopada 2025 · 14:32</div>
+          <div class="results-amount num">127,40 zł</div>
+          <div class="results-status-badge">
+            <span class="dot"></span>
+            Oczekuje na transakcję bankową
+          </div>
+        </div>
+
+        <div class="results-card">
+          <div class="results-card-header">
+            <div class="results-card-title">27 pozycji · podgląd</div>
+          </div>
+          <div class="results-card-body">
+
+            <div class="result-item">
+              <div class="result-item-info">
+                <div class="result-item-name">Chleb żytni razowy 600g</div>
+                <div class="result-item-cat"><span class="result-item-cat-dot" style="background:var(--cat-food)"></span>Pieczywo</div>
+              </div>
+              <div>
+                <div class="result-item-amount num">6,49 zł</div>
+                <div class="result-item-qty" style="text-align:right">1 szt.</div>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-item-info">
+                <div class="result-item-name">Mleko UHT 3,2% 1l</div>
+                <div class="result-item-cat"><span class="result-item-cat-dot" style="background:var(--cat-food)"></span>Nabiał</div>
+              </div>
+              <div>
+                <div class="result-item-amount num">8,40 zł</div>
+                <div class="result-item-qty" style="text-align:right">2 × 4,20</div>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-item-info">
+                <div class="result-item-name">Marchew luz</div>
+                <div class="result-item-cat"><span class="result-item-cat-dot" style="background:var(--cat-food)"></span>Warzywa</div>
+              </div>
+              <div>
+                <div class="result-item-amount num">4,80 zł</div>
+                <div class="result-item-qty" style="text-align:right">1,2 kg</div>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-item-info">
+                <div class="result-item-name">Schab b/k</div>
+                <div class="result-item-cat"><span class="result-item-cat-dot" style="background:var(--cat-food)"></span>Mięso</div>
+              </div>
+              <div>
+                <div class="result-item-amount num">25,15 zł</div>
+                <div class="result-item-qty" style="text-align:right">0,84 kg</div>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-item-info">
+                <div class="result-item-name">Ser Salami 200g</div>
+                <div class="result-item-cat"><span class="result-item-cat-dot" style="background:var(--cat-food)"></span>Nabiał</div>
+              </div>
+              <div>
+                <div class="result-item-amount num">14,99 zł</div>
+                <div class="result-item-qty" style="text-align:right">1 szt.</div>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-item-info" style="display:flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-footnote)">
+                <svg class="icon" viewBox="0 0 24 24" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+                Pokaż wszystkie 22 pozostałe
+              </div>
+              <div></div>
+            </div>
+
+          </div>
+        </div>
+
+        <div style="font-size: var(--fs-footnote); color: var(--text-tertiary); text-align: center; padding: 0 8px; line-height: 1.6;">
+          Paragon zostanie automatycznie powiązany z transakcją bankową, gdy zaimportujesz wyciąg.
+        </div>
+      </div>
+
+      <div class="results-footer">
+        <button class="results-action">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Zapisz paragon
+        </button>
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-tab">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+          Główna
+        </div>
+        <div class="nav-tab active">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          Paragony
+        </div>
+        <div class="nav-tab">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+          Alerty
+        </div>
+        <div class="nav-tab">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Cele
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="device-label">3 · Receipt saved</div>
+</div>
+
+</div>
+
+<script>
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('coffer-theme', theme);
+  document.getElementById('t-light').classList.toggle('active', theme === 'light');
+  document.getElementById('t-dark').classList.toggle('active', theme === 'dark');
+}
+const saved = localStorage.getItem('coffer-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(saved);
+</script>
+
+</body>
+</html>

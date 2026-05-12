@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffer · UI Mockups</title>
+<link rel="stylesheet" href="shared/design-tokens.css">
+<style>
+body {
+  background: var(--bg-base);
+  min-height: 100vh;
+  padding: 64px 32px 96px;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.brand-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 8px 16px 8px 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-full);
+}
+
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: var(--fw-bold);
+  font-size: 15px;
+}
+
+.brand-name {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 48px;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.subtitle {
+  font-size: var(--fs-title3);
+  color: var(--text-secondary);
+  max-width: 580px;
+  margin: 0 auto;
+  line-height: var(--lh-snug);
+}
+
+.section {
+  margin-bottom: 64px;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section-title {
+  font-size: var(--fs-title1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+}
+
+.section-meta {
+  font-size: var(--fs-callout);
+  color: var(--text-tertiary);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: var(--t-base);
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-default);
+  text-decoration: none;
+}
+
+.card.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.card-preview {
+  aspect-ratio: 16 / 10;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tiny preview illustrations using SVG */
+.mini-mockup {
+  width: 80%;
+  height: 80%;
+  background: var(--bg-surface);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.mini-mockup-sidebar {
+  width: 28%;
+  background: var(--bg-base);
+  border-right: 1px solid var(--border-subtle);
+  padding: 6px 4px;
+}
+
+.mini-mockup-sidebar-item {
+  height: 5px;
+  background: var(--bg-sunken);
+  border-radius: 2px;
+  margin-bottom: 3px;
+}
+
+.mini-mockup-sidebar-item.active {
+  background: var(--accent);
+}
+
+.mini-mockup-main {
+  flex: 1;
+  padding: 6px;
+}
+
+.mini-mockup-header {
+  height: 8px;
+  width: 60%;
+  background: var(--text-primary);
+  border-radius: 2px;
+  margin-bottom: 6px;
+}
+
+.mini-mockup-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+
+.mini-mockup-card {
+  height: 18px;
+  background: var(--bg-sunken);
+  border-radius: 3px;
+}
+
+.mini-mockup-row {
+  height: 6px;
+  background: var(--bg-sunken);
+  border-radius: 2px;
+  margin-bottom: 3px;
+}
+
+.mini-mockup-row.short { width: 70%; }
+.mini-mockup-row.shorter { width: 50%; }
+
+/* Mobile preview */
+.mini-phone {
+  width: 50%;
+  aspect-ratio: 9 / 19;
+  background: #000;
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: var(--shadow-md);
+}
+
+.mini-phone-screen {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-base);
+  border-radius: 7px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mini-phone-row {
+  height: 5px;
+  background: var(--bg-sunken);
+  border-radius: 1.5px;
+}
+
+.mini-phone-row.title {
+  background: var(--text-primary);
+  width: 60%;
+}
+
+.mini-phone-row.accent {
+  background: var(--accent);
+}
+
+.card-body {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-title {
+  font-size: var(--fs-headline);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+}
+
+.card-description {
+  font-size: var(--fs-callout);
+  color: var(--text-secondary);
+  line-height: var(--lh-snug);
+  flex: 1;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  font-size: var(--fs-footnote);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-badge.ready {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.status-badge.planned {
+  background: var(--bg-sunken);
+  color: var(--text-secondary);
+}
+
+.status-badge .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.card-link {
+  margin-left: auto;
+  font-size: var(--fs-callout);
+  color: var(--accent);
+  font-weight: var(--fw-medium);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Design tokens preview */
+.tokens-section {
+  margin-bottom: 64px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-xl);
+  padding: 40px;
+}
+
+.tokens-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.token-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.swatch {
+  height: 80px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: flex-end;
+  padding: 12px;
+}
+
+.swatch-label {
+  font-size: var(--fs-footnote);
+  font-weight: var(--fw-semibold);
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+}
+
+.token-name {
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+
+.token-value {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+.intro-note {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-soft);
+  border-radius: var(--r-lg);
+  padding: 20px 24px;
+  margin-bottom: 48px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.intro-note-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.intro-note-content {
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+  line-height: var(--lh-snug);
+}
+
+.intro-note-content strong {
+  font-weight: var(--fw-semibold);
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: var(--z-toast);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(20px);
+}
+
+.theme-toggle button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--text-secondary);
+  transition: var(--t-fast);
+}
+
+.theme-toggle button:hover { background: var(--bg-hover); color: var(--text-primary); }
+.theme-toggle button.active { background: var(--accent); color: var(--text-on-accent); }
+
+.icon { width: 18px; height: 18px; stroke-width: 1.8; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+@media (max-width: 700px) {
+  body { padding: 32px 16px 64px; }
+  h1 { font-size: 32px; }
+  .subtitle { font-size: var(--fs-body); }
+  .tokens-section { padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="theme-toggle">
+  <button onclick="setTheme('light')" id="t-light"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button>
+  <button onclick="setTheme('dark')" id="t-dark"><svg class="icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+</div>
+
+<div class="page">
+
+  <header class="header">
+    <div class="brand-row">
+      <div class="brand-mark">C</div>
+      <span class="brand-name">Coffer</span>
+    </div>
+    <h1>UI Mockups</h1>
+    <p class="subtitle">
+      Visual reference for implementation. Each mockup is a working HTML file
+      with light + dark theme. The Apple-inspired design system is in
+      <code style="font-family:var(--font-mono);font-size:0.9em;background:var(--bg-sunken);padding:1px 6px;border-radius:4px">shared/design-tokens.css</code>.
+    </p>
+  </header>
+
+  <div class="intro-note">
+    <div class="intro-note-icon">
+      <svg class="icon" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <div class="intro-note-content">
+      <strong>How to use these mockups.</strong> They are <em>not</em> binding pixel-perfect specs — they show the intended visual language, density, hierarchy, and component behavior. When implementing in Avalonia or MAUI, match the spirit (spacing rhythm, color usage, typography hierarchy) rather than reproducing exact pixel values. The design system tokens in <code style="font-family:var(--font-mono);font-size:0.92em">shared/design-tokens.css</code> map directly to Avalonia ResourceDictionary entries and MAUI ResourceDictionary values.
+    </div>
+  </div>
+
+  <!-- ============== DESIGN TOKENS ============== -->
+  <section class="tokens-section">
+    <h2 class="section-title" style="margin-bottom:8px">Design tokens</h2>
+    <p style="font-size:var(--fs-callout);color:var(--text-secondary)">Foundation colors. Full system (typography, spacing, radius, shadows) in <code style="font-family:var(--font-mono);font-size:0.92em">shared/design-tokens.css</code>.</p>
+
+    <div class="tokens-grid">
+      <div class="token-card">
+        <div class="swatch" style="background:var(--accent)">
+          <span class="swatch-label">Accent</span>
+        </div>
+        <div class="token-name">accent</div>
+        <div class="token-value">#1D4ED8 / #3B82F6</div>
+      </div>
+      <div class="token-card">
+        <div class="swatch" style="background:var(--success)">
+          <span class="swatch-label">Success</span>
+        </div>
+        <div class="token-name">success</div>
+        <div class="token-value">Income, positive deltas</div>
+      </div>
+      <div class="token-card">
+        <div class="swatch" style="background:var(--warning)">
+          <span class="swatch-label">Warning</span>
+        </div>
+        <div class="token-name">warning</div>
+        <div class="token-value">Budget thresholds</div>
+      </div>
+      <div class="token-card">
+        <div class="swatch" style="background:var(--danger)">
+          <span class="swatch-label">Danger</span>
+        </div>
+        <div class="token-name">danger</div>
+        <div class="token-value">Anomalies, alerts</div>
+      </div>
+      <div class="token-card">
+        <div class="swatch" style="background:var(--info)">
+          <span class="swatch-label">Info</span>
+        </div>
+        <div class="token-name">info</div>
+        <div class="token-value">Receipts, hints</div>
+      </div>
+      <div class="token-card">
+        <div class="swatch" style="background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-default)">
+          <span class="swatch-label" style="color:var(--text-primary);text-shadow:none">Surface</span>
+        </div>
+        <div class="token-name">bg-surface</div>
+        <div class="token-value">Cards, panels</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== DESKTOP ============== -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Desktop · Avalonia</h2>
+      </div>
+      <div class="section-meta">2 / 10 mockups · light + dark</div>
+    </div>
+
+    <div class="grid">
+
+      <a href="desktop/dashboard.html" class="card">
+        <div class="card-preview">
+          <div class="mini-mockup">
+            <div class="mini-mockup-sidebar">
+              <div class="mini-mockup-sidebar-item active"></div>
+              <div class="mini-mockup-sidebar-item"></div>
+              <div class="mini-mockup-sidebar-item"></div>
+              <div class="mini-mockup-sidebar-item"></div>
+              <div class="mini-mockup-sidebar-item"></div>
+            </div>
+            <div class="mini-mockup-main">
+              <div class="mini-mockup-header"></div>
+              <div class="mini-mockup-cards">
+                <div class="mini-mockup-card" style="background:var(--accent-bg)"></div>
+                <div class="mini-mockup-card" style="background:var(--success-bg)"></div>
+                <div class="mini-mockup-card" style="background:var(--info-bg)"></div>
+                <div class="mini-mockup-card" style="background:var(--warning-bg)"></div>
+              </div>
+              <div class="mini-mockup-row"></div>
+              <div class="mini-mockup-row short"></div>
+              <div class="mini-mockup-row shorter"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Dashboard</div>
+          <div class="card-description">Hero balance, KPI cards, monthly trend chart, top categories, recent transactions.</div>
+          <div class="card-footer">
+            <span class="status-badge ready"><span class="dot"></span>Ready</span>
+            <span class="card-link">Open →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="desktop/transactions.html" class="card">
+        <div class="card-preview">
+          <div class="mini-mockup">
+            <div class="mini-mockup-sidebar">
+              <div class="mini-mockup-sidebar-item"></div>
+              <div class="mini-mockup-sidebar-item active"></div>
+              <div class="mini-mockup-sidebar-item"></div>
+              <div class="mini-mockup-sidebar-item"></div>
+            </div>
+            <div class="mini-mockup-main">
+              <div class="mini-mockup-header"></div>
+              <div style="display:flex;gap:3px;margin-bottom:6px">
+                <div style="height:6px;width:30%;background:var(--accent-bg);border-radius:2px"></div>
+                <div style="height:6px;width:20%;background:var(--bg-sunken);border-radius:2px"></div>
+                <div style="height:6px;width:20%;background:var(--bg-sunken);border-radius:2px"></div>
+              </div>
+              <div class="mini-mockup-row"></div>
+              <div class="mini-mockup-row short"></div>
+              <div class="mini-mockup-row"></div>
+              <div class="mini-mockup-row shorter"></div>
+              <div class="mini-mockup-row short"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Transactions</div>
+          <div class="card-description">Filter bar, grouped list by day, selected row with detail panel showing receipt items.</div>
+          <div class="card-footer">
+            <span class="status-badge ready"><span class="dot"></span>Ready</span>
+            <span class="card-link">Open →</span>
+          </div>
+        </div>
+      </a>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-mockup">
+            <div class="mini-mockup-sidebar"></div>
+            <div class="mini-mockup-main">
+              <div class="mini-mockup-header"></div>
+              <div style="border:2px dashed var(--border-default);border-radius:4px;height:60%;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--text-tertiary)">drop PDF</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Import wyciągu</div>
+          <div class="card-description">Drag-and-drop PDF zone with 5-step pipeline progress (read → detect → parse → dedup → save).</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-mockup">
+            <div class="mini-mockup-sidebar"></div>
+            <div class="mini-mockup-main">
+              <div class="mini-mockup-header"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">
+                <div style="background:var(--cat-food);height:14px;border-radius:2px"></div>
+                <div style="background:var(--cat-fuel);height:14px;border-radius:2px"></div>
+                <div style="background:var(--cat-restaurants);height:14px;border-radius:2px"></div>
+                <div style="background:var(--cat-subscriptions);height:14px;border-radius:2px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Kategorie i reguły</div>
+          <div class="card-description">Manage categories with colors. Rules table with regex patterns. Test rule against history.</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-mockup">
+            <div class="mini-mockup-sidebar"></div>
+            <div class="mini-mockup-main">
+              <div class="mini-mockup-header"></div>
+              <div style="display:flex;gap:4px;margin-bottom:4px"><div style="background:var(--info-bg);width:14px;height:14px;border-radius:2px"></div><div class="mini-mockup-row short" style="margin:0;flex:1"></div></div>
+              <div style="display:flex;gap:4px;margin-bottom:4px"><div style="background:var(--info-bg);width:14px;height:14px;border-radius:2px"></div><div class="mini-mockup-row" style="margin:0;flex:1"></div></div>
+              <div style="display:flex;gap:4px"><div style="background:var(--bg-sunken);width:14px;height:14px;border-radius:2px"></div><div class="mini-mockup-row shorter" style="margin:0;flex:1"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Paragony</div>
+          <div class="card-description">List of all receipts with status badges (matched / waiting / unmatched). Drill-down to items.</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-mockup">
+            <div class="mini-mockup-sidebar"></div>
+            <div class="mini-mockup-main">
+              <div class="mini-mockup-header"></div>
+              <div style="display:flex;align-items:flex-end;gap:2px;height:50%">
+                <div style="flex:1;background:var(--accent);height:60%;border-radius:1px"></div>
+                <div style="flex:1;background:var(--accent);height:75%;border-radius:1px"></div>
+                <div style="flex:1;background:var(--accent);height:50%;border-radius:1px"></div>
+                <div style="flex:1;background:var(--accent);height:85%;border-radius:1px"></div>
+                <div style="flex:1;background:var(--accent);height:65%;border-radius:1px"></div>
+                <div style="flex:1;background:var(--success);height:100%;border-radius:1px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Doradca i cele</div>
+          <div class="card-description">Goals list with feasibility status. Detail view with simulator slider, 12-month projection, AI suggestions.</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-mockup">
+            <div class="mini-mockup-sidebar"></div>
+            <div class="mini-mockup-main">
+              <div style="background:var(--bg-sunken);border-radius:3px;padding:3px;margin-bottom:3px;display:flex;justify-content:flex-end"><div style="width:60%;background:var(--accent);height:8px;border-radius:2px"></div></div>
+              <div style="background:var(--bg-sunken);border-radius:3px;padding:3px;margin-bottom:3px"><div style="width:75%;height:8px;background:var(--text-tertiary);border-radius:2px"></div></div>
+              <div style="background:var(--bg-sunken);border-radius:3px;padding:3px;margin-bottom:3px;display:flex;justify-content:flex-end"><div style="width:50%;background:var(--accent);height:8px;border-radius:2px"></div></div>
+              <div style="border:1px solid var(--border-default);border-radius:3px;height:10px;margin-top:6px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Czat z danymi</div>
+          <div class="card-description">Conversational AI with tool transparency panel (which queries were called). Suggested prompts on empty state.</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-mockup">
+            <div class="mini-mockup-sidebar"></div>
+            <div class="mini-mockup-main">
+              <div class="mini-mockup-header"></div>
+              <div style="background:var(--danger-bg);border:1px solid var(--danger-soft);border-radius:3px;padding:4px;margin-bottom:3px"><div style="background:var(--danger);height:6px;width:60%;border-radius:2px"></div></div>
+              <div style="background:var(--warning-bg);border:1px solid var(--warning-soft);border-radius:3px;padding:4px;margin-bottom:3px"><div style="background:var(--warning);height:6px;width:75%;border-radius:2px"></div></div>
+              <div style="background:var(--bg-sunken);border-radius:3px;padding:4px"><div style="background:var(--text-tertiary);height:6px;width:50%;border-radius:2px"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Anomalie i alerty</div>
+          <div class="card-description">List of detected anomalies with severity badges, expandable details, accept/dismiss actions.</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-mockup">
+            <div class="mini-mockup-sidebar"></div>
+            <div class="mini-mockup-main">
+              <div style="display:flex;gap:4px;align-items:flex-start;margin-bottom:4px">
+                <div style="width:30%"><div class="mini-mockup-row" style="margin:0 0 2px"></div><div class="mini-mockup-row shorter" style="margin:0"></div></div>
+                <div style="flex:1;background:var(--bg-sunken);height:14px;border-radius:2px"></div>
+              </div>
+              <div style="display:flex;gap:4px;align-items:flex-start;margin-bottom:4px">
+                <div style="width:30%"><div class="mini-mockup-row short" style="margin:0"></div></div>
+                <div style="flex:1;background:var(--bg-sunken);height:14px;border-radius:2px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Ustawienia</div>
+          <div class="card-description">Tabs: account, AI providers + budget, sync + backup, security (password / seed / auto-lock).</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-mockup" style="flex-direction:column;align-items:center;justify-content:center;padding:8px;gap:4px">
+            <div style="background:var(--accent);width:24px;height:24px;border-radius:6px"></div>
+            <div class="mini-mockup-row short" style="margin:0;width:60%"></div>
+            <div class="mini-mockup-row shorter" style="margin:0;width:40%"></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px;width:80%;margin-top:4px">
+              <div style="background:var(--bg-sunken);height:6px;border-radius:1px"></div>
+              <div style="background:var(--bg-sunken);height:6px;border-radius:1px"></div>
+              <div style="background:var(--bg-sunken);height:6px;border-radius:1px"></div>
+              <div style="background:var(--bg-sunken);height:6px;border-radius:1px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Setup wizard</div>
+          <div class="card-description">First-run flow: welcome, master password creation with strength meter, BIP39 seed display, verify words.</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============== MOBILE ============== -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Mobile · MAUI</h2>
+      </div>
+      <div class="section-meta">1 / 5 mockups · iOS + Android</div>
+    </div>
+
+    <div class="grid">
+
+      <a href="mobile/receipt-capture.html" class="card">
+        <div class="card-preview">
+          <div style="display:flex;gap:4px">
+            <div class="mini-phone">
+              <div class="mini-phone-screen">
+                <div class="mini-phone-row title"></div>
+                <div style="flex:1;background:#1a1a1a;border-radius:3px;display:flex;align-items:center;justify-content:center">
+                  <div style="background:#f9f9f7;width:50%;height:60%;border-radius:1px"></div>
+                </div>
+                <div style="background:white;width:14px;height:14px;border-radius:50%;margin:0 auto"></div>
+              </div>
+            </div>
+            <div class="mini-phone">
+              <div class="mini-phone-screen">
+                <div class="mini-phone-row title"></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+                  <div style="background:var(--accent);width:8px;height:8px;border-radius:50%"></div>
+                  <div class="mini-phone-row" style="width:60%"></div>
+                  <div class="mini-phone-row" style="width:50%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Receipt capture</div>
+          <div class="card-description">3-state flow: camera viewfinder → AI processing → results. Bottom nav with 4 tabs.</div>
+          <div class="card-footer">
+            <span class="status-badge ready"><span class="dot"></span>Ready</span>
+            <span class="card-link">Open →</span>
+          </div>
+        </div>
+      </a>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-phone">
+            <div class="mini-phone-screen">
+              <div class="mini-phone-row title"></div>
+              <div style="background:var(--accent-bg);height:30%;border-radius:2px;padding:3px"><div class="mini-phone-row" style="width:60%"></div></div>
+              <div class="mini-phone-row"></div>
+              <div class="mini-phone-row" style="width:80%"></div>
+              <div class="mini-phone-row" style="width:70%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Home</div>
+          <div class="card-description">Balance hero, recent 5 transactions, quick actions (capture, add manual, view alerts).</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-phone">
+            <div class="mini-phone-screen">
+              <div class="mini-phone-row title"></div>
+              <div style="display:flex;gap:2px;align-items:center"><div style="background:var(--info-bg);width:10px;height:10px;border-radius:2px"></div><div class="mini-phone-row" style="flex:1"></div></div>
+              <div style="display:flex;gap:2px;align-items:center"><div style="background:var(--success-bg);width:10px;height:10px;border-radius:2px"></div><div class="mini-phone-row" style="flex:1;width:70%"></div></div>
+              <div style="display:flex;gap:2px;align-items:center"><div style="background:var(--warning-bg);width:10px;height:10px;border-radius:2px"></div><div class="mini-phone-row" style="flex:1;width:60%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Paragony</div>
+          <div class="card-description">Receipts list with status badges. Quick filter: all / waiting / matched.</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-phone">
+            <div class="mini-phone-screen">
+              <div class="mini-phone-row title"></div>
+              <div style="background:var(--danger-bg);border-left:2px solid var(--danger);padding:3px;border-radius:0 2px 2px 0"><div class="mini-phone-row" style="width:80%"></div></div>
+              <div style="background:var(--warning-bg);border-left:2px solid var(--warning);padding:3px;border-radius:0 2px 2px 0"><div class="mini-phone-row" style="width:70%"></div></div>
+              <div style="background:var(--info-bg);border-left:2px solid var(--info);padding:3px;border-radius:0 2px 2px 0"><div class="mini-phone-row" style="width:60%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Alerty</div>
+          <div class="card-description">Notification list. Each alert expandable with engine numbers + AI commentary + actions.</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card disabled">
+        <div class="card-preview">
+          <div class="mini-phone">
+            <div class="mini-phone-screen">
+              <div class="mini-phone-row title"></div>
+              <div style="background:var(--bg-sunken);height:5px;border-radius:99px;overflow:hidden"><div style="background:var(--success);width:65%;height:100%;border-radius:99px"></div></div>
+              <div class="mini-phone-row shorter" style="width:40%"></div>
+              <div style="background:var(--bg-sunken);height:5px;border-radius:99px;overflow:hidden;margin-top:4px"><div style="background:var(--accent);width:30%;height:100%;border-radius:99px"></div></div>
+              <div class="mini-phone-row shorter" style="width:50%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Cele</div>
+          <div class="card-description">Goals overview with progress bars, ETA, status indicators. Tap for detail (read-only on mobile).</div>
+          <div class="card-footer">
+            <span class="status-badge planned"><span class="dot"></span>Planned</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer style="text-align:center;padding-top:32px;border-top:1px solid var(--border-subtle);font-size:var(--fs-callout);color:var(--text-tertiary)">
+    Coffer · Personal finance with AI integration · See <code style="font-family:var(--font-mono);font-size:0.92em">CLAUDE.md</code> and <code style="font-family:var(--font-mono);font-size:0.92em">docs/architecture/</code> for full design.
+  </footer>
+
+</div>
+
+<script>
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('coffer-theme', theme);
+  document.getElementById('t-light').classList.toggle('active', theme === 'light');
+  document.getElementById('t-dark').classList.toggle('active', theme === 'dark');
+}
+const saved = localStorage.getItem('coffer-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(saved);
+</script>
+
+</body>
+</html>

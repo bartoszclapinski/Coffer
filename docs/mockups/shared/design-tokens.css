@@ -1,0 +1,366 @@
+/* ============================================================
+   COFFER DESIGN TOKENS
+   Apple-inspired design system, light + dark themes.
+   Inspired by macOS Sonoma + iOS 17 system UI.
+   ============================================================ */
+
+:root {
+  /* === Typography === */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+  --font-tabular: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+
+  /* Font sizes — Apple HIG inspired */
+  --fs-largeTitle: 34px;     /* Page hero numbers (e.g., balance) */
+  --fs-title1: 28px;         /* Section primary headings */
+  --fs-title2: 22px;         /* Subsection headings */
+  --fs-title3: 18px;         /* Card titles */
+  --fs-headline: 16px;       /* Emphasized body */
+  --fs-body: 14px;           /* Default body text */
+  --fs-callout: 13px;        /* Secondary body */
+  --fs-subhead: 12px;        /* Small labels */
+  --fs-footnote: 11px;       /* Captions, micro-labels */
+
+  /* Font weights */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Line heights */
+  --lh-tight: 1.2;
+  --lh-snug: 1.35;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.625;
+
+  /* === Spacing scale === */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+  --sp-9: 48px;
+  --sp-10: 64px;
+
+  /* === Border radius === */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-2xl: 28px;
+  --r-full: 9999px;
+
+  /* === Transitions === */
+  --t-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow: 320ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* === Z-index === */
+  --z-base: 0;
+  --z-elevated: 10;
+  --z-overlay: 100;
+  --z-modal: 1000;
+  --z-toast: 10000;
+}
+
+/* ============================================================
+   LIGHT THEME (default)
+   ============================================================ */
+:root,
+[data-theme="light"] {
+  /* Backgrounds — three layers of depth */
+  --bg-base: #F5F5F7;          /* Page background, slightly off-white */
+  --bg-surface: #FFFFFF;        /* Cards, panels */
+  --bg-elevated: #FFFFFF;       /* Modals, popovers (with shadow) */
+  --bg-sunken: #EBEBED;         /* Sub-areas, input wells */
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.08);
+
+  /* Text */
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-tertiary: #8E8E93;
+  --text-quaternary: #C7C7CC;
+  --text-on-accent: #FFFFFF;
+
+  /* Borders — very subtle, Apple uses these sparingly */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-strong: rgba(0, 0, 0, 0.18);
+
+  /* Accent — Coffer's brand color, deep navy with character */
+  --accent: #1D4ED8;            /* Indigo-600 — feels modern, fintech, not clichéd blue */
+  --accent-hover: #1E40AF;
+  --accent-active: #1E3A8A;
+  --accent-soft: rgba(29, 78, 216, 0.12);
+  --accent-bg: rgba(29, 78, 216, 0.08);
+
+  /* Semantic colors */
+  --success: #16A34A;
+  --success-soft: rgba(22, 163, 74, 0.12);
+  --success-bg: rgba(22, 163, 74, 0.08);
+
+  --warning: #EA580C;
+  --warning-soft: rgba(234, 88, 12, 0.12);
+  --warning-bg: rgba(234, 88, 12, 0.08);
+
+  --danger: #DC2626;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+  --danger-bg: rgba(220, 38, 38, 0.08);
+
+  --info: #0891B2;
+  --info-soft: rgba(8, 145, 178, 0.12);
+  --info-bg: rgba(8, 145, 178, 0.08);
+
+  /* Money colors — restrained, used only for deltas not amounts */
+  --money-positive: #16A34A;
+  --money-negative: #6E6E73;     /* Negative is just secondary text — money is normal */
+  --money-emphasis-negative: #DC2626;  /* Only for alerts/anomalies */
+
+  /* Category colors — soft, palette-aware */
+  --cat-food: #F97316;          /* orange */
+  --cat-fuel: #6366F1;          /* indigo */
+  --cat-restaurants: #EC4899;   /* pink */
+  --cat-subscriptions: #8B5CF6; /* violet */
+  --cat-housing: #0EA5E9;       /* sky */
+  --cat-mortgage: #14B8A6;      /* teal */
+  --cat-entertainment: #F59E0B; /* amber */
+  --cat-transport: #3B82F6;     /* blue */
+  --cat-health: #10B981;        /* emerald */
+  --cat-shopping: #A855F7;      /* purple */
+  --cat-income: #16A34A;        /* green */
+  --cat-other: #71717A;         /* zinc */
+
+  /* Shadows — Apple-style, very subtle elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 3px rgba(29, 78, 216, 0.3);
+
+  /* Sidebar specific */
+  --sidebar-bg: rgba(245, 245, 247, 0.85);
+}
+
+/* ============================================================
+   DARK THEME
+   ============================================================ */
+[data-theme="dark"] {
+  --bg-base: #000000;          /* True black like iOS — works great on OLED */
+  --bg-surface: #1C1C1E;        /* Cards */
+  --bg-elevated: #2C2C2E;       /* Modals, popovers */
+  --bg-sunken: #0A0A0A;         /* Sub-areas */
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.10);
+
+  --text-primary: #F5F5F7;
+  --text-secondary: #98989D;
+  --text-tertiary: #636366;
+  --text-quaternary: #48484A;
+  --text-on-accent: #FFFFFF;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --accent: #3B82F6;            /* Brighter blue in dark mode for contrast */
+  --accent-hover: #60A5FA;
+  --accent-active: #2563EB;
+  --accent-soft: rgba(59, 130, 246, 0.18);
+  --accent-bg: rgba(59, 130, 246, 0.12);
+
+  --success: #22C55E;
+  --success-soft: rgba(34, 197, 94, 0.18);
+  --success-bg: rgba(34, 197, 94, 0.12);
+
+  --warning: #FB923C;
+  --warning-soft: rgba(251, 146, 60, 0.18);
+  --warning-bg: rgba(251, 146, 60, 0.12);
+
+  --danger: #EF4444;
+  --danger-soft: rgba(239, 68, 68, 0.18);
+  --danger-bg: rgba(239, 68, 68, 0.12);
+
+  --info: #06B6D4;
+  --info-soft: rgba(6, 182, 212, 0.18);
+  --info-bg: rgba(6, 182, 212, 0.12);
+
+  --money-positive: #22C55E;
+  --money-negative: #98989D;
+  --money-emphasis-negative: #EF4444;
+
+  /* Categories — slightly brighter for dark backgrounds */
+  --cat-food: #FB923C;
+  --cat-fuel: #818CF8;
+  --cat-restaurants: #F472B6;
+  --cat-subscriptions: #A78BFA;
+  --cat-housing: #38BDF8;
+  --cat-mortgage: #2DD4BF;
+  --cat-entertainment: #FBBF24;
+  --cat-transport: #60A5FA;
+  --cat-health: #34D399;
+  --cat-shopping: #C084FC;
+  --cat-income: #22C55E;
+  --cat-other: #A1A1AA;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.5);
+
+  --sidebar-bg: rgba(28, 28, 30, 0.85);
+}
+
+/* ============================================================
+   AUTO THEME — respects user's OS preference
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg-base: #000000;
+    --bg-surface: #1C1C1E;
+    --bg-elevated: #2C2C2E;
+    --bg-sunken: #0A0A0A;
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(255, 255, 255, 0.10);
+    --text-primary: #F5F5F7;
+    --text-secondary: #98989D;
+    --text-tertiary: #636366;
+    --text-quaternary: #48484A;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-default: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --accent: #3B82F6;
+    --accent-hover: #60A5FA;
+    --accent-soft: rgba(59, 130, 246, 0.18);
+    --accent-bg: rgba(59, 130, 246, 0.12);
+    --success: #22C55E;
+    --warning: #FB923C;
+    --danger: #EF4444;
+    --info: #06B6D4;
+    --money-positive: #22C55E;
+    --money-negative: #98989D;
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+    --sidebar-bg: rgba(28, 28, 30, 0.85);
+  }
+}
+
+/* ============================================================
+   GLOBAL RESET + BASE
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  color: var(--text-primary);
+  background: var(--bg-base);
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Tabular figures for numbers — critical for financial UI */
+.num, .tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "kern" 1;
+}
+
+/* Scrollbar — subtle Apple-style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--r-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ============================================================
+   THEME TOGGLE WIDGET — top-right corner of every mockup
+   ============================================================ */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-toggle button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--text-secondary);
+  transition: var(--t-fast);
+}
+
+.theme-toggle button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.theme-toggle button.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}

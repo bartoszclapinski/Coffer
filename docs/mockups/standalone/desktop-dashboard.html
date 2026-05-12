@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffer — Dashboard</title>
+<style>
+/* ============================================================
+   COFFER DESIGN TOKENS
+   Apple-inspired design system, light + dark themes.
+   Inspired by macOS Sonoma + iOS 17 system UI.
+   ============================================================ */
+
+:root {
+  /* === Typography === */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+  --font-tabular: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+
+  /* Font sizes — Apple HIG inspired */
+  --fs-largeTitle: 34px;     /* Page hero numbers (e.g., balance) */
+  --fs-title1: 28px;         /* Section primary headings */
+  --fs-title2: 22px;         /* Subsection headings */
+  --fs-title3: 18px;         /* Card titles */
+  --fs-headline: 16px;       /* Emphasized body */
+  --fs-body: 14px;           /* Default body text */
+  --fs-callout: 13px;        /* Secondary body */
+  --fs-subhead: 12px;        /* Small labels */
+  --fs-footnote: 11px;       /* Captions, micro-labels */
+
+  /* Font weights */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Line heights */
+  --lh-tight: 1.2;
+  --lh-snug: 1.35;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.625;
+
+  /* === Spacing scale === */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+  --sp-9: 48px;
+  --sp-10: 64px;
+
+  /* === Border radius === */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-2xl: 28px;
+  --r-full: 9999px;
+
+  /* === Transitions === */
+  --t-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow: 320ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* === Z-index === */
+  --z-base: 0;
+  --z-elevated: 10;
+  --z-overlay: 100;
+  --z-modal: 1000;
+  --z-toast: 10000;
+}
+
+/* ============================================================
+   LIGHT THEME (default)
+   ============================================================ */
+:root,
+[data-theme="light"] {
+  /* Backgrounds — three layers of depth */
+  --bg-base: #F5F5F7;          /* Page background, slightly off-white */
+  --bg-surface: #FFFFFF;        /* Cards, panels */
+  --bg-elevated: #FFFFFF;       /* Modals, popovers (with shadow) */
+  --bg-sunken: #EBEBED;         /* Sub-areas, input wells */
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.08);
+
+  /* Text */
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-tertiary: #8E8E93;
+  --text-quaternary: #C7C7CC;
+  --text-on-accent: #FFFFFF;
+
+  /* Borders — very subtle, Apple uses these sparingly */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-strong: rgba(0, 0, 0, 0.18);
+
+  /* Accent — Coffer's brand color, deep navy with character */
+  --accent: #1D4ED8;            /* Indigo-600 — feels modern, fintech, not clichéd blue */
+  --accent-hover: #1E40AF;
+  --accent-active: #1E3A8A;
+  --accent-soft: rgba(29, 78, 216, 0.12);
+  --accent-bg: rgba(29, 78, 216, 0.08);
+
+  /* Semantic colors */
+  --success: #16A34A;
+  --success-soft: rgba(22, 163, 74, 0.12);
+  --success-bg: rgba(22, 163, 74, 0.08);
+
+  --warning: #EA580C;
+  --warning-soft: rgba(234, 88, 12, 0.12);
+  --warning-bg: rgba(234, 88, 12, 0.08);
+
+  --danger: #DC2626;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+  --danger-bg: rgba(220, 38, 38, 0.08);
+
+  --info: #0891B2;
+  --info-soft: rgba(8, 145, 178, 0.12);
+  --info-bg: rgba(8, 145, 178, 0.08);
+
+  /* Money colors — restrained, used only for deltas not amounts */
+  --money-positive: #16A34A;
+  --money-negative: #6E6E73;     /* Negative is just secondary text — money is normal */
+  --money-emphasis-negative: #DC2626;  /* Only for alerts/anomalies */
+
+  /* Category colors — soft, palette-aware */
+  --cat-food: #F97316;          /* orange */
+  --cat-fuel: #6366F1;          /* indigo */
+  --cat-restaurants: #EC4899;   /* pink */
+  --cat-subscriptions: #8B5CF6; /* violet */
+  --cat-housing: #0EA5E9;       /* sky */
+  --cat-mortgage: #14B8A6;      /* teal */
+  --cat-entertainment: #F59E0B; /* amber */
+  --cat-transport: #3B82F6;     /* blue */
+  --cat-health: #10B981;        /* emerald */
+  --cat-shopping: #A855F7;      /* purple */
+  --cat-income: #16A34A;        /* green */
+  --cat-other: #71717A;         /* zinc */
+
+  /* Shadows — Apple-style, very subtle elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 3px rgba(29, 78, 216, 0.3);
+
+  /* Sidebar specific */
+  --sidebar-bg: rgba(245, 245, 247, 0.85);
+}
+
+/* ============================================================
+   DARK THEME
+   ============================================================ */
+[data-theme="dark"] {
+  --bg-base: #000000;          /* True black like iOS — works great on OLED */
+  --bg-surface: #1C1C1E;        /* Cards */
+  --bg-elevated: #2C2C2E;       /* Modals, popovers */
+  --bg-sunken: #0A0A0A;         /* Sub-areas */
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.10);
+
+  --text-primary: #F5F5F7;
+  --text-secondary: #98989D;
+  --text-tertiary: #636366;
+  --text-quaternary: #48484A;
+  --text-on-accent: #FFFFFF;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --accent: #3B82F6;            /* Brighter blue in dark mode for contrast */
+  --accent-hover: #60A5FA;
+  --accent-active: #2563EB;
+  --accent-soft: rgba(59, 130, 246, 0.18);
+  --accent-bg: rgba(59, 130, 246, 0.12);
+
+  --success: #22C55E;
+  --success-soft: rgba(34, 197, 94, 0.18);
+  --success-bg: rgba(34, 197, 94, 0.12);
+
+  --warning: #FB923C;
+  --warning-soft: rgba(251, 146, 60, 0.18);
+  --warning-bg: rgba(251, 146, 60, 0.12);
+
+  --danger: #EF4444;
+  --danger-soft: rgba(239, 68, 68, 0.18);
+  --danger-bg: rgba(239, 68, 68, 0.12);
+
+  --info: #06B6D4;
+  --info-soft: rgba(6, 182, 212, 0.18);
+  --info-bg: rgba(6, 182, 212, 0.12);
+
+  --money-positive: #22C55E;
+  --money-negative: #98989D;
+  --money-emphasis-negative: #EF4444;
+
+  /* Categories — slightly brighter for dark backgrounds */
+  --cat-food: #FB923C;
+  --cat-fuel: #818CF8;
+  --cat-restaurants: #F472B6;
+  --cat-subscriptions: #A78BFA;
+  --cat-housing: #38BDF8;
+  --cat-mortgage: #2DD4BF;
+  --cat-entertainment: #FBBF24;
+  --cat-transport: #60A5FA;
+  --cat-health: #34D399;
+  --cat-shopping: #C084FC;
+  --cat-income: #22C55E;
+  --cat-other: #A1A1AA;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.5);
+
+  --sidebar-bg: rgba(28, 28, 30, 0.85);
+}
+
+/* ============================================================
+   AUTO THEME — respects user's OS preference
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg-base: #000000;
+    --bg-surface: #1C1C1E;
+    --bg-elevated: #2C2C2E;
+    --bg-sunken: #0A0A0A;
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(255, 255, 255, 0.10);
+    --text-primary: #F5F5F7;
+    --text-secondary: #98989D;
+    --text-tertiary: #636366;
+    --text-quaternary: #48484A;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-default: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --accent: #3B82F6;
+    --accent-hover: #60A5FA;
+    --accent-soft: rgba(59, 130, 246, 0.18);
+    --accent-bg: rgba(59, 130, 246, 0.12);
+    --success: #22C55E;
+    --warning: #FB923C;
+    --danger: #EF4444;
+    --info: #06B6D4;
+    --money-positive: #22C55E;
+    --money-negative: #98989D;
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+    --sidebar-bg: rgba(28, 28, 30, 0.85);
+  }
+}
+
+/* ============================================================
+   GLOBAL RESET + BASE
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  color: var(--text-primary);
+  background: var(--bg-base);
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Tabular figures for numbers — critical for financial UI */
+.num, .tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "kern" 1;
+}
+
+/* Scrollbar — subtle Apple-style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--r-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ============================================================
+   THEME TOGGLE WIDGET — top-right corner of every mockup
+   ============================================================ */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-toggle button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--text-secondary);
+  transition: var(--t-fast);
+}
+
+.theme-toggle button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.theme-toggle button.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+</style>
+<style>
+/* ================================================
+   DASHBOARD-SPECIFIC LAYOUT
+   ================================================ */
+
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background: var(--bg-base);
+}
+
+/* === SIDEBAR === */
+.sidebar {
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-right: 1px solid var(--border-subtle);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-5);
+  font-size: var(--fs-title3);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: var(--fw-bold);
+  font-size: 14px;
+}
+
+.nav-section {
+  margin-top: var(--sp-4);
+}
+
+.nav-label {
+  font-size: var(--fs-footnote);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: var(--t-fast);
+  position: relative;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.nav-item .icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.nav-item .badge {
+  margin-left: auto;
+  font-size: var(--fs-footnote);
+  font-weight: var(--fw-semibold);
+  background: var(--bg-sunken);
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  min-width: 20px;
+  text-align: center;
+}
+
+.nav-item.active .badge {
+  background: var(--accent);
+  color: white;
+}
+
+.user-card {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.user-card:hover {
+  background: var(--bg-hover);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-full);
+  background: linear-gradient(135deg, var(--accent), #6366F1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: var(--fw-semibold);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-status {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--success);
+}
+
+/* === MAIN CONTENT === */
+.main {
+  padding: var(--sp-7) var(--sp-9);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: var(--sp-7);
+  padding-right: 90px; /* room for theme toggle */
+}
+
+.page-title-group h1 {
+  font-size: var(--fs-title1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.page-title-group .subtitle {
+  font-size: var(--fs-callout);
+  color: var(--text-secondary);
+  margin-top: var(--sp-1);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 8px 14px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: var(--t-fast);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* === HERO BALANCE === */
+.balance-hero {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-xl);
+  padding: var(--sp-7);
+  margin-bottom: var(--sp-6);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-7);
+  align-items: center;
+}
+
+.balance-label {
+  font-size: var(--fs-subhead);
+  color: var(--text-secondary);
+  font-weight: var(--fw-medium);
+  margin-bottom: var(--sp-2);
+}
+
+.balance-amount {
+  font-size: 48px;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-currency {
+  font-size: 24px;
+  color: var(--text-tertiary);
+  margin-left: var(--sp-2);
+  font-weight: var(--fw-medium);
+}
+
+.balance-meta {
+  display: flex;
+  gap: var(--sp-6);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.balance-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.balance-meta-label {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--fw-semibold);
+}
+
+.balance-meta-value {
+  font-size: var(--fs-headline);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-meta-value.positive { color: var(--money-positive); }
+.balance-meta-value.negative { color: var(--text-primary); }
+
+.balance-accounts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 280px;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.account-row:hover {
+  background: var(--bg-hover);
+}
+
+.bank-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  color: white;
+  flex-shrink: 0;
+}
+
+.bank-pko { background: #003574; }
+.bank-mbank { background: #E4002B; }
+.bank-ing { background: #FF6200; }
+
+.account-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-name {
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-medium);
+}
+
+.account-number {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+.account-amount {
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* === KPI GRID === */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+
+.kpi-label {
+  font-size: var(--fs-callout);
+  color: var(--text-secondary);
+  font-weight: var(--fw-medium);
+}
+
+.kpi-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.kpi-icon.spent { background: var(--accent-bg); color: var(--accent); }
+.kpi-icon.income { background: var(--success-bg); color: var(--success); }
+.kpi-icon.savings { background: var(--info-bg); color: var(--info); }
+.kpi-icon.budget { background: var(--warning-bg); color: var(--warning); }
+
+.kpi-value {
+  font-size: var(--fs-title1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--lh-tight);
+}
+
+.kpi-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--sp-2);
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-medium);
+}
+
+.kpi-delta.up { color: var(--money-positive); }
+.kpi-delta.down { color: var(--money-emphasis-negative); }
+.kpi-delta.neutral { color: var(--text-secondary); }
+
+.kpi-delta-arrow {
+  width: 12px;
+  height: 12px;
+}
+
+.kpi-comparison {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  margin-left: 4px;
+}
+
+/* === CHART + CATEGORIES === */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-5);
+}
+
+.panel-title {
+  font-size: var(--fs-title3);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+}
+
+.panel-subtitle {
+  font-size: var(--fs-callout);
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.tab-group {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-sunken);
+  border-radius: var(--r-md);
+}
+
+.tab {
+  padding: 5px 12px;
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+  color: var(--text-secondary);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* === CHART === */
+.chart-container {
+  height: 220px;
+  position: relative;
+  margin-top: var(--sp-3);
+}
+
+.chart-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.chart-axis-label {
+  font-size: var(--fs-footnote);
+  fill: var(--text-tertiary);
+  font-family: var(--font-sans);
+}
+
+/* === CATEGORIES LIST === */
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.category-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+.category-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.category-icon svg {
+  width: 18px;
+  height: 18px;
+  color: white;
+}
+
+.category-info {
+  min-width: 0;
+}
+
+.category-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.category-name {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+}
+
+.category-amount {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--bg-sunken);
+  border-radius: var(--r-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--r-full);
+  transition: width var(--t-slow);
+}
+
+/* === RECENT TRANSACTIONS === */
+.transactions-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.transactions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.transaction-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: var(--sp-4);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.transaction-row:hover {
+  background: var(--bg-hover);
+}
+
+.transaction-row:last-child {
+  border-bottom: none;
+}
+
+.tx-merchant-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--fw-semibold);
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.tx-info {
+  min-width: 0;
+}
+
+.tx-merchant {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tx-meta {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.tx-receipt-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--info);
+}
+
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  font-size: var(--fs-footnote);
+  font-weight: var(--fw-medium);
+  background: var(--bg-sunken);
+  color: var(--text-secondary);
+}
+
+.category-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+}
+
+.tx-amount {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tx-amount.income { color: var(--money-positive); }
+.tx-amount.expense { color: var(--text-primary); }
+
+.tx-date {
+  font-size: var(--fs-callout);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* === SVG ICON HELPER === */
+.icon { width: 18px; height: 18px; stroke-width: 1.8; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+/* === RESPONSIVE === */
+@media (max-width: 1280px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .balance-hero { grid-template-columns: 1fr; }
+  .balance-accounts { min-width: 0; }
+}
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .main { padding: var(--sp-4); }
+}
+</style>
+</head>
+<body>
+
+<!-- THEME TOGGLE -->
+<div class="theme-toggle">
+  <button onclick="setTheme('light')" id="t-light" title="Light mode">
+    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+  </button>
+  <button onclick="setTheme('dark')" id="t-dark" title="Dark mode">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</div>
+
+<div class="app">
+
+<!-- ============== SIDEBAR ============== -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <span>Coffer</span>
+  </div>
+
+  <div class="nav-section">
+    <nav>
+      <div class="nav-item active">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        Transakcje
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Import
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        Paragony
+        <span class="badge">3</span>
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Cele
+      </div>
+    </nav>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">AI</div>
+    <nav>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Czat z danymi
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+        Anomalie
+        <span class="badge">2</span>
+      </div>
+    </nav>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Ustawienia</div>
+    <nav>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Konto i kategorie
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Bezpieczeństwo
+      </div>
+    </nav>
+  </div>
+
+  <div class="user-card">
+    <div class="avatar">B</div>
+    <div class="user-info">
+      <div class="user-name">Bartosz</div>
+      <div class="user-status"><span class="status-dot"></span>Sync OK</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ============== MAIN ============== -->
+<main class="main">
+
+  <header class="page-header">
+    <div class="page-title-group">
+      <h1>Dashboard</h1>
+      <div class="subtitle">Listopad 2025 · ostatnia aktualizacja 2 minuty temu</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Import wyciągu
+      </button>
+      <button class="btn btn-primary">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Nowa transakcja
+      </button>
+    </div>
+  </header>
+
+  <!-- HERO BALANCE -->
+  <section class="balance-hero">
+    <div>
+      <div class="balance-label">Saldo łączne</div>
+      <div class="balance-amount num">
+        24 387,52<span class="balance-currency">zł</span>
+      </div>
+      <div class="balance-meta">
+        <div class="balance-meta-item">
+          <div class="balance-meta-label">Wpływy mies.</div>
+          <div class="balance-meta-value positive num">+12 450,00 zł</div>
+        </div>
+        <div class="balance-meta-item">
+          <div class="balance-meta-label">Wydatki mies.</div>
+          <div class="balance-meta-value num">8 234,18 zł</div>
+        </div>
+        <div class="balance-meta-item">
+          <div class="balance-meta-label">Bilans mies.</div>
+          <div class="balance-meta-value positive num">+4 215,82 zł</div>
+        </div>
+      </div>
+    </div>
+    <div class="balance-accounts">
+      <div class="account-row">
+        <div class="bank-logo bank-pko">PKO</div>
+        <div class="account-info">
+          <div class="account-name">Konto główne</div>
+          <div class="account-number">···· 2874</div>
+        </div>
+        <div class="account-amount num">18 945,12 zł</div>
+      </div>
+      <div class="account-row">
+        <div class="bank-logo bank-mbank">mB</div>
+        <div class="account-info">
+          <div class="account-name">eKonto</div>
+          <div class="account-number">···· 5621</div>
+        </div>
+        <div class="account-amount num">3 187,40 zł</div>
+      </div>
+      <div class="account-row">
+        <div class="bank-logo bank-ing">ING</div>
+        <div class="account-info">
+          <div class="account-name">Oszczędności</div>
+          <div class="account-number">···· 9043</div>
+        </div>
+        <div class="account-amount num">2 255,00 zł</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI CARDS -->
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-label">Wydatki w tym miesiącu</div>
+        <div class="kpi-icon spent">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+      </div>
+      <div class="kpi-value num">8 234 <span style="font-size:18px;color:var(--text-tertiary)">zł</span></div>
+      <div class="kpi-delta down">
+        <svg class="kpi-delta-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+        12,4% <span class="kpi-comparison">vs poprzedni mies.</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-label">Wpływy</div>
+        <div class="kpi-icon income">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </div>
+      </div>
+      <div class="kpi-value num">12 450 <span style="font-size:18px;color:var(--text-tertiary)">zł</span></div>
+      <div class="kpi-delta neutral">
+        <svg class="kpi-delta-arrow" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="2"/></svg>
+        Bez zmian <span class="kpi-comparison">vs poprzedni mies.</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-label">Oszczędności</div>
+        <div class="kpi-icon savings">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zM12 14a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+        </div>
+      </div>
+      <div class="kpi-value num">4 216 <span style="font-size:18px;color:var(--text-tertiary)">zł</span></div>
+      <div class="kpi-delta up">
+        <svg class="kpi-delta-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5z"/></svg>
+        18,3% <span class="kpi-comparison">vs poprzedni mies.</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-label">Budżet AI</div>
+        <div class="kpi-icon budget">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+      </div>
+      <div class="kpi-value num">12,40 <span style="font-size:18px;color:var(--text-tertiary)">zł / 20</span></div>
+      <div class="kpi-delta neutral">
+        <span style="display:inline-block;width:80px;height:4px;background:var(--bg-sunken);border-radius:99px;overflow:hidden;vertical-align:middle;margin-right:6px"><span style="display:block;height:100%;width:62%;background:var(--warning);border-radius:99px"></span></span>
+        62% wykorzystane
+      </div>
+    </div>
+  </section>
+
+  <!-- CHART + CATEGORIES -->
+  <section class="dashboard-grid">
+
+    <!-- CHART -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Trend wydatków</div>
+          <div class="panel-subtitle">Dzienne wydatki, ostatnie 30 dni</div>
+        </div>
+        <div class="tab-group">
+          <div class="tab">7d</div>
+          <div class="tab active">30d</div>
+          <div class="tab">90d</div>
+          <div class="tab">1r</div>
+        </div>
+      </div>
+      <div class="chart-container">
+        <svg class="chart-svg" viewBox="0 0 600 220" preserveAspectRatio="none">
+          <!-- Grid lines -->
+          <g stroke="var(--border-subtle)" stroke-width="1">
+            <line x1="40" y1="40" x2="600" y2="40"/>
+            <line x1="40" y1="90" x2="600" y2="90"/>
+            <line x1="40" y1="140" x2="600" y2="140"/>
+            <line x1="40" y1="190" x2="600" y2="190"/>
+          </g>
+          <!-- Y axis labels -->
+          <g class="chart-axis-label" text-anchor="end">
+            <text x="32" y="44">600</text>
+            <text x="32" y="94">400</text>
+            <text x="32" y="144">200</text>
+            <text x="32" y="194">0</text>
+          </g>
+          <!-- X axis labels -->
+          <g class="chart-axis-label" text-anchor="middle">
+            <text x="80" y="210">1.11</text>
+            <text x="180" y="210">7.11</text>
+            <text x="280" y="210">14.11</text>
+            <text x="380" y="210">21.11</text>
+            <text x="480" y="210">28.11</text>
+          </g>
+          <!-- Average line -->
+          <line x1="40" y1="125" x2="600" y2="125" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
+          <text x="595" y="120" class="chart-axis-label" text-anchor="end" font-size="10">śred. 274 zł</text>
+
+          <!-- Area chart fill -->
+          <defs>
+            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M 60 160 L 80 145 L 100 170 L 120 130 L 140 155 L 160 110 L 180 140 L 200 95 L 220 125 L 240 60 L 260 100 L 280 80 L 300 130 L 320 75 L 340 145 L 360 90 L 380 105 L 400 60 L 420 125 L 440 100 L 460 70 L 480 110 L 500 50 L 520 95 L 540 80 L 560 105 L 580 60 L 580 195 L 60 195 Z"
+            fill="url(#chartGradient)"/>
+          <!-- Line -->
+          <path d="M 60 160 L 80 145 L 100 170 L 120 130 L 140 155 L 160 110 L 180 140 L 200 95 L 220 125 L 240 60 L 260 100 L 280 80 L 300 130 L 320 75 L 340 145 L 360 90 L 380 105 L 400 60 L 420 125 L 440 100 L 460 70 L 480 110 L 500 50 L 520 95 L 540 80 L 560 105 L 580 60"
+            fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Highlighted point -->
+          <circle cx="500" cy="50" r="5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- TOP CATEGORIES -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Top kategorie</div>
+          <div class="panel-subtitle">Listopad 2025</div>
+        </div>
+        <a style="font-size:var(--fs-callout);color:var(--accent);text-decoration:none">Wszystkie →</a>
+      </div>
+      <div class="categories-list">
+        <div class="category-row">
+          <div class="category-icon" style="background:var(--cat-mortgage)">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+          </div>
+          <div class="category-info">
+            <div class="category-name-row">
+              <div class="category-name">Kredyt hipoteczny</div>
+              <div class="category-amount num">2 340 zł</div>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--cat-mortgage)"></div></div>
+          </div>
+        </div>
+        <div class="category-row">
+          <div class="category-icon" style="background:var(--cat-food)">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+          </div>
+          <div class="category-info">
+            <div class="category-name-row">
+              <div class="category-name">Spożywcze</div>
+              <div class="category-amount num">1 487 zł</div>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:64%;background:var(--cat-food)"></div></div>
+          </div>
+        </div>
+        <div class="category-row">
+          <div class="category-icon" style="background:var(--cat-fuel)">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 22V8a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v14M3 22h11M14 13h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2v-9.5a1.5 1.5 0 0 0-.44-1.06L18.5 9"/></svg>
+          </div>
+          <div class="category-info">
+            <div class="category-name-row">
+              <div class="category-name">Paliwo</div>
+              <div class="category-amount num">892 zł</div>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:38%;background:var(--cat-fuel)"></div></div>
+          </div>
+        </div>
+        <div class="category-row">
+          <div class="category-icon" style="background:var(--cat-restaurants)">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+          </div>
+          <div class="category-info">
+            <div class="category-name-row">
+              <div class="category-name">Restauracje</div>
+              <div class="category-amount num">540 zł</div>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:23%;background:var(--cat-restaurants)"></div></div>
+          </div>
+        </div>
+        <div class="category-row">
+          <div class="category-icon" style="background:var(--cat-subscriptions)">
+            <svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </div>
+          <div class="category-info">
+            <div class="category-name-row">
+              <div class="category-name">Subskrypcje</div>
+              <div class="category-amount num">389 zł</div>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:17%;background:var(--cat-subscriptions)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- RECENT TRANSACTIONS -->
+  <section class="transactions-panel">
+    <div class="transactions-header">
+      <div>
+        <div class="panel-title">Ostatnie transakcje</div>
+        <div class="panel-subtitle">8 transakcji z ostatnich 5 dni</div>
+      </div>
+      <a style="font-size:var(--fs-callout);color:var(--accent);text-decoration:none">Zobacz wszystkie →</a>
+    </div>
+
+    <div class="transaction-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-food);color:white">L</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Lidl Toruń <svg class="tx-receipt-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-food)"></span>Spożywcze</span>
+          <span>PKO ···· 2874</span>
+        </div>
+      </div>
+      <div class="tx-amount expense num">−127,40 zł</div>
+      <div class="tx-date">28 list.</div>
+    </div>
+
+    <div class="transaction-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-fuel);color:white">O</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Orlen Stacja Toruń</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-fuel)"></span>Paliwo</span>
+          <span>PKO ···· 2874</span>
+        </div>
+      </div>
+      <div class="tx-amount expense num">−287,15 zł</div>
+      <div class="tx-date">28 list.</div>
+    </div>
+
+    <div class="transaction-row">
+      <div class="tx-merchant-icon" style="background:#000;color:white">A</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Anthropic PBC</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-subscriptions)"></span>Subskrypcje</span>
+          <span>PKO ···· 2874</span>
+        </div>
+      </div>
+      <div class="tx-amount expense num">−89,00 zł</div>
+      <div class="tx-date">27 list.</div>
+    </div>
+
+    <div class="transaction-row">
+      <div class="tx-merchant-icon" style="background:var(--success);color:white">W</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Wynagrodzenie · ACME Sp. z o.o.</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-income)"></span>Wpływy</span>
+          <span>PKO ···· 2874</span>
+        </div>
+      </div>
+      <div class="tx-amount income num">+12 450,00 zł</div>
+      <div class="tx-date">27 list.</div>
+    </div>
+
+    <div class="transaction-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-restaurants);color:white">P</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Pizzeria Capri <svg class="tx-receipt-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-restaurants)"></span>Restauracje</span>
+          <span>PKO ···· 2874</span>
+        </div>
+      </div>
+      <div class="tx-amount expense num">−68,50 zł</div>
+      <div class="tx-date">26 list.</div>
+    </div>
+
+    <div class="transaction-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-mortgage);color:white">P</div>
+      <div class="tx-info">
+        <div class="tx-merchant">PKO BP — Rata kredytu hipotecznego</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-mortgage)"></span>Kredyt hipoteczny</span>
+          <span>PKO ···· 2874</span>
+        </div>
+      </div>
+      <div class="tx-amount expense num">−2 340,00 zł</div>
+      <div class="tx-date">25 list.</div>
+    </div>
+
+    <div class="transaction-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-food);color:white">B</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Biedronka Toruń <svg class="tx-receipt-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-food)"></span>Spożywcze</span>
+          <span>PKO ···· 2874</span>
+        </div>
+      </div>
+      <div class="tx-amount expense num">−95,32 zł</div>
+      <div class="tx-date">25 list.</div>
+    </div>
+
+    <div class="transaction-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-shopping);color:white">A</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Allegro · Dell Monitor</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-shopping)"></span>Zakupy</span>
+          <span>mB ···· 5621</span>
+        </div>
+      </div>
+      <div class="tx-amount expense num">−1 249,00 zł</div>
+      <div class="tx-date">24 list.</div>
+    </div>
+
+  </section>
+
+</main>
+</div>
+
+<script>
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('coffer-theme', theme);
+  document.getElementById('t-light').classList.toggle('active', theme === 'light');
+  document.getElementById('t-dark').classList.toggle('active', theme === 'dark');
+}
+const saved = localStorage.getItem('coffer-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(saved);
+</script>
+
+</body>
+</html>

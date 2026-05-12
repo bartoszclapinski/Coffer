@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffer — Transakcje</title>
+<style>
+/* ============================================================
+   COFFER DESIGN TOKENS
+   Apple-inspired design system, light + dark themes.
+   Inspired by macOS Sonoma + iOS 17 system UI.
+   ============================================================ */
+
+:root {
+  /* === Typography === */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+  --font-tabular: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+
+  /* Font sizes — Apple HIG inspired */
+  --fs-largeTitle: 34px;     /* Page hero numbers (e.g., balance) */
+  --fs-title1: 28px;         /* Section primary headings */
+  --fs-title2: 22px;         /* Subsection headings */
+  --fs-title3: 18px;         /* Card titles */
+  --fs-headline: 16px;       /* Emphasized body */
+  --fs-body: 14px;           /* Default body text */
+  --fs-callout: 13px;        /* Secondary body */
+  --fs-subhead: 12px;        /* Small labels */
+  --fs-footnote: 11px;       /* Captions, micro-labels */
+
+  /* Font weights */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Line heights */
+  --lh-tight: 1.2;
+  --lh-snug: 1.35;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.625;
+
+  /* === Spacing scale === */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+  --sp-9: 48px;
+  --sp-10: 64px;
+
+  /* === Border radius === */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-2xl: 28px;
+  --r-full: 9999px;
+
+  /* === Transitions === */
+  --t-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow: 320ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* === Z-index === */
+  --z-base: 0;
+  --z-elevated: 10;
+  --z-overlay: 100;
+  --z-modal: 1000;
+  --z-toast: 10000;
+}
+
+/* ============================================================
+   LIGHT THEME (default)
+   ============================================================ */
+:root,
+[data-theme="light"] {
+  /* Backgrounds — three layers of depth */
+  --bg-base: #F5F5F7;          /* Page background, slightly off-white */
+  --bg-surface: #FFFFFF;        /* Cards, panels */
+  --bg-elevated: #FFFFFF;       /* Modals, popovers (with shadow) */
+  --bg-sunken: #EBEBED;         /* Sub-areas, input wells */
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.08);
+
+  /* Text */
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-tertiary: #8E8E93;
+  --text-quaternary: #C7C7CC;
+  --text-on-accent: #FFFFFF;
+
+  /* Borders — very subtle, Apple uses these sparingly */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-strong: rgba(0, 0, 0, 0.18);
+
+  /* Accent — Coffer's brand color, deep navy with character */
+  --accent: #1D4ED8;            /* Indigo-600 — feels modern, fintech, not clichéd blue */
+  --accent-hover: #1E40AF;
+  --accent-active: #1E3A8A;
+  --accent-soft: rgba(29, 78, 216, 0.12);
+  --accent-bg: rgba(29, 78, 216, 0.08);
+
+  /* Semantic colors */
+  --success: #16A34A;
+  --success-soft: rgba(22, 163, 74, 0.12);
+  --success-bg: rgba(22, 163, 74, 0.08);
+
+  --warning: #EA580C;
+  --warning-soft: rgba(234, 88, 12, 0.12);
+  --warning-bg: rgba(234, 88, 12, 0.08);
+
+  --danger: #DC2626;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+  --danger-bg: rgba(220, 38, 38, 0.08);
+
+  --info: #0891B2;
+  --info-soft: rgba(8, 145, 178, 0.12);
+  --info-bg: rgba(8, 145, 178, 0.08);
+
+  /* Money colors — restrained, used only for deltas not amounts */
+  --money-positive: #16A34A;
+  --money-negative: #6E6E73;     /* Negative is just secondary text — money is normal */
+  --money-emphasis-negative: #DC2626;  /* Only for alerts/anomalies */
+
+  /* Category colors — soft, palette-aware */
+  --cat-food: #F97316;          /* orange */
+  --cat-fuel: #6366F1;          /* indigo */
+  --cat-restaurants: #EC4899;   /* pink */
+  --cat-subscriptions: #8B5CF6; /* violet */
+  --cat-housing: #0EA5E9;       /* sky */
+  --cat-mortgage: #14B8A6;      /* teal */
+  --cat-entertainment: #F59E0B; /* amber */
+  --cat-transport: #3B82F6;     /* blue */
+  --cat-health: #10B981;        /* emerald */
+  --cat-shopping: #A855F7;      /* purple */
+  --cat-income: #16A34A;        /* green */
+  --cat-other: #71717A;         /* zinc */
+
+  /* Shadows — Apple-style, very subtle elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 3px rgba(29, 78, 216, 0.3);
+
+  /* Sidebar specific */
+  --sidebar-bg: rgba(245, 245, 247, 0.85);
+}
+
+/* ============================================================
+   DARK THEME
+   ============================================================ */
+[data-theme="dark"] {
+  --bg-base: #000000;          /* True black like iOS — works great on OLED */
+  --bg-surface: #1C1C1E;        /* Cards */
+  --bg-elevated: #2C2C2E;       /* Modals, popovers */
+  --bg-sunken: #0A0A0A;         /* Sub-areas */
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.10);
+
+  --text-primary: #F5F5F7;
+  --text-secondary: #98989D;
+  --text-tertiary: #636366;
+  --text-quaternary: #48484A;
+  --text-on-accent: #FFFFFF;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --accent: #3B82F6;            /* Brighter blue in dark mode for contrast */
+  --accent-hover: #60A5FA;
+  --accent-active: #2563EB;
+  --accent-soft: rgba(59, 130, 246, 0.18);
+  --accent-bg: rgba(59, 130, 246, 0.12);
+
+  --success: #22C55E;
+  --success-soft: rgba(34, 197, 94, 0.18);
+  --success-bg: rgba(34, 197, 94, 0.12);
+
+  --warning: #FB923C;
+  --warning-soft: rgba(251, 146, 60, 0.18);
+  --warning-bg: rgba(251, 146, 60, 0.12);
+
+  --danger: #EF4444;
+  --danger-soft: rgba(239, 68, 68, 0.18);
+  --danger-bg: rgba(239, 68, 68, 0.12);
+
+  --info: #06B6D4;
+  --info-soft: rgba(6, 182, 212, 0.18);
+  --info-bg: rgba(6, 182, 212, 0.12);
+
+  --money-positive: #22C55E;
+  --money-negative: #98989D;
+  --money-emphasis-negative: #EF4444;
+
+  /* Categories — slightly brighter for dark backgrounds */
+  --cat-food: #FB923C;
+  --cat-fuel: #818CF8;
+  --cat-restaurants: #F472B6;
+  --cat-subscriptions: #A78BFA;
+  --cat-housing: #38BDF8;
+  --cat-mortgage: #2DD4BF;
+  --cat-entertainment: #FBBF24;
+  --cat-transport: #60A5FA;
+  --cat-health: #34D399;
+  --cat-shopping: #C084FC;
+  --cat-income: #22C55E;
+  --cat-other: #A1A1AA;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.5);
+
+  --sidebar-bg: rgba(28, 28, 30, 0.85);
+}
+
+/* ============================================================
+   AUTO THEME — respects user's OS preference
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg-base: #000000;
+    --bg-surface: #1C1C1E;
+    --bg-elevated: #2C2C2E;
+    --bg-sunken: #0A0A0A;
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(255, 255, 255, 0.10);
+    --text-primary: #F5F5F7;
+    --text-secondary: #98989D;
+    --text-tertiary: #636366;
+    --text-quaternary: #48484A;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-default: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --accent: #3B82F6;
+    --accent-hover: #60A5FA;
+    --accent-soft: rgba(59, 130, 246, 0.18);
+    --accent-bg: rgba(59, 130, 246, 0.12);
+    --success: #22C55E;
+    --warning: #FB923C;
+    --danger: #EF4444;
+    --info: #06B6D4;
+    --money-positive: #22C55E;
+    --money-negative: #98989D;
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+    --sidebar-bg: rgba(28, 28, 30, 0.85);
+  }
+}
+
+/* ============================================================
+   GLOBAL RESET + BASE
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  color: var(--text-primary);
+  background: var(--bg-base);
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Tabular figures for numbers — critical for financial UI */
+.num, .tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "kern" 1;
+}
+
+/* Scrollbar — subtle Apple-style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--r-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ============================================================
+   THEME TOGGLE WIDGET — top-right corner of every mockup
+   ============================================================ */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-toggle button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--text-secondary);
+  transition: var(--t-fast);
+}
+
+.theme-toggle button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.theme-toggle button.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+</style>
+<style>
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background: var(--bg-base);
+}
+
+/* === SIDEBAR (same as dashboard) === */
+.sidebar {
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-right: 1px solid var(--border-subtle);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-5);
+  font-size: var(--fs-title3);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: var(--fw-bold);
+  font-size: 14px;
+}
+
+.nav-section { margin-top: var(--sp-4); }
+
+.nav-label {
+  font-size: var(--fs-footnote);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.nav-item .icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.nav-item .badge {
+  margin-left: auto;
+  font-size: var(--fs-footnote);
+  font-weight: var(--fw-semibold);
+  background: var(--bg-sunken);
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  min-width: 20px;
+  text-align: center;
+}
+
+.user-card {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-full);
+  background: linear-gradient(135deg, var(--accent), #6366F1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: var(--fw-semibold);
+  font-size: 13px;
+}
+
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: var(--fs-callout); font-weight: var(--fw-medium); }
+.user-status { font-size: var(--fs-footnote); color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; }
+.status-dot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--success); }
+
+/* === TRANSACTIONS LAYOUT === */
+.tx-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 0;
+  min-height: 100vh;
+}
+
+.tx-layout.no-detail {
+  grid-template-columns: 1fr;
+}
+
+.tx-main {
+  padding: var(--sp-7) var(--sp-7);
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.tx-detail {
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: var(--sp-6);
+}
+
+/* === HEADER === */
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: var(--sp-6);
+  padding-right: 90px;
+}
+
+.page-title-group h1 {
+  font-size: var(--fs-title1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.page-title-group .subtitle {
+  font-size: var(--fs-callout);
+  color: var(--text-secondary);
+  margin-top: var(--sp-1);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 8px 14px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: var(--t-fast);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.btn-primary:hover { background: var(--accent-hover); }
+.btn .icon { width: 16px; height: 16px; }
+
+/* === FILTER BAR === */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 240px;
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+  transition: var(--t-fast);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.search-input::placeholder { color: var(--text-tertiary); }
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 7px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--t-fast);
+  white-space: nowrap;
+}
+
+.filter-pill:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.filter-pill.active {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.filter-pill .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.filter-pill .chevron {
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
+  opacity: 0.6;
+}
+
+.filter-pill .count {
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  margin-left: 2px;
+}
+
+/* === SUMMARY STRIP === */
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-label {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--fw-semibold);
+}
+
+.summary-value {
+  font-size: var(--fs-headline);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-value.positive { color: var(--money-positive); }
+
+/* === TRANSACTION TABLE === */
+.tx-table {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.tx-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.tx-section-header .count {
+  background: transparent;
+  color: var(--text-tertiary);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-footnote);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.tx-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  gap: var(--sp-4);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.tx-row:hover { background: var(--bg-hover); }
+.tx-row:last-child { border-bottom: none; }
+
+.tx-row.selected {
+  background: var(--accent-bg);
+  border-left: 3px solid var(--accent);
+  padding-left: calc(var(--sp-5) - 3px);
+}
+
+.tx-row.selected:hover {
+  background: var(--accent-bg);
+}
+
+.tx-merchant-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--fw-semibold);
+  font-size: 13px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.tx-info { min-width: 0; }
+
+.tx-merchant {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tx-receipt-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: var(--info);
+}
+
+.tx-meta {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  font-size: var(--fs-footnote);
+  font-weight: var(--fw-medium);
+  background: var(--bg-sunken);
+  color: var(--text-secondary);
+}
+
+.category-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+}
+
+.tx-amount {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tx-amount.income { color: var(--money-positive); }
+.tx-amount.expense { color: var(--text-primary); }
+
+.tx-bank {
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.tx-date {
+  font-size: var(--fs-callout);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 50px;
+}
+
+/* === DETAIL PANEL === */
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-5);
+}
+
+.detail-close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-sunken);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.detail-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.detail-merchant-card {
+  text-align: center;
+  padding: var(--sp-6) var(--sp-4) var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.detail-merchant-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r-lg);
+  background: var(--cat-food);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: var(--fw-bold);
+  margin-bottom: var(--sp-3);
+}
+
+.detail-merchant-name {
+  font-size: var(--fs-title2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.015em;
+  margin-bottom: 4px;
+}
+
+.detail-amount {
+  font-size: var(--fs-largeTitle);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  margin-top: var(--sp-3);
+}
+
+.detail-section {
+  margin-bottom: var(--sp-5);
+}
+
+.detail-section-title {
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  margin-bottom: var(--sp-3);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-body);
+}
+
+.detail-row:last-child { border-bottom: none; }
+
+.detail-row-label {
+  color: var(--text-secondary);
+}
+
+.detail-row-value {
+  color: var(--text-primary);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Receipt items */
+.receipt-card {
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+
+.receipt-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--fs-footnote);
+  color: var(--text-tertiary);
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px dashed var(--border-default);
+}
+
+.receipt-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2);
+  padding: 6px 0;
+  font-size: var(--fs-callout);
+}
+
+.receipt-item-name {
+  color: var(--text-primary);
+}
+
+.receipt-item-cat {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.receipt-item-amount {
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.receipt-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-default);
+  font-size: var(--fs-callout);
+  font-weight: var(--fw-semibold);
+}
+
+.detail-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.detail-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+.icon { width: 18px; height: 18px; stroke-width: 1.8; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(20px);
+}
+
+.theme-toggle button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--text-secondary);
+  transition: var(--t-fast);
+}
+
+.theme-toggle button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.theme-toggle button.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+@media (max-width: 1280px) {
+  .tx-detail { display: none; }
+  .tx-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .tx-main { padding: var(--sp-4); }
+  .summary-strip { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="theme-toggle">
+  <button onclick="setTheme('light')" id="t-light"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button>
+  <button onclick="setTheme('dark')" id="t-dark"><svg class="icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+</div>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <span>Coffer</span>
+  </div>
+  <div class="nav-section">
+    <nav>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item active">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        Transakcje
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Import
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Paragony
+        <span class="badge">3</span>
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Cele
+      </div>
+    </nav>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">AI</div>
+    <nav>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Czat z danymi
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+        Anomalie
+        <span class="badge">2</span>
+      </div>
+    </nav>
+  </div>
+  <div class="user-card">
+    <div class="avatar">B</div>
+    <div class="user-info">
+      <div class="user-name">Bartosz</div>
+      <div class="user-status"><span class="status-dot"></span>Sync OK</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="tx-layout">
+<main class="tx-main">
+
+  <header class="page-header">
+    <div class="page-title-group">
+      <h1>Transakcje</h1>
+      <div class="subtitle">236 transakcji · 1 maj – 28 list. 2025</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Eksport CSV
+      </button>
+      <button class="btn btn-primary">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Nowa transakcja
+      </button>
+    </div>
+  </header>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" class="search-input" placeholder="Szukaj po opisie, kwocie, kategorii…">
+    </div>
+    <button class="filter-pill active">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Ostatnie 6 mies.
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <button class="filter-pill">
+      Kategorie
+      <span class="count">2</span>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <button class="filter-pill">
+      Konto
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <button class="filter-pill">
+      Kwota
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <button class="filter-pill">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+      Z paragonem
+    </button>
+  </div>
+
+  <!-- SUMMARY STRIP -->
+  <div class="summary-strip">
+    <div class="summary-item">
+      <div class="summary-label">Transakcji</div>
+      <div class="summary-value num">236</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">Wpływy</div>
+      <div class="summary-value positive num">+62 250 zł</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">Wydatki</div>
+      <div class="summary-value num">41 187 zł</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">Bilans</div>
+      <div class="summary-value positive num">+21 063 zł</div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="tx-table">
+
+    <div class="tx-section-header">
+      <span>Dziś · 28 listopada</span>
+      <span class="count">2 transakcje · 414,55 zł</span>
+    </div>
+
+    <div class="tx-row selected">
+      <div class="tx-merchant-icon" style="background:var(--cat-food)">L</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Lidl Toruń <svg class="tx-receipt-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-food)"></span>Spożywcze</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount expense num">−127,40 zł</div>
+      <div class="tx-date">14:32</div>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-fuel)">O</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Orlen Stacja Toruń</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-fuel)"></span>Paliwo</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount expense num">−287,15 zł</div>
+      <div class="tx-date">10:18</div>
+    </div>
+
+    <div class="tx-section-header">
+      <span>Wczoraj · 27 listopada</span>
+      <span class="count">3 transakcje · +12 361,00 zł</span>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:#000">A</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Anthropic PBC</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-subscriptions)"></span>Subskrypcje</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount expense num">−89,00 zł</div>
+      <div class="tx-date">09:14</div>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:var(--success)">W</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Wynagrodzenie · ACME Sp. z o.o.</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-income)"></span>Wpływy</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount income num">+12 450,00 zł</div>
+      <div class="tx-date">08:00</div>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-other)">B</div>
+      <div class="tx-info">
+        <div class="tx-merchant">BLIK · Marek</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-other)"></span>Inne</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount expense num">−50,00 zł</div>
+      <div class="tx-date">19:45</div>
+    </div>
+
+    <div class="tx-section-header">
+      <span>26 listopada</span>
+      <span class="count">2 transakcje · 158,49 zł</span>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-restaurants)">P</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Pizzeria Capri <svg class="tx-receipt-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-restaurants)"></span>Restauracje</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount expense num">−68,50 zł</div>
+      <div class="tx-date">19:22</div>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-transport)">u</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Uber · Toruń → lotnisko</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-transport)"></span>Transport</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount expense num">−89,99 zł</div>
+      <div class="tx-date">06:14</div>
+    </div>
+
+    <div class="tx-section-header">
+      <span>25 listopada</span>
+      <span class="count">3 transakcje · 2 525,32 zł</span>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-mortgage)">P</div>
+      <div class="tx-info">
+        <div class="tx-merchant">PKO BP · Rata kredytu hipotecznego</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-mortgage)"></span>Kredyt hipoteczny</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount expense num">−2 340,00 zł</div>
+      <div class="tx-date">02:00</div>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-food)">B</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Biedronka Toruń <svg class="tx-receipt-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-food)"></span>Spożywcze</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount expense num">−95,32 zł</div>
+      <div class="tx-date">17:18</div>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-subscriptions)">N</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Netflix Polska Sp. z o.o.</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-subscriptions)"></span>Subskrypcje</span>
+        </div>
+      </div>
+      <div class="tx-bank">PKO ···· 2874</div>
+      <div class="tx-amount expense num">−43,00 zł</div>
+      <div class="tx-date">12:00</div>
+    </div>
+
+    <div class="tx-section-header">
+      <span>24 listopada</span>
+      <span class="count">1 transakcja · 1 249,00 zł</span>
+    </div>
+
+    <div class="tx-row">
+      <div class="tx-merchant-icon" style="background:var(--cat-shopping)">A</div>
+      <div class="tx-info">
+        <div class="tx-merchant">Allegro · Dell U2723QE 27"</div>
+        <div class="tx-meta">
+          <span class="category-pill"><span class="category-dot" style="background:var(--cat-shopping)"></span>Zakupy</span>
+        </div>
+      </div>
+      <div class="tx-bank">mB ···· 5621</div>
+      <div class="tx-amount expense num">−1 249,00 zł</div>
+      <div class="tx-date">11:42</div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- DETAIL PANEL -->
+<aside class="tx-detail">
+  <div class="detail-header">
+    <div style="font-size:var(--fs-subhead);font-weight:var(--fw-semibold);text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary)">Szczegóły transakcji</div>
+    <button class="detail-close">
+      <svg class="icon" viewBox="0 0 24 24" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="detail-merchant-card">
+    <div class="detail-merchant-icon">L</div>
+    <div class="detail-merchant-name">Lidl Toruń</div>
+    <div style="font-size:var(--fs-callout);color:var(--text-secondary)">28 listopada 2025 · 14:32</div>
+    <div class="detail-amount num">−127,40 zł</div>
+  </div>
+
+  <div class="detail-section">
+    <div class="detail-section-title">Informacje</div>
+    <div class="detail-row">
+      <span class="detail-row-label">Kategoria</span>
+      <span class="detail-row-value">
+        <span class="category-pill"><span class="category-dot" style="background:var(--cat-food)"></span>Spożywcze</span>
+      </span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-row-label">Konto</span>
+      <span class="detail-row-value">PKO ···· 2874</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-row-label">Typ</span>
+      <span class="detail-row-value">Płatność kartą</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-row-label">Lokalizacja</span>
+      <span class="detail-row-value">Toruń, Szosa Lubicka</span>
+    </div>
+  </div>
+
+  <div class="detail-section">
+    <div class="detail-section-title">Paragon · 27 pozycji</div>
+    <div class="receipt-card">
+      <div class="receipt-meta">
+        <span>Lidl sp. z o.o. sp. k.</span>
+        <span>14:32:18</span>
+      </div>
+
+      <div class="receipt-item">
+        <div>
+          <div class="receipt-item-name">Chleb żytni razowy 600g</div>
+          <div class="receipt-item-cat">Pieczywo</div>
+        </div>
+        <div class="receipt-item-amount">6,49 zł</div>
+      </div>
+      <div class="receipt-item">
+        <div>
+          <div class="receipt-item-name">Mleko UHT 3,2% 1l × 2</div>
+          <div class="receipt-item-cat">Nabiał</div>
+        </div>
+        <div class="receipt-item-amount">8,40 zł</div>
+      </div>
+      <div class="receipt-item">
+        <div>
+          <div class="receipt-item-name">Marchew luz 1,2 kg</div>
+          <div class="receipt-item-cat">Warzywa</div>
+        </div>
+        <div class="receipt-item-amount">4,80 zł</div>
+      </div>
+      <div class="receipt-item">
+        <div>
+          <div class="receipt-item-name">Schab b/k 0,84 kg</div>
+          <div class="receipt-item-cat">Mięso</div>
+        </div>
+        <div class="receipt-item-amount">25,15 zł</div>
+      </div>
+      <div class="receipt-item">
+        <div>
+          <div class="receipt-item-name">Ser żółty Salami 200g</div>
+          <div class="receipt-item-cat">Nabiał</div>
+        </div>
+        <div class="receipt-item-amount">14,99 zł</div>
+      </div>
+      <div class="receipt-item">
+        <div>
+          <div class="receipt-item-name">Jabłka Lobo 1,5 kg</div>
+          <div class="receipt-item-cat">Owoce</div>
+        </div>
+        <div class="receipt-item-amount">7,49 zł</div>
+      </div>
+      <div class="receipt-item">
+        <div style="display:flex;align-items:center;gap:6px;color:var(--text-tertiary);font-size:var(--fs-footnote)">
+          + 21 więcej pozycji
+        </div>
+        <div></div>
+      </div>
+
+      <div class="receipt-total">
+        <span>Razem (z VAT)</span>
+        <span class="num">127,40 zł</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-actions">
+    <button class="btn btn-secondary">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Edytuj
+    </button>
+    <button class="btn btn-secondary">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 12l-4 4-4-4M12 8v8"/></svg>
+      Cel oszcz.
+    </button>
+  </div>
+
+</aside>
+</div>
+</div>
+
+<script>
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('coffer-theme', theme);
+  document.getElementById('t-light').classList.toggle('active', theme === 'light');
+  document.getElementById('t-dark').classList.toggle('active', theme === 'dark');
+}
+const saved = localStorage.getItem('coffer-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(saved);
+</script>
+
+</body>
+</html>
