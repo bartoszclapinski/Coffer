@@ -1,5 +1,7 @@
 # Coffer
 
+[![build](https://github.com/bartoszclapinski/Coffer/actions/workflows/build.yml/badge.svg)](https://github.com/bartoszclapinski/Coffer/actions/workflows/build.yml)
+
 Personal finance application with AI integration. Cross-platform .NET app — Avalonia desktop + MAUI mobile companion. Local-first, end-to-end encrypted, no third-party data exchange.
 
 ## What it does
@@ -76,9 +78,7 @@ This keeps context windows manageable and answers focused.
 
 ## Status
 
-Pre-MVP. Phase 0 (foundation) in progress. Roadmap: `docs/architecture/10-roadmap.md`.
-
-Build status: see badge at top of repo (CI runs on every push and pull request to `main`).
+Pre-MVP. Phase 0 (foundation) in progress. Roadmap: `docs/architecture/10-roadmap.md`. CI runs on every push and pull request to `main` — status badge at top.
 
 ## License
 
