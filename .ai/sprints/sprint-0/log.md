@@ -9,3 +9,20 @@
 - decyzja: Avalonia templates wymagają one-time install `dotnet new install Avalonia.Templates` na maszynie — odnotowane w sprint-0.md jako krok 0.6, ale to operacja machine-level a nie repo-level
 - decyzja: strategia "single-push" — wszystko konfigurujemy lokalnie, walidujemy `dotnet build/test/format` zielono, dopiero potem `gh repo create --push`, żeby CI na publicznym repo był zielony od pierwszego commita
 - decyzja: status Sprint 0 → "W toku" (plan finalny, zaczynamy realizację)
+- krok 0.1 ukończony — `git init` z `main` jako domyślną gałęzią
+- krok 0.2 ukończony — commit `ecc26db` `chore: initial commit with planning docs and ci skeleton` (30 plików, 13472 wstawienia)
+- decyzja: `.claude/settings.local.json` dodane do `.gitignore` — to lokalne uprawnienia Claude Code per maszyna, nie commitowane; team-shared `settings.json` (jeśli powstanie) zostaje śledzony
+- krok 0.3 ukończony — usunięto `Install MAUI workload` z `.github/workflows/build.yml`
+- krok 0.4 ukończony — `global.json` pinuje SDK 9.0.0 z `rollForward: latestFeature`; `dotnet --version` na maszynie zmienia z 10.0.201 na 9.0.312
+- krok 0.5 ukończony — `Directory.Build.props` dodany, single source of truth dla TargetFramework/Nullable/LangVersion/TreatWarningsAsErrors/ImplicitUsings/EnforceCodeStyleInBuild
+- krok 0.6 ukończony — `dotnet new install Avalonia.Templates` — UWAGA: to operacja machine-level, nie repo-level; każda maszyna gdzie chce się tworzyć nowe projekty Avalonia musi to zrobić raz
+- decyzja: Avalonia.Templates najnowsze (template `avalonia.app`) wygenerowały csproj z `TargetFramework=net10.0` i Avalonia 12.0.3 — niezgodne z naszym SDK 9 i z docs (Avalonia 11). Pinujemy `Avalonia.*` PackageReferences do `11.*` w Coffer.Desktop.csproj
+- decyzja: wszystkie csprojy oczyszczone z `TargetFramework`/`Nullable`/`ImplicitUsings` — single source of truth w `Directory.Build.props`. csprojy projektów produkcyjnych dostają tylko `ProjectReference`-y, csprojy testowe dodatkowo `IsPackable=false` i package references xUnit/FluentAssertions/coverlet/Microsoft.NET.Test.Sdk
+- problem: kolizja namespace `Coffer.Application` (project reference) vs `Avalonia.Application` (base class) w `Coffer.Desktop/App.axaml.cs` (CS0118) → rozwiązanie: fully qualified `public partial class App : Avalonia.Application`
+- problem: Avalonia template generowała placeholdery `Class1.cs` w projektach classlib i `UnitTest1.cs` w testowych → rozwiązanie: usunięto Class1.cs (czyste, puste projekty), wymieniono UnitTest1.cs na SmokeTest.cs weryfikujący wire-up FluentAssertions
+- decyzja: FluentAssertions pinowane do `6.12.*` — od wersji 8 license komercyjna, 6.x darmowa
+- kroki 0.7-0.11 ukończone — `Coffer.sln`, 5 projektów produkcyjnych + 3 testowe, referencje zgodnie z plan, wszystko w sln
+- krok 0.12 ukończony — `dotnet build Coffer.sln --configuration Release` zielono, 0 warnings, 0 errors, ~2.5s
+- krok 0.13 ukończony — `dotnet test Coffer.sln --no-build` zielono, 3 testy (po jednym smoke teście w każdym projekcie), wszystkie pass
+- problem: `Coffer.Infrastructure.Tests.csproj` mimo zgłoszonego "updated successfully" w batch Write zachował template content (możliwy bug narzędzia lub race condition) → rozwiązanie: ponowny Write naprawił, kolejne builds OK
+- krok 0.14 ukończony — `dotnet format Coffer.sln` naprawił CRLF/BOM/imports w wygenerowanych przez template plikach Avalonia (App.axaml.cs, MainWindow.axaml.cs, Program.cs); `dotnet format --verify-no-changes --severity warn` przeszło zielono

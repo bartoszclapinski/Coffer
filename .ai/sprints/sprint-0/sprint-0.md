@@ -14,34 +14,34 @@ Wszystkie kroki konfiguracji wykonujemy lokalnie, walidujemy `dotnet build/test/
 
 ## Kroki
 
-- [ ] 0.1 `git init` (bez commitów)
-- [ ] 0.2 Pierwszy commit obecnej zawartości repo (`chore: initial commit with planning docs and ci skeleton`)
-- [ ] 0.3 Usunąć krok `Install MAUI workload` z [.github/workflows/build.yml](../../../.github/workflows/build.yml) — wróci gdy doczepimy `Coffer.Mobile` (Faza 5)
-- [ ] 0.4 Dodać `global.json` w korzeniu z `"version": "9.0.0"` i `"rollForward": "latestFeature"` — zapewnia powtarzalny SDK (lokalnie mamy też .NET 10, CI używa 9.0.x)
-- [ ] 0.5 Dodać `Directory.Build.props` w korzeniu ze wspólnymi propertiesami: `TargetFramework=net9.0`, `Nullable=enable`, `LangVersion=13`, `TreatWarningsAsErrors=true`, `ImplicitUsings=enable`
-- [ ] 0.6 Zainstalować templates Avalonia lokalnie: `dotnet new install Avalonia.Templates` (one-time per machine, odnotowane w `log.md` żeby kolejny LLM/dev wiedział)
-- [ ] 0.7 Stworzyć `Coffer.sln` w korzeniu repo
-- [ ] 0.8 Utworzyć 5 projektów w `src/`:
+- [x] 0.1 `git init` (bez commitów)
+- [x] 0.2 Pierwszy commit obecnej zawartości repo (`chore: initial commit with planning docs and ci skeleton`)
+- [x] 0.3 Usunąć krok `Install MAUI workload` z [.github/workflows/build.yml](../../../.github/workflows/build.yml) — wróci gdy doczepimy `Coffer.Mobile` (Faza 5)
+- [x] 0.4 Dodać `global.json` w korzeniu z `"version": "9.0.0"` i `"rollForward": "latestFeature"` — zapewnia powtarzalny SDK (lokalnie mamy też .NET 10, CI używa 9.0.x)
+- [x] 0.5 Dodać `Directory.Build.props` w korzeniu ze wspólnymi propertiesami: `TargetFramework=net9.0`, `Nullable=enable`, `LangVersion=13`, `TreatWarningsAsErrors=true`, `ImplicitUsings=enable`
+- [x] 0.6 Zainstalować templates Avalonia lokalnie: `dotnet new install Avalonia.Templates` (one-time per machine, odnotowane w `log.md` żeby kolejny LLM/dev wiedział)
+- [x] 0.7 Stworzyć `Coffer.sln` w korzeniu repo
+- [x] 0.8 Utworzyć 5 projektów w `src/`:
   - 0.8.a `Coffer.Core` — classlib
   - 0.8.b `Coffer.Shared` — classlib
   - 0.8.c `Coffer.Infrastructure` — classlib
   - 0.8.d `Coffer.Application` — classlib
   - 0.8.e `Coffer.Desktop` — Avalonia 11 app (template `avalonia.app`), template-default `App.axaml` + `MainWindow.axaml` (UI bez funkcjonalności)
-- [ ] 0.9 Utworzyć 3 projekty testowe w `tests/` (template `xunit`):
+- [x] 0.9 Utworzyć 3 projekty testowe w `tests/` (template `xunit`):
   - 0.9.a `Coffer.Core.Tests` → Coffer.Core
   - 0.9.b `Coffer.Infrastructure.Tests` → Coffer.Infrastructure
   - 0.9.c `Coffer.Application.Tests` → Coffer.Application
   - + dodać `FluentAssertions` jako PackageReference do każdego
-- [ ] 0.10 Referencje między projektami (zgodnie z [01-stack-and-projects.md](../../../docs/architecture/01-stack-and-projects.md)):
+- [x] 0.10 Referencje między projektami (zgodnie z [01-stack-and-projects.md](../../../docs/architecture/01-stack-and-projects.md)):
   - `Coffer.Application` → Core, Shared
   - `Coffer.Infrastructure` → Core, Shared
   - `Coffer.Desktop` → Application, Infrastructure
   - `Coffer.Core` → (nic)
   - `Coffer.Shared` → (nic)
-- [ ] 0.11 Wszystkie projekty (prod + testy) dodać do `Coffer.sln`
-- [ ] 0.12 `dotnet build` lokalnie zielono
-- [ ] 0.13 `dotnet test` lokalnie zielono (puste projekty testowe — OK, ale dodać po jednym smoke teście na każdy projekt żeby `dotnet test` miał co znaleźć)
-- [ ] 0.14 `dotnet format --verify-no-changes --severity warn` zielono
+- [x] 0.11 Wszystkie projekty (prod + testy) dodać do `Coffer.sln`
+- [x] 0.12 `dotnet build` lokalnie zielono
+- [x] 0.13 `dotnet test` lokalnie zielono (puste projekty testowe — OK, ale dodać po jednym smoke teście na każdy projekt żeby `dotnet test` miał co znaleźć)
+- [x] 0.14 `dotnet format --verify-no-changes --severity warn` zielono
 - [ ] 0.15 Drugi commit (`chore(build): bootstrap Coffer.sln with 5 projects and 3 test projects`)
 - [ ] 0.16 `gh repo create Coffer --public --source=. --remote=origin --push` — tworzy publiczne repo i pushuje branch `main`
 - [ ] 0.17 Weryfikacja: CI workflow na GitHubie kończy się zielono (lokalnie już sprawdzone, ale CI używa innego SDK + Linux — warto upewnić się)
