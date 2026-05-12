@@ -129,12 +129,26 @@ The `!` after the type indicates a breaking change. The footer must include `BRE
 - ❌ Multiple unrelated changes squeezed into one commit (split them)
 - ❌ Commits that mix formatting changes with logic changes (do them separately)
 
-## Branch naming
+## Branch naming and PR workflow
 
-Personal project, mostly working on `main`. For larger features:
+**Rule: never push directly to `main`.** Every change — feature, fix, doc, chore — goes through feature branch + PR + squash-merge. Branch protection on `main` enforces this mechanically (`enforce_admins=true`, so even the owner cannot bypass).
 
-- `feature/<scope>-<short-name>` — `feature/parser-mbank`
-- `fix/<scope>-<short-name>` — `fix/sync-clock-drift`
-- `experiment/<short-name>` — exploratory work that may not merge
+Branch naming:
 
-Squash-merge feature branches into `main` so history stays linear.
+- `feature/<scope>-<short-name>` — new functionality, e.g. `feature/parser-mbank`
+- `fix/<scope>-<short-name>` — bug fix, e.g. `fix/sync-clock-drift`
+- `chore/<scope>-<short-name>` — tooling, deps, CI, operational docs
+- `experiment/<short-name>` — exploratory work that may not merge to `main`
+
+Workflow per sprint (or smaller change):
+
+1. `git checkout -b <type>/<scope>-<short-name>`
+2. Commit normally on the branch; multiple pushes are fine (CI re-runs per push)
+3. When DoD is met: `gh pr create` with a title + body describing the change
+4. Wait for CI green (`build-and-test` and `format-check` are required status checks)
+5. `gh pr merge --squash --delete-branch`
+6. `git checkout main && git pull`
+
+Squash-merge only — no merge commits, no rebase-merge. One PR equals one commit on `main`. Linear history is also enforced by branch protection (`required_linear_history=true`).
+
+Exception: critical hotfix (e.g. exposed secret accidentally pushed). Direct push is acceptable with an explicit "hotfix, branch protection bypassed, follow-up PR adds safeguard" note in the commit body. This should be very rare.
