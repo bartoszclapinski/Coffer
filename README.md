@@ -4,6 +4,25 @@
 
 Personal finance application with AI integration. Cross-platform .NET app — Avalonia desktop + MAUI mobile companion. Local-first, end-to-end encrypted, no third-party data exchange.
 
+<p align="center">
+  <img src="docs/mockups/screenshots/desktop-dashboard.png" alt="Desktop dashboard — KPI cards, account balances, spending trend and top categories"/>
+</p>
+
+<table>
+  <tr>
+    <td width="68%" valign="top">
+      <img src="docs/mockups/screenshots/desktop-transactions.png" alt="Desktop transactions — filterable list with detail panel and receipt drill-down"/>
+      <p align="center"><sub>Desktop · transactions with receipt drill-down</sub></p>
+    </td>
+    <td width="32%" valign="top">
+      <img src="docs/mockups/screenshots/mobile-receipt-capture.png" alt="Mobile receipt capture — camera with detected receipt overlay"/>
+      <p align="center"><sub>Mobile · receipt capture</sub></p>
+    </td>
+  </tr>
+</table>
+
+> Above: UI mockups from [`docs/mockups/`](docs/mockups/). Implementation is pre-MVP — see status at the bottom.
+
 ## What it does
 
 - Imports PDF bank statements (PKO BP first, multi-bank support via parser registry)
