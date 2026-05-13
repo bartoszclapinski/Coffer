@@ -142,13 +142,38 @@ Branch naming:
 
 Workflow per sprint (or smaller change):
 
-1. `git checkout -b <type>/<scope>-<short-name>`
-2. Commit normally on the branch; multiple pushes are fine (CI re-runs per push)
-3. When DoD is met: `gh pr create` with a title + body describing the change
-4. Wait for CI green (`build-and-test` and `format-check` are required status checks)
-5. `gh pr merge --squash --delete-branch`
-6. `git checkout main && git pull`
+1. `gh issue create` with a conventional title and a short body (what + why) — see "Issue tracking" below
+2. `git checkout -b <type>/<scope>-<short-name>`
+3. Commit normally on the branch; multiple pushes are fine (CI re-runs per push)
+4. When DoD is met: `gh pr create` with a body that includes `Closes #<issue-number>`
+5. Wait for CI green (`build-and-test` and `format-check` are required status checks)
+6. `gh pr merge --squash --delete-branch` — the linked issue auto-closes
+7. `git checkout main && git pull`
 
 Squash-merge only — no merge commits, no rebase-merge. One PR equals one commit on `main`. Linear history is also enforced by branch protection (`required_linear_history=true`).
 
 Exception: critical hotfix (e.g. exposed secret accidentally pushed). Direct push is acceptable with an explicit "hotfix, branch protection bypassed, follow-up PR adds safeguard" note in the commit body. This should be very rare.
+
+## Issue tracking
+
+Every PR closes exactly one GitHub issue. The issue is created **before** the branch — it captures intent up-front and persists as a filterable record after the diff is forgotten.
+
+Per-PR steps:
+
+1. `gh issue create --title "<conventional title, same shape as commit>" --body "<what + why, 2–3 lines>" --label <type> [--label sprint-N]`
+2. Branch, commit, push, `gh pr create` with `Closes #<issue-number>` in the body (GitHub also accepts `Fixes`, `Resolves` — pick one and be consistent; `Closes` is the default here)
+3. Squash-merge — GitHub auto-closes the linked issue
+
+Labels in use:
+
+| Label | Meaning | Color |
+|---|---|---|
+| `feat` | New user-visible feature | green |
+| `fix` | Bug fix | red |
+| `chore` | Tooling, deps, CI, operational docs | gray |
+| `docs` | Documentation only | blue |
+| `sprint-N` | Anything tied to a specific sprint (plan, impl, closure) | purple |
+
+A PR can carry both a type label and a sprint label (e.g., `feat` + `sprint-3`). Sprint labels are created at the start of each sprint (`gh label create "sprint-N" --color "5319e7"`). The label scheme is intentionally minimal; add new labels only when filtering needs grow.
+
+Exception: PRs #1–#9 predate this rule and have no associated issues. The rule starts with the PR that introduced this section (issue #10).
