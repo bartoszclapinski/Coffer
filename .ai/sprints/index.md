@@ -5,10 +5,10 @@ Status na: 2026-05-12
 | Sprint | Faza | Cel | Status |
 |---|---|---|---|
 | [sprint-0](sprint-0/sprint-0.md) | 0 | Repo na GitHubie, `Coffer.sln` z 5 projektami + 3 testowymi, `dotnet build` zielono, CI zielony | Zamknięty (2026-05-12) |
+| [sprint-1](sprint-1/sprint-1.md) | 0 | DI plumbing, Serilog (konsola+plik), Avalonia uruchamiane z DI bootstrap, `MainWindow` z `ILogger<MainWindow>` | Planowany |
 
 ## Zaplanowane sprinty Fazy 0 (pełne plany powstają na początku każdego sprintu)
 
-- **Sprint 1** — DI plumbing (`ServiceRegistration` extensions), Serilog (plik + konsola), pusty `MainWindow` w Avalonia uruchamiany z DI bootstrap
 - **Sprint 2** — `IKeyVault` w Core + `WindowsDpapiKeyVault` (DPAPI cache 7 dni) + testy round-trip
 - **Sprint 3** — `Argon2KeyDerivation`, `Bip39SeedManager` (NBitcoin), format pliku `dek.encrypted`, AES-GCM helpers, testy z wektorami BIP39
 - **Sprint 4** — `CofferDbContext` + `_SchemaInfo`, `SqlCipherKeyInterceptor`, `IDbContextFactory`, pierwsza migracja, szkielet `MigrationRunner` z hookiem na backup, test integracyjny szyfrowania
