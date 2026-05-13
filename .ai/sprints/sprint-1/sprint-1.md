@@ -1,7 +1,7 @@
 # Sprint 1 — DI + Serilog + Avalonia DI bootstrap
 
 **Faza:** 0 (Foundation)
-**Status:** W toku
+**Status:** Zamknięty
 **Zależności:** sprint-0
 
 ## Cel
@@ -75,10 +75,10 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 - [x] 1.14 Manualny run: `dotnet run --project src/Coffer.Desktop` — pokazuje się okno; plik `%LocalAppData%\Coffer\logs\coffer-<data>.log` powstaje i zawiera co najmniej dwie linijki ("Coffer starting", "MainWindow created")
 - [x] 1.15 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` zielono lokalnie
-- [ ] 1.16 Commit na `feature/sprint-1-di-serilog-bootstrap`, push, PR
-- [ ] 1.17 CI zielony (build-and-test + format-check)
-- [ ] 1.18 Squash-merge, branch usunięty
-- [ ] 1.19 Update [log.md](log.md) — finalny wpis "sprint zamknięty"; update [index.md](../index.md) — status Sprint 1 na "Zamknięty"
+- [x] 1.16 Commit na `feature/sprint-1-di-serilog-bootstrap`, push, PR
+- [x] 1.17 CI zielony (build-and-test + format-check)
+- [x] 1.18 Squash-merge, branch usunięty
+- [x] 1.19 Update [log.md](log.md) — finalny wpis "sprint zamknięty"; update [index.md](../index.md) — status Sprint 1 na "Zamknięty"
 
 ## Definition of Done
 
