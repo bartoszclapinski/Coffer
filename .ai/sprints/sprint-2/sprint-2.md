@@ -1,7 +1,7 @@
 # Sprint 2 — IKeyVault + WindowsDpapiKeyVault + testy round-trip
 
 **Faza:** 0 (Foundation)
-**Status:** W toku
+**Status:** Zamknięty
 **Zależności:** sprint-1
 
 ## Cel
@@ -111,10 +111,10 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 - [x] 2.11 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` zielono lokalnie (na Windows — wszystkie testy run, w tym DPAPI)
 - [x] 2.12 Manualne sprawdzenie: zapisać cache (PowerShell repl albo small console app), zamknąć proces, odczytać z drugiego procesu — sprawdza że DPAPI persistencja działa cross-process dla tego samego usera
-- [ ] 2.13 Commit na `feature/sprint-2-keyvault-dpapi`, push, PR
-- [ ] 2.14 CI zielony — InMemoryKeyVaultTests run, WindowsDpapiKeyVaultTests skipped na Ubuntu CI (z czytelnym "Skipped: DPAPI only available on Windows")
-- [ ] 2.15 Squash-merge, branch usunięty
-- [ ] 2.16 Osobny closure PR `chore/close-sprint-2`: status w `sprint-2.md` → Zamknięty, finalne wpisy w `log.md`, update `index.md`
+- [x] 2.13 Commit na `feature/sprint-2-keyvault-dpapi`, push, PR
+- [x] 2.14 CI zielony — InMemoryKeyVaultTests run, WindowsDpapiKeyVaultTests skipped na Ubuntu CI (z czytelnym "Skipped: DPAPI only available on Windows")
+- [x] 2.15 Squash-merge, branch usunięty
+- [x] 2.16 Osobny closure PR `chore/close-sprint-2`: status w `sprint-2.md` → Zamknięty, finalne wpisy w `log.md`, update `index.md`
 
 ## Definition of Done
 
