@@ -13,3 +13,8 @@
 - problem: `dotnet format --verify-no-changes` zawodzi z `IDE1006 Naming rule violation: Missing prefix: "_"` na `SensitivePropertyNames` (private static readonly field) → rozwiązanie: rename na `_sensitivePropertyNames`. .editorconfig wymaga `_camelCase` dla private fields niezależnie od `static readonly`
 - krok 1.14 ukończony — manualny run: `dotnet run --project src/Coffer.Desktop` uruchomiło aplikację (window pokazany na pulpicie), plik `%LocalAppData%/Coffer/logs/coffer-20260513.log` powstał z dwoma liniami: `[INF] Coffer starting, runtime 9.0.15` + `[INF] MainWindow created`
 - krok 1.15 ukończony — `dotnet build` (0 warnings, 0 errors), `dotnet test` (6 testów pass: 1 Core SmokeTest, 3 Application ServiceRegistrationTests, 2 Infrastructure SerilogConfigurationTests), `dotnet format --verify-no-changes` zielono
+- krok 1.16 ukończony — commit na `feature/sprint-1-di-serilog-bootstrap`, push, PR #4 (https://github.com/bartoszclapinski/Coffer/pull/4)
+- krok 1.17 ukończony — CI zielony na PR #4: `build-and-test` 33s, `format-check` 27s
+- krok 1.18 ukończony — PR #4 squash-merged jako `4530ab5`, branch `feature/sprint-1-di-serilog-bootstrap` usunięty
+- krok 1.19 — sprint zamknięty: status w `sprint-1.md` na "Zamknięty", `index.md` zaktualizowany, ten log finalizuje pracę
+- sprint zamknięty 2026-05-13
