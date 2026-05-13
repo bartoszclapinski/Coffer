@@ -29,7 +29,13 @@
 
 ### Coffer.Core
 
-**Rules:** Zero dependencies on UI frameworks, infrastructure, or external libraries beyond standard BCL and small utility packages (e.g., NodaTime if needed, BIP39 helpers). Pure C#.
+**Rules:** Zero dependencies on UI frameworks or infrastructure libraries. Allowed external dependencies are limited to:
+
+- the BCL,
+- `Microsoft.Extensions.DependencyInjection.Abstractions` (interface-only, for `IServiceCollection` extensions like `AddCofferCore`),
+- small focused utility packages introduced when needed (e.g., NodaTime, BIP39 helpers).
+
+No `using Avalonia.*`, no `using Microsoft.Maui.*`, no `using System.Windows.*`, no crypto-implementation or platform-specific deps.
 
 **Contains:**
 - Entities: `Transaction`, `Account`, `Category`, `Statement`, `ImportSession`, `Receipt`, `ReceiptItem`, `Goal`, `GoalContribution`, `GoalSnapshot`, `Rule`, `Alert`, `Tag`

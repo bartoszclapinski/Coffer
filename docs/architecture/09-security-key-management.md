@@ -183,30 +183,80 @@ User chose 7-day cache. Implementation:
   - On detection of OS reinstall (DPAPI handles this automatically — the cache becomes unreadable)
 - After 7 days expires, app prompts for password again
 
-```csharp
-public class DpapiCache : IMasterKeyCache
-{
-    private const string CacheFileName = "master-key.dpapi.cache";
+Sprint 2 built the production implementation as `WindowsDpapiKeyVault : IKeyVault` in `Coffer.Infrastructure/Security/`. `IKeyVault` is the umbrella contract in `Coffer.Core/Security/`; the master-key-cache methods (`GetCachedMasterKeyAsync`, `SetCachedMasterKeyAsync`, `InvalidateMasterKeyCacheAsync`) are the only members today. Other duties (DEK loading, OAuth refresh tokens) join the interface in their respective sprints.
 
-    public bool TryGet(out byte[]? masterKey)
+```csharp
+[SupportedOSPlatform("windows")]
+public sealed class WindowsDpapiKeyVault : IKeyVault
+{
+    private readonly string _cacheFilePath;
+
+    public WindowsDpapiKeyVault() : this(CofferPaths.MasterKeyCacheFile()) { }
+    public WindowsDpapiKeyVault(string cacheFilePath) => _cacheFilePath = cacheFilePath;
+
+    public async Task<byte[]?> GetCachedMasterKeyAsync(CancellationToken ct)
     {
-        if (!File.Exists(Path)) { masterKey = null; return false; }
-        var bytes = File.ReadAllBytes(Path);
-        var decrypted = ProtectedData.Unprotect(bytes, optionalEntropy: null, DataProtectionScope.CurrentUser);
-        var (key, expiresAt) = Deserialize(decrypted);
-        if (DateTime.UtcNow > expiresAt) { masterKey = null; return false; }
-        masterKey = key;
-        return true;
+        if (!File.Exists(_cacheFilePath)) return null;
+
+        var protectedBytes = await File.ReadAllBytesAsync(_cacheFilePath, ct);
+        byte[] plainBytes;
+        try
+        {
+            plainBytes = ProtectedData.Unprotect(protectedBytes, null, DataProtectionScope.CurrentUser);
+        }
+        catch (CryptographicException)
+        {
+            return null; // Different user, corrupted, or DPAPI key revoked.
+        }
+
+        try
+        {
+            // Payload: [expiresAtUtcTicks: long][keyLength: int][masterKey: N bytes]
+            var (expiresAtUtcTicks, masterKey) = ParsePayload(plainBytes);
+            if (DateTime.UtcNow.Ticks > expiresAtUtcTicks)
+            {
+                Array.Clear(masterKey, 0, masterKey.Length);
+                TryDeleteCacheFile();
+                return null;
+            }
+            return masterKey;
+        }
+        finally
+        {
+            Array.Clear(plainBytes, 0, plainBytes.Length);
+        }
     }
 
-    public void Set(byte[] masterKey, TimeSpan ttl)
+    public async Task SetCachedMasterKeyAsync(byte[] masterKey, TimeSpan ttl, CancellationToken ct)
     {
-        var serialized = Serialize(masterKey, DateTime.UtcNow + ttl);
-        var protectedBytes = ProtectedData.Protect(serialized, optionalEntropy: null, DataProtectionScope.CurrentUser);
-        File.WriteAllBytes(Path, protectedBytes);
+        ArgumentNullException.ThrowIfNull(masterKey);
+        Directory.CreateDirectory(Path.GetDirectoryName(_cacheFilePath)!);
+
+        var plainBytes = BuildPayload(DateTime.UtcNow.Add(ttl).Ticks, masterKey);
+        try
+        {
+            var protectedBytes = ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
+            await File.WriteAllBytesAsync(_cacheFilePath, protectedBytes, ct);
+        }
+        finally
+        {
+            Array.Clear(plainBytes, 0, plainBytes.Length);
+        }
+    }
+
+    public Task InvalidateMasterKeyCacheAsync(CancellationToken ct)
+    {
+        TryDeleteCacheFile();
+        return Task.CompletedTask;
     }
 }
 ```
+
+`CofferPaths.MasterKeyCacheFile()` returns `%LocalAppData%/Coffer/master-key.dpapi.cache`. The DPAPI scope is `CurrentUser` — the cache is only readable by the same Windows account that wrote it, and becomes unreadable after an OS reinstall (the DPAPI master key is regenerated). Memory hygiene: all plaintext buffers are zeroed in `try-finally` per the rule earlier in this doc.
+
+### Cross-platform fallback
+
+For non-Windows hosts (CI on Ubuntu, future Linux/macOS dev), `Coffer.Infrastructure/Security/InMemoryKeyVault.cs` provides a process-local fallback that satisfies the same interface but persists nothing across restarts. `AddCofferInfrastructure` picks the implementation via `OperatingSystem.IsWindows()` at DI build time and logs the selection when the in-memory fallback is used.
 
 ## Mobile secure storage
 
