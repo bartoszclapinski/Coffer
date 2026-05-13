@@ -1,18 +1,43 @@
-using System;
 using Avalonia;
+using Coffer.Application.DependencyInjection;
+using Coffer.Core.DependencyInjection;
+using Coffer.Desktop.DependencyInjection;
+using Coffer.Infrastructure.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace Coffer.Desktop;
 
-class Program
+internal static class Program
 {
-    // Initialization code. Don't use any Avalonia, third-party APIs or any
-    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    // yet and stuff might break.
     [STAThread]
-    public static void Main(string[] args) => BuildAvaloniaApp()
-        .StartWithClassicDesktopLifetime(args);
+    public static int Main(string[] args)
+    {
+        var services = new ServiceCollection()
+            .AddCofferCore()
+            .AddCofferApplication()
+            .AddCofferInfrastructure()
+            .AddCofferDesktopUi();
 
-    // Avalonia configuration, don't remove; also used by visual designer.
+        App.Services = services.BuildServiceProvider();
+
+        try
+        {
+            Log.Information("Coffer starting, runtime {Runtime}", Environment.Version);
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Coffer terminated unexpectedly");
+            return 1;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()

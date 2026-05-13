@@ -1,7 +1,7 @@
 # Sprint 1 — DI + Serilog + Avalonia DI bootstrap
 
 **Faza:** 0 (Foundation)
-**Status:** Planowany
+**Status:** W toku
 **Zależności:** sprint-0
 
 ## Cel
@@ -20,7 +20,7 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 ### A. Pakiety NuGet
 
-- [ ] 1.1 PackageReferences w odpowiednich csproj:
+- [x] 1.1 PackageReferences w odpowiednich csproj:
   - 1.1.a `Coffer.Core` — bez zmian (brak deps na MS Extensions zgodnie z hard-rule #3)
   - 1.1.b `Coffer.Application` — `Microsoft.Extensions.DependencyInjection.Abstractions`, `Microsoft.Extensions.Logging.Abstractions`
   - 1.1.c `Coffer.Infrastructure` — `Microsoft.Extensions.DependencyInjection.Abstractions`, `Microsoft.Extensions.Logging`, `Serilog`, `Serilog.Extensions.Logging`, `Serilog.Sinks.Console`, `Serilog.Sinks.File`
@@ -28,13 +28,13 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 ### B. ServiceRegistration extensions per warstwa
 
-- [ ] 1.2 `Coffer.Core/DependencyInjection/ServiceRegistration.cs` z `AddCofferCore(this IServiceCollection)` — początkowo prawie pusta (return services), wzorzec ustanowiony
-- [ ] 1.3 `Coffer.Application/DependencyInjection/ServiceRegistration.cs` z `AddCofferApplication(this IServiceCollection)` — j.w.
-- [ ] 1.4 `Coffer.Infrastructure/DependencyInjection/ServiceRegistration.cs` z `AddCofferInfrastructure(this IServiceCollection)` — wywołuje wewnątrz `AddCofferLogging`
+- [x] 1.2 `Coffer.Core/DependencyInjection/ServiceRegistration.cs` z `AddCofferCore(this IServiceCollection)` — początkowo prawie pusta (return services), wzorzec ustanowiony
+- [x] 1.3 `Coffer.Application/DependencyInjection/ServiceRegistration.cs` z `AddCofferApplication(this IServiceCollection)` — j.w.
+- [x] 1.4 `Coffer.Infrastructure/DependencyInjection/ServiceRegistration.cs` z `AddCofferInfrastructure(this IServiceCollection)` — wywołuje wewnątrz `AddCofferLogging`
 
 ### C. Serilog
 
-- [ ] 1.5 `Coffer.Infrastructure/Logging/SerilogConfiguration.cs` — extension `AddCofferLogging(this IServiceCollection)`:
+- [x] 1.5 `Coffer.Infrastructure/Logging/SerilogConfiguration.cs` — extension `AddCofferLogging(this IServiceCollection)`:
   - 1.5.a `Log.Logger = new LoggerConfiguration()` z minimum level Information, Debug w `#if DEBUG`
   - 1.5.b Console sink
   - 1.5.c File sink rolling, ścieżka: `Path.Combine(Environment.GetFolderPath(SpecialFolder.LocalApplicationData), "Coffer", "logs", "coffer-.log")` (cross-platform — Windows `%LocalAppData%`, Linux/macOS odpowiedniki); `RollingInterval.Day`, `fileSizeLimitBytes: 10_000_000`, `rollOnFileSizeLimit: true`, `retainedFileCountLimit: 30`
@@ -44,37 +44,37 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 ### D. Avalonia DI bootstrap
 
-- [ ] 1.6 `Coffer.Desktop/Program.cs` — przepisz:
+- [x] 1.6 `Coffer.Desktop/Program.cs` — przepisz:
   - 1.6.a `var services = new ServiceCollection().AddCofferCore().AddCofferInfrastructure().AddCofferApplication().AddCofferDesktopUi();`
   - 1.6.b `App.Services = services.BuildServiceProvider();`
   - 1.6.c `Log.Information("Coffer starting, version {Version}, runtime {Runtime}", ...)` przed `BuildAvaloniaApp().StartWithClassicDesktopLifetime(args)`
   - 1.6.d `Log.CloseAndFlush()` w `finally` (lub `try-catch-finally` wokół całości)
-- [ ] 1.7 `Coffer.Desktop/DependencyInjection/DesktopServiceRegistration.cs` z `AddCofferDesktopUi(this IServiceCollection)`:
+- [x] 1.7 `Coffer.Desktop/DependencyInjection/DesktopServiceRegistration.cs` z `AddCofferDesktopUi(this IServiceCollection)`:
   - 1.7.a Rejestruje `MainWindow` jako Singleton (decyzja: single-window app, refactor do Transient w Sprint 5 gdy doszłucze drugie okno setup wizard)
-- [ ] 1.8 `Coffer.Desktop/App.axaml.cs`:
+- [x] 1.8 `Coffer.Desktop/App.axaml.cs`:
   - 1.8.a `public static IServiceProvider Services { get; set; } = null!;`
   - 1.8.b W `OnFrameworkInitializationCompleted`: `desktop.MainWindow = Services.GetRequiredService<MainWindow>();`
-- [ ] 1.9 `Coffer.Desktop/MainWindow.axaml.cs`:
+- [x] 1.9 `Coffer.Desktop/MainWindow.axaml.cs`:
   - 1.9.a Konstruktor przyjmuje `ILogger<MainWindow> logger`
   - 1.9.b Loguje `logger.LogInformation("MainWindow created")` po `InitializeComponent()`
   - 1.9.c Pole `_logger` zachowane (przyda się dla późniejszych zdarzeń UI)
-- [ ] 1.10 `Coffer.Desktop/MainWindow.axaml` — opcjonalnie dorzucić tekstowy placeholder (np. `<TextBlock>Coffer</TextBlock>`) zamiast "Welcome to Avalonia!"
+- [x] 1.10 `Coffer.Desktop/MainWindow.axaml` — opcjonalnie dorzucić tekstowy placeholder (np. `<TextBlock>Coffer</TextBlock>`) zamiast "Welcome to Avalonia!"
 
 ### E. Testy
 
-- [ ] 1.11 `tests/Coffer.Application.Tests/DependencyInjection/ServiceRegistrationTests.cs` (zastępuje `SmokeTest.cs`):
+- [x] 1.11 `tests/Coffer.Application.Tests/DependencyInjection/ServiceRegistrationTests.cs` (zastępuje `SmokeTest.cs`):
   - 1.11.a Test: `AddCofferCore() + AddCofferInfrastructure() + AddCofferApplication()` builds without throwing
   - 1.11.b Test: `BuildServiceProvider()` returns non-null
-- [ ] 1.12 `tests/Coffer.Infrastructure.Tests/Logging/SerilogConfigurationTests.cs` (zastępuje `SmokeTest.cs`):
+- [x] 1.12 `tests/Coffer.Infrastructure.Tests/Logging/SerilogConfigurationTests.cs` (zastępuje `SmokeTest.cs`):
   - 1.12.a Test: `AddCofferLogging()` registers `ILoggerFactory`
   - 1.12.b Test: można pozyskać `ILogger<SerilogConfigurationTests>` z DI
   - 1.12.c Test: property filter ukrywa wartość pola `Password` w wyjściu loga (capture sink, weryfikacja string'a)
-- [ ] 1.13 `tests/Coffer.Core.Tests/SmokeTest.cs` — zostawić obecny (FluentAssertions wired up) lub przepisać na test pustej `AddCofferCore()` — decyzja w trakcie
+- [x] 1.13 `tests/Coffer.Core.Tests/SmokeTest.cs` — zostawić obecny (FluentAssertions wired up) lub przepisać na test pustej `AddCofferCore()` — decyzja w trakcie
 
 ### F. Walidacja i merge
 
-- [ ] 1.14 Manualny run: `dotnet run --project src/Coffer.Desktop` — pokazuje się okno; plik `%LocalAppData%\Coffer\logs\coffer-<data>.log` powstaje i zawiera co najmniej dwie linijki ("Coffer starting", "MainWindow created")
-- [ ] 1.15 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` zielono lokalnie
+- [x] 1.14 Manualny run: `dotnet run --project src/Coffer.Desktop` — pokazuje się okno; plik `%LocalAppData%\Coffer\logs\coffer-<data>.log` powstaje i zawiera co najmniej dwie linijki ("Coffer starting", "MainWindow created")
+- [x] 1.15 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` zielono lokalnie
 - [ ] 1.16 Commit na `feature/sprint-1-di-serilog-bootstrap`, push, PR
 - [ ] 1.17 CI zielony (build-and-test + format-check)
 - [ ] 1.18 Squash-merge, branch usunięty

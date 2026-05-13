@@ -4,6 +4,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Coffer.Desktop.MainWindow"
-        Title="Coffer.Desktop">
-    Welcome to Avalonia!
+        Title="Coffer"
+        Width="800" Height="450">
+    <Grid>
+        <TextBlock Text="Coffer"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="48"
+                   FontWeight="Light" />
+    </Grid>
 </Window>
