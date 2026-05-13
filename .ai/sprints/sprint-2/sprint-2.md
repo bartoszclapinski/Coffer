@@ -1,7 +1,7 @@
 # Sprint 2 — IKeyVault + WindowsDpapiKeyVault + testy round-trip
 
 **Faza:** 0 (Foundation)
-**Status:** Planowany
+**Status:** W toku
 **Zależności:** sprint-1
 
 ## Cel
@@ -22,12 +22,12 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 ### A. Pakiety NuGet
 
-- [ ] 2.1 `Coffer.Infrastructure` — dodać `System.Security.Cryptography.ProtectedData` (`9.*`). To pakiet potrzebny dla `ProtectedData.Protect/Unprotect` na .NET 9 (nie jest w core BCL).
-- [ ] 2.2 `tests/Coffer.Infrastructure.Tests` — dodać `Xunit.SkippableFact` (`1.*`). Pozwala na `Skip.IfNot(OperatingSystem.IsWindows(), "...")` w testach DPAPI; xUnit raportuje skipped (nie passed) gdy warunek nie spełniony — czytelniejsza diagnostyka w CI.
+- [x] 2.1 `Coffer.Infrastructure` — dodać `System.Security.Cryptography.ProtectedData` (`9.*`). To pakiet potrzebny dla `ProtectedData.Protect/Unprotect` na .NET 9 (nie jest w core BCL).
+- [x] 2.2 `tests/Coffer.Infrastructure.Tests` — dodać `Xunit.SkippableFact` (`1.*`). Pozwala na `Skip.IfNot(OperatingSystem.IsWindows(), "...")` w testach DPAPI; xUnit raportuje skipped (nie passed) gdy warunek nie spełniony — czytelniejsza diagnostyka w CI.
 
 ### B. IKeyVault interface w Coffer.Core
 
-- [ ] 2.3 `src/Coffer.Core/Security/IKeyVault.cs`:
+- [x] 2.3 `src/Coffer.Core/Security/IKeyVault.cs`:
   ```csharp
   public interface IKeyVault
   {
@@ -39,15 +39,15 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
   - Async zgodnie z [conventions.md](../../../docs/conventions.md) "All I/O methods are async"
   - `CancellationToken ct` wymagany (nie default na library API)
   - Zwraca kopię master key (caller odpowiada za `Array.Clear` po użyciu)
-- [ ] 2.4 `Coffer.Core/Security/` jako nowy folder — namespace `Coffer.Core.Security`
+- [x] 2.4 `Coffer.Core/Security/` jako nowy folder — namespace `Coffer.Core.Security`
 
 ### C. WindowsDpapiKeyVault
 
-- [ ] 2.5 `src/Coffer.Infrastructure/Security/CofferPaths.cs` — helper dla cross-platform paths:
+- [x] 2.5 `src/Coffer.Infrastructure/Security/CofferPaths.cs` — helper dla cross-platform paths:
   - `LocalAppDataFolder()` zwraca `Path.Combine(Environment.GetFolderPath(SpecialFolder.LocalApplicationData), "Coffer")`
   - `MasterKeyCacheFile()` zwraca `Path.Combine(LocalAppDataFolder(), "master-key.dpapi.cache")`
   - Dorzucamy teraz — w Sprintach 3-4 dojdą `DekFile()`, `DatabaseFile()`, ścieżki rosną organicznie
-- [ ] 2.6 `src/Coffer.Infrastructure/Security/WindowsDpapiKeyVault.cs`:
+- [x] 2.6 `src/Coffer.Infrastructure/Security/WindowsDpapiKeyVault.cs`:
   - Klasa oznaczona `[SupportedOSPlatform("windows")]`
   - Konstruktor parametryczny `WindowsDpapiKeyVault(string cacheFilePath)` + konstruktor bezparametrowy używający `CofferPaths.MasterKeyCacheFile()` — test isolation
   - Format pliku (przed DPAPI): `[expiresAtUtcTicks: 8 bajtów BinaryWriter][keyLength: 4 bajty][masterKey: N bajtów]`
@@ -69,7 +69,7 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 ### D. InMemoryKeyVault (cross-platform fallback)
 
-- [ ] 2.7 `src/Coffer.Infrastructure/Security/InMemoryKeyVault.cs`:
+- [x] 2.7 `src/Coffer.Infrastructure/Security/InMemoryKeyVault.cs`:
   - Klasa cross-platform, fallback dla non-Windows
   - Pola: `byte[]? _key`, `DateTime _expiresAtUtc`
   - Wszystkie metody async, ale wewnętrznie `Task.CompletedTask` / `Task.FromResult(...)` — nie ma I/O
@@ -78,7 +78,7 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 ### E. DI registration
 
-- [ ] 2.8 Update `src/Coffer.Infrastructure/DependencyInjection/ServiceRegistration.cs`:
+- [x] 2.8 Update `src/Coffer.Infrastructure/DependencyInjection/ServiceRegistration.cs`:
   - Nowa metoda `AddCofferKeyVault(this IServiceCollection)`:
     ```csharp
     services.AddSingleton<IKeyVault>(_ =>
@@ -91,13 +91,13 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 ### F. Testy
 
-- [ ] 2.9 `tests/Coffer.Infrastructure.Tests/Security/InMemoryKeyVaultTests.cs` — kontraktowe testy (cross-platform, działają w CI Ubuntu):
+- [x] 2.9 `tests/Coffer.Infrastructure.Tests/Security/InMemoryKeyVaultTests.cs` — kontraktowe testy (cross-platform, działają w CI Ubuntu):
   - 2.9.a `GetCachedMasterKeyAsync_WhenEmpty_ReturnsNull`
   - 2.9.b `SetThenGet_RoundTrip_ReturnsSameBytes`
   - 2.9.c `Get_AfterTtlExpired_ReturnsNull`
   - 2.9.d `Invalidate_ThenGet_ReturnsNull`
   - 2.9.e `Set_OverwritesPreviousKey`
-- [ ] 2.10 `tests/Coffer.Infrastructure.Tests/Security/WindowsDpapiKeyVaultTests.cs` — DPAPI tests (skipped na non-Windows przez SkippableFact):
+- [x] 2.10 `tests/Coffer.Infrastructure.Tests/Security/WindowsDpapiKeyVaultTests.cs` — DPAPI tests (skipped na non-Windows przez SkippableFact):
   - 2.10.a `SetThenGet_RoundTrip_ReturnsSameBytes` — używa temp folder przez konstruktor parametryczny
   - 2.10.b `Set_WritesEncryptedFile_NotPlaintext` — czyta surowe bajty pliku, weryfikuje że oryginalny key nie pojawia się jako substring
   - 2.10.c `Get_AfterTtlExpired_ReturnsNullAndDeletesFile`
@@ -109,8 +109,8 @@ Sprint idzie przez dwa PR-y zgodnie z naszą regułą:
 
 ### G. Walidacja i merge
 
-- [ ] 2.11 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` zielono lokalnie (na Windows — wszystkie testy run, w tym DPAPI)
-- [ ] 2.12 Manualne sprawdzenie: zapisać cache (PowerShell repl albo small console app), zamknąć proces, odczytać z drugiego procesu — sprawdza że DPAPI persistencja działa cross-process dla tego samego usera
+- [x] 2.11 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` zielono lokalnie (na Windows — wszystkie testy run, w tym DPAPI)
+- [x] 2.12 Manualne sprawdzenie: zapisać cache (PowerShell repl albo small console app), zamknąć proces, odczytać z drugiego procesu — sprawdza że DPAPI persistencja działa cross-process dla tego samego usera
 - [ ] 2.13 Commit na `feature/sprint-2-keyvault-dpapi`, push, PR
 - [ ] 2.14 CI zielony — InMemoryKeyVaultTests run, WindowsDpapiKeyVaultTests skipped na Ubuntu CI (z czytelnym "Skipped: DPAPI only available on Windows")
 - [ ] 2.15 Squash-merge, branch usunięty
