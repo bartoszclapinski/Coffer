@@ -1,7 +1,7 @@
 # Sprint 3 — Argon2 + BIP39 + dek.encrypted + AES-GCM
 
 **Faza:** 0 (Foundation)
-**Status:** Planowany
+**Status:** W toku
 **Zależności:** sprint-2
 
 ## Cel
@@ -27,32 +27,32 @@ Trzy PR-y (z odpowiadającymi issues, zgodnie z workflow ustalonym w issue #10):
 
 ### A. Pakiety NuGet
 
-- [ ] 3.1 `Coffer.Infrastructure` — dodać `Konscious.Security.Cryptography.Argon2` (`1.*`) dla Argon2id; `NBitcoin` (`7.*`) dla BIP39
-- [ ] 3.2 `tests/Coffer.Infrastructure.Tests` — bez nowych package'ów (FluentAssertions + xUnit + SkippableFact już są)
+- [x] 3.1 `Coffer.Infrastructure` — dodać `Konscious.Security.Cryptography.Argon2` (`1.*`) dla Argon2id; `NBitcoin` (`7.*`) dla BIP39
+- [x] 3.2 `tests/Coffer.Infrastructure.Tests` — bez nowych package'ów (FluentAssertions + xUnit + SkippableFact już są)
 
 ### B. Wartości i interfejsy w Coffer.Core
 
-- [ ] 3.3 `Coffer.Core/Security/Argon2Parameters.cs` — positional record `Argon2Parameters(int MemorySizeKb, int Iterations, int Parallelism, int OutputBytes, int SaltBytes)` z static `Default` (64MB / 3 / 4 / 32 / 16) zgodnie z [09-security-key-management.md](../../../docs/architecture/09-security-key-management.md)
-- [ ] 3.4 `Coffer.Core/Security/IMasterKeyDerivation.cs` — `Task<byte[]> DeriveMasterKeyAsync(string password, byte[] salt, Argon2Parameters parameters, CancellationToken ct)`
-- [ ] 3.5 `Coffer.Core/Security/ISeedManager.cs`:
+- [x] 3.3 `Coffer.Core/Security/Argon2Parameters.cs` — positional record `Argon2Parameters(int MemorySizeKb, int Iterations, int Parallelism, int OutputBytes, int SaltBytes)` z static `Default` (64MB / 3 / 4 / 32 / 16) zgodnie z [09-security-key-management.md](../../../docs/architecture/09-security-key-management.md)
+- [x] 3.4 `Coffer.Core/Security/IMasterKeyDerivation.cs` — `Task<byte[]> DeriveMasterKeyAsync(string password, byte[] salt, Argon2Parameters parameters, CancellationToken ct)`
+- [x] 3.5 `Coffer.Core/Security/ISeedManager.cs`:
   - `string GenerateMnemonic()` (sync, fast — generates random 12-word phrase)
   - `bool IsValid(string mnemonic)` (sync, fast — checksum + wordlist validation)
   - `Task<byte[]> DeriveRecoveryKeyAsync(string mnemonic, string passphrase, CancellationToken ct)` (async, PBKDF2 expensive; passphrase wymagany parametr — caller decyduje, `""` dla BIP39 standard)
 
 ### C. Implementacje w Coffer.Infrastructure
 
-- [ ] 3.6 `Coffer.Infrastructure/Security/Argon2KeyDerivation.cs`:
+- [x] 3.6 `Coffer.Infrastructure/Security/Argon2KeyDerivation.cs`:
   - `Argon2KeyDerivation : IMasterKeyDerivation`
   - Używa `Konscious.Security.Cryptography.Argon2id`
   - `DeriveMasterKeyAsync` → `await Task.Run(() => { var bytes = Encoding.UTF8.GetBytes(password); try { ... argon2id.GetBytes(parameters.OutputBytes) ... } finally { Array.Clear(bytes, 0, bytes.Length); } }, ct)`
   - Memory hygiene: bajty hasła zerowane w try-finally po `GetBytes` callu
   - Cancellation: ct propagowane do Task.Run; Argon2 sam się nie anuluje, ale jeśli ct cancelled przed startem — `OperationCanceledException`
-- [ ] 3.7 `Coffer.Infrastructure/Security/Bip39SeedManager.cs`:
+- [x] 3.7 `Coffer.Infrastructure/Security/Bip39SeedManager.cs`:
   - `Bip39SeedManager : ISeedManager`
   - `GenerateMnemonic` → `new Mnemonic(Wordlist.English, WordCount.Twelve).ToString()`
   - `IsValid` → `try { new Mnemonic(phrase, Wordlist.English); return true; } catch { return false; }` zgodnie z 09-security example
   - `DeriveRecoveryKeyAsync` → `await Task.Run(() => new Mnemonic(mnemonic, Wordlist.English).DeriveSeed(passphrase).AsSpan(0, 32).ToArray(), ct)` (pierwsze 32 bajty z 512-bit seed)
-- [ ] 3.8 `Coffer.Infrastructure/Security/AesGcmCrypto.cs` — static helpers:
+- [x] 3.8 `Coffer.Infrastructure/Security/AesGcmCrypto.cs` — static helpers:
   - `public sealed record AesGcmResult(byte[] Iv, byte[] Ciphertext, byte[] Tag)`
   - `AesGcmResult Encrypt(byte[] plaintext, byte[] key, byte[]? associatedData = null)`:
     - IV: 12 bajtów losowe (`RandomNumberGenerator.GetBytes(12)`)
@@ -60,17 +60,17 @@ Trzy PR-y (z odpowiadającymi issues, zgodnie z workflow ustalonym w issue #10):
     - Używa `System.Security.Cryptography.AesGcm` (BCL)
   - `byte[] Decrypt(byte[] ciphertext, byte[] iv, byte[] tag, byte[] key, byte[]? associatedData = null)`:
     - Rzuca `CryptographicException` przy tamper detection (zlecone przez AesGcm.Decrypt)
-- [ ] 3.9 `Coffer.Infrastructure/Security/DekFile.cs`:
+- [x] 3.9 `Coffer.Infrastructure/Security/DekFile.cs`:
   - `public sealed record DekFile(byte Version, Argon2Parameters ArgonParameters, byte[] Salt, byte[] Iv, byte[] Tag, byte[] Ciphertext)`
   - `static async Task WriteAsync(DekFile file, string path, CancellationToken ct)` — binarny layout:
     - Version (1B) | MemKb (4B) | Iter (4B) | Par (4B) | OutBytes (4B) | SaltBytes (4B) | Salt (N B) | Iv (12B) | Tag (16B) | CipherLength (4B) | Ciphertext (N B)
     - Używa `BinaryWriter` na `MemoryStream` → `File.WriteAllBytesAsync`
   - `static async Task<DekFile> ReadAsync(string path, CancellationToken ct)` — parsuje, rzuca `InvalidDataException` przy malformed payload, `FileNotFoundException` jeśli plik nie istnieje
-- [ ] 3.10 `Coffer.Infrastructure/Security/CofferPaths.cs` — dorzucić `public static string DekFile() => Path.Combine(LocalAppDataFolder(), "dek.encrypted")` (uwaga: nazwa metody `DekFile` koliduje z typem `DekFile` — zmienić na `DekFilePath()` lub `EncryptedDekFile()`)
+- [x] 3.10 `Coffer.Infrastructure/Security/CofferPaths.cs` — dorzucić `public static string DekFile() => Path.Combine(LocalAppDataFolder(), "dek.encrypted")` (uwaga: nazwa metody `DekFile` koliduje z typem `DekFile` — zmienić na `DekFilePath()` lub `EncryptedDekFile()`)
 
 ### D. DI registration
 
-- [ ] 3.11 Update `Coffer.Infrastructure/DependencyInjection/ServiceRegistration.cs`:
+- [x] 3.11 Update `Coffer.Infrastructure/DependencyInjection/ServiceRegistration.cs`:
   - Nowa metoda `AddCofferCrypto(this IServiceCollection)`:
     ```csharp
     services.AddSingleton<IMasterKeyDerivation, Argon2KeyDerivation>();
@@ -82,32 +82,32 @@ Trzy PR-y (z odpowiadającymi issues, zgodnie z workflow ustalonym w issue #10):
 
 ### E. Testy
 
-- [ ] 3.12 `tests/Coffer.Infrastructure.Tests/Security/Argon2KeyDerivationTests.cs` (4 testy):
+- [x] 3.12 `tests/Coffer.Infrastructure.Tests/Security/Argon2KeyDerivationTests.cs` (4 testy):
   - 3.12.a `Derive_WithSamePasswordAndSalt_ProducesSameKey` (deterministic check)
   - 3.12.b `Derive_WithDifferentSalts_ProducesDifferentKeys`
   - 3.12.c `Derive_OutputBytes_MatchesParametersOutputBytes`
   - 3.12.d `Derive_CanBeCancelled_BeforeStart_Throws` (CT cancelled before call → OperationCanceledException)
-- [ ] 3.13 `tests/Coffer.Infrastructure.Tests/Security/Bip39SeedManagerTests.cs` (6 testów):
+- [x] 3.13 `tests/Coffer.Infrastructure.Tests/Security/Bip39SeedManagerTests.cs` (6 testów):
   - 3.13.a `Generate_Produces12WordsAcceptedByIsValid` (round-trip)
   - 3.13.b `IsValid_OfficialBip39Vector_ReturnsTrue` (Theory z 3 oficjalnymi vectorami z https://github.com/trezor/python-mnemonic/blob/master/vectors.json)
   - 3.13.c `IsValid_InvalidChecksum_ReturnsFalse` (modify last word in valid mnemonic)
   - 3.13.d `IsValid_NonBip39Word_ReturnsFalse` (gibberish words)
   - 3.13.e `DeriveRecoveryKey_OfficialBip39Vector_ProducesExpectedSeed` (Theory z 3 vectorami: known `mnemonic` + `passphrase` → znany pierwszy 32B seed)
   - 3.13.f `DeriveRecoveryKey_DifferentPassphrase_ProducesDifferentSeed`
-- [ ] 3.14 `tests/Coffer.Infrastructure.Tests/Security/AesGcmCryptoTests.cs` (4 testy):
+- [x] 3.14 `tests/Coffer.Infrastructure.Tests/Security/AesGcmCryptoTests.cs` (4 testy):
   - 3.14.a `Encrypt_ThenDecrypt_RoundTrips`
   - 3.14.b `Decrypt_WithTamperedCiphertext_ThrowsCryptographicException`
   - 3.14.c `Decrypt_WithWrongKey_ThrowsCryptographicException`
   - 3.14.d `Encrypt_ProducesUniqueIvForEachCall`
-- [ ] 3.15 `tests/Coffer.Infrastructure.Tests/Security/DekFileTests.cs` (3 testy):
+- [x] 3.15 `tests/Coffer.Infrastructure.Tests/Security/DekFileTests.cs` (3 testy):
   - 3.15.a `WriteThenRead_RoundTrip_ReturnsEquivalentFile` (używa temp folder + `IDisposable.Dispose` cleanup, wzorzec z Sprint 2 DPAPI tests)
   - 3.15.b `ReadAsync_FromMissingFile_ThrowsFileNotFoundException`
   - 3.15.c `ReadAsync_FromCorruptedFile_ThrowsInvalidDataException`
 
 ### F. Walidacja i merge
 
-- [ ] 3.16 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` zielono lokalnie (Windows). Na Ubuntu CI też powinno przejść — Konscious i NBitcoin są cross-platform.
-- [ ] 3.17 `gh issue create` dla implementacji — title `feat(sprint-3): crypto core (Argon2, BIP39, AES-GCM, DEK file)`
+- [x] 3.16 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` zielono lokalnie (Windows). Na Ubuntu CI też powinno przejść — Konscious i NBitcoin są cross-platform.
+- [x] 3.17 `gh issue create` dla implementacji — title `feat(sprint-3): crypto core (Argon2, BIP39, AES-GCM, DEK file)`
 - [ ] 3.18 Commit na `feature/sprint-3-crypto-core`, push, `gh pr create` z `Closes #<impl-issue>` w body, label `feat` + `sprint-3`
 - [ ] 3.19 CI zielony, squash-merge, branch usunięty
 - [ ] 3.20 `gh issue create` dla closure → osobny `chore/close-sprint-3` PR analogicznie do Sprintów 1-2
