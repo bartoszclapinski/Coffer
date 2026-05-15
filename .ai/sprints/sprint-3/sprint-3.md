@@ -1,7 +1,7 @@
 # Sprint 3 — Argon2 + BIP39 + dek.encrypted + AES-GCM
 
 **Faza:** 0 (Foundation)
-**Status:** W toku
+**Status:** Zamknięty
 **Zależności:** sprint-2
 
 ## Cel
@@ -108,9 +108,9 @@ Trzy PR-y (z odpowiadającymi issues, zgodnie z workflow ustalonym w issue #10):
 
 - [x] 3.16 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` zielono lokalnie (Windows). Na Ubuntu CI też powinno przejść — Konscious i NBitcoin są cross-platform.
 - [x] 3.17 `gh issue create` dla implementacji — title `feat(sprint-3): crypto core (Argon2, BIP39, AES-GCM, DEK file)`
-- [ ] 3.18 Commit na `feature/sprint-3-crypto-core`, push, `gh pr create` z `Closes #<impl-issue>` w body, label `feat` + `sprint-3`
-- [ ] 3.19 CI zielony, squash-merge, branch usunięty
-- [ ] 3.20 `gh issue create` dla closure → osobny `chore/close-sprint-3` PR analogicznie do Sprintów 1-2
+- [x] 3.18 Commit na `feature/sprint-3-crypto-core`, push, `gh pr create` z `Closes #<impl-issue>` w body, label `feat` + `sprint-3`
+- [x] 3.19 CI zielony, squash-merge, branch usunięty
+- [x] 3.20 `gh issue create` dla closure → osobny `chore/close-sprint-3` PR analogicznie do Sprintów 1-2
 
 ## Definition of Done
 
