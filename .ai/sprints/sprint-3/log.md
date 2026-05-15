@@ -17,3 +17,10 @@
 - decyzja: drift między `docs/conventions.md` ("Constants are PascalCase") a `.editorconfig` (wszystkie private fields → `_camelCase`) odłożony do osobnego follow-up chore PR. Aktualnie analyzer wygrywa.
 - problem: post-checkout autocrlf w `tests/Coffer.Infrastructure.Tests/Security/WindowsDpapiKeyVaultTests.cs` ze Sprintu 2 (znany side-effect na Windows + autocrlf=true) → rozwiązanie: `dotnet format` (bez --verify) naprawił.
 - krok 3.16 ukończony — `dotnet build` (0 warnings, 0 errors), `dotnet test` 39 pass total (1 Core + 3 Application + 35 Infrastructure: 5 InMemory + 7 DPAPI + 2 Serilog + 17 nowe Sprintu 3), `dotnet format --verify-no-changes` zielono.
+- code review na PR #15 (na zimno, jako recenzent) zgłosił cztery realne findings. Naprawione w follow-up commicie na ten sam branch:
+  1. `DekFile.ReadAsync` czytał `version` bez walidacji — dodano `if (version != CurrentVersion) throw new InvalidDataException(...)`. Test `ReadAsync_FromUnsupportedVersion_ThrowsInvalidDataException` dodany (zapisuje valid DEK, podmienia pierwszy bajt na 0xFF, weryfikuje throw + komunikat).
+  2. `DekFile.ReadAsync` nie sprawdzał czy `Salt.Length == ArgonParameters.SaltBytes` — dodany invariant check (dwie liczby w pliku reprezentują tę samą informację, rozjazd to malformed payload).
+  3. `Bip39SeedManager.DeriveRecoveryKeyAsync` nie zerował 64-bajtowego `seed` array (zawiera dane wrażliwe) — wrap w try-finally z `Array.Clear`, konsystencja z `Argon2KeyDerivation` i Sprint 2 DPAPI memory hygiene.
+  4. `AesGcmCrypto.Decrypt` zwraca plaintext bez ostrzeżenia o cleanup — dodany XML doc summary + exception remark, że caller jest odpowiedzialny za `Array.Clear`. Wąski security-focused XML doc, nie szeroka konwencja.
+- code review item: brak XML docs na publicznych typach crypto (`Argon2KeyDerivation`, `Bip39SeedManager`, `AesGcmCrypto`, `DekFile`) — odłożone do osobnego chore PR razem z innymi conventions cleanupami (drift `_camelCase` consts). Zakres tego sprintu utrzymany.
+- po fixach: `dotnet build` (0/0), `dotnet test` 40 pass total (+1 nowy version-mismatch test), `dotnet format --verify-no-changes` zielono.

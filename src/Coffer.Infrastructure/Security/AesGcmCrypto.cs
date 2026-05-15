@@ -24,6 +24,15 @@ public static class AesGcmCrypto
         return new AesGcmResult(iv, ciphertext, tag);
     }
 
+    /// <summary>
+    /// Decrypts an AES-GCM ciphertext and returns the plaintext. The caller owns the returned
+    /// buffer and is responsible for calling <see cref="Array.Clear(System.Array,int,int)"/> on
+    /// it once finished when the contents are sensitive (e.g. a DEK or master key).
+    /// </summary>
+    /// <exception cref="CryptographicException">
+    /// Thrown when the authentication tag does not match the ciphertext (tampering, wrong key,
+    /// or wrong associated data).
+    /// </exception>
     public static byte[] Decrypt(
         byte[] ciphertext,
         byte[] iv,

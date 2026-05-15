@@ -67,6 +67,12 @@ public sealed record DekFile(
             using var reader = new BinaryReader(ms);
 
             var version = reader.ReadByte();
+            if (version != CurrentVersion)
+            {
+                throw new InvalidDataException(
+                    $"DEK file version {version} is not supported (expected {CurrentVersion}).");
+            }
+
             var memorySizeKb = reader.ReadInt32();
             var iterations = reader.ReadInt32();
             var parallelism = reader.ReadInt32();
@@ -74,6 +80,12 @@ public sealed record DekFile(
             var saltBytesParam = reader.ReadInt32();
 
             var salt = ReadLengthPrefixedBytes(reader, "salt");
+            if (salt.Length != saltBytesParam)
+            {
+                throw new InvalidDataException(
+                    $"DEK file salt length ({salt.Length}) does not match Argon2Parameters.SaltBytes ({saltBytesParam}).");
+            }
+
             var iv = ReadLengthPrefixedBytes(reader, "iv");
             var tag = ReadLengthPrefixedBytes(reader, "tag");
             var ciphertext = ReadLengthPrefixedBytes(reader, "ciphertext");

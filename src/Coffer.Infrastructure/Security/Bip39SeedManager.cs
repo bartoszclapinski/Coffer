@@ -45,9 +45,16 @@ public sealed class Bip39SeedManager : ISeedManager
 
                 var bip39 = new Mnemonic(mnemonic, Wordlist.English);
                 var seed = bip39.DeriveSeed(passphrase);
-                var recoveryKey = new byte[_recoveryKeyBytes];
-                Buffer.BlockCopy(seed, 0, recoveryKey, 0, _recoveryKeyBytes);
-                return recoveryKey;
+                try
+                {
+                    var recoveryKey = new byte[_recoveryKeyBytes];
+                    Buffer.BlockCopy(seed, 0, recoveryKey, 0, _recoveryKeyBytes);
+                    return recoveryKey;
+                }
+                finally
+                {
+                    Array.Clear(seed, 0, seed.Length);
+                }
             },
             ct);
     }

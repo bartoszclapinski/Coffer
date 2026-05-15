@@ -70,4 +70,27 @@ public class DekFileTests : IDisposable
 
         await act.Should().ThrowAsync<InvalidDataException>();
     }
+
+    [Fact]
+    public async Task ReadAsync_FromUnsupportedVersion_ThrowsInvalidDataException()
+    {
+        var original = new DekFile(
+            Version: DekFile.CurrentVersion,
+            ArgonParameters: Argon2Parameters.Default,
+            Salt: new byte[Argon2Parameters.Default.SaltBytes],
+            Iv: new byte[12],
+            Tag: new byte[16],
+            Ciphertext: new byte[32]);
+        await DekFile.WriteAsync(original, _filePath, CancellationToken.None);
+
+        // Tamper the version byte (first byte of file) to an unsupported value.
+        var bytes = await File.ReadAllBytesAsync(_filePath);
+        bytes[0] = 0xFF;
+        await File.WriteAllBytesAsync(_filePath, bytes);
+
+        var act = async () => await DekFile.ReadAsync(_filePath, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidDataException>()
+            .WithMessage("DEK file version * is not supported*");
+    }
 }
