@@ -11,7 +11,15 @@ public static class ServiceRegistration
     public static IServiceCollection AddCofferInfrastructure(this IServiceCollection services) =>
         services
             .AddCofferLogging()
-            .AddCofferKeyVault();
+            .AddCofferKeyVault()
+            .AddCofferCrypto();
+
+    public static IServiceCollection AddCofferCrypto(this IServiceCollection services)
+    {
+        services.AddSingleton<IMasterKeyDerivation, Argon2KeyDerivation>();
+        services.AddSingleton<ISeedManager, Bip39SeedManager>();
+        return services;
+    }
 
     public static IServiceCollection AddCofferKeyVault(this IServiceCollection services)
     {
