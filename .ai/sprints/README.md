@@ -1,81 +1,83 @@
-# Sprinty
+# Sprints
 
-Lekka organizacja pracy nad Cofferem. Każdy sprint = logiczny kawałek pracy kończący się commitem i działającym/testowalnym stanem. Sprinty nie mają sztywnego budżetu czasowego — kończą się gdy DoD jest spełnione.
+Lightweight work organisation for Coffer. Each sprint = a logical chunk of work that ends with a commit and a working / testable state. Sprints are not time-boxed — they end when DoD is met.
 
-Kolejny LLM (lub ten sam po przerwie) zaczyna od:
+A future LLM (or the same one after a break) starts by:
 
-1. Przeczytać [CLAUDE.md](../../CLAUDE.md)
-2. Przeczytać [index.md](index.md) — który sprint jest w toku
-3. Przeczytać `sprint-N/sprint-N.md` (plan) i `sprint-N/log.md` (co już zrobione)
-4. Kontynuować pracę zgodnie z planem
+1. Reading [CLAUDE.md](../../CLAUDE.md)
+2. Reading [index.md](index.md) — which sprint is in progress
+3. Reading `sprint-N/sprint-N.md` (plan) and `sprint-N/log.md` (what was done)
+4. Continuing the work per the plan
 
-## Struktura sprintu
+## Sprint structure
 
-Każdy sprint to katalog `sprint-N/` z dwoma plikami:
+Each sprint is a directory `sprint-N/` with two files:
 
-- `sprint-N.md` — plan sprintu. W trakcie modyfikujemy tylko checkboxy i sekcję "Otwarte pytania" (zamknięte pytania przenosimy do `log.md` jako decyzje).
-- `log.md` — append-only chronologiczny dziennik.
+- `sprint-N.md` — the sprint plan. While the sprint is running, only checkboxes and the "Open questions" section are edited (closed questions are moved to `log.md` as decisions).
+- `log.md` — append-only chronological log.
 
-## Format `sprint-N.md`
+## `sprint-N.md` format
 
 ```markdown
-# Sprint N — <krótki tytuł>
+# Sprint N — <short title>
 
-**Faza:** <numer z docs/architecture/10-roadmap.md>
-**Status:** Planowany | W toku | Zamknięty
-**Zależności:** sprint-X, sprint-Y (lub: brak)
+**Phase:** <number from docs/architecture/10-roadmap.md>
+**Status:** Planned | In progress | Closed
+**Depends on:** sprint-X, sprint-Y (or: none)
 
-## Cel
+## Goal
 
-Jedno zdanie — co po sprincie ma działać.
+One sentence — what should work after the sprint.
 
-## Kroki
+## Steps
 
 - [ ] N.1 ...
 - [ ] N.2 ...
 
-(Można dzielić na podkroki N.1.a, N.1.b.)
+(Sub-steps as N.1.a, N.1.b are allowed.)
 
 ## Definition of Done
 
-Konkretny test ręczny lub automatyczny do odhaczenia.
+A specific manual or automated test to tick off.
 
-## Dotykane pliki
+## Files affected
 
-Lista plików/katalogów których spodziewamy się tknąć.
+A list of files / directories expected to be touched.
 
-## Otwarte pytania
+## Open questions
 
-- pytanie 1
-- pytanie 2
+- question 1
+- question 2
 ```
 
-## Format `log.md`
+## `log.md` format
 
-Append-only, najnowsze na dole:
+Append-only, newest at the bottom:
 
 ```markdown
-# Log sprintu N
+# Sprint N log
 
 ## YYYY-MM-DD
 
-- `HH:MM` krok N.X ukończony — commit `abc1234` — krótka notatka
-- `HH:MM` decyzja: <co> bo <dlaczego>
-- `HH:MM` problem: <opis> → rozwiązanie: <co zrobiliśmy>
+- `HH:MM` step N.X complete — commit `abc1234` — short note
+- `HH:MM` decision: <what> because <why>
+- `HH:MM` problem: <description> → resolution: <what we did>
 ```
 
-Hash commita opcjonalny ale przydatny dla nawigacji.
+Commit hash is optional but helpful for navigation.
 
-## Status sprintu
+## Sprint status
 
-- **Planowany** — plan napisany, ani jeden krok jeszcze nie zaczęty
-- **W toku** — przynajmniej jeden krok ukończony, nie wszystkie
-- **Zamknięty** — wszystkie kroki done, DoD spełnione, ostatni wpis w logu to "sprint zamknięty"
+- **Planned** — plan written, no step started yet
+- **In progress** — at least one step done, not all
+- **Closed** — all steps complete, DoD met, last log entry is "sprint closed"
 
-## Aktualizacja `index.md`
+## Updating `index.md`
 
-Po każdej zmianie statusu sprintu — zaktualizuj [index.md](index.md). `index.md` to tylko tablica statusów; treści sprintów tam nie kopiujemy.
+After any sprint status change, update [index.md](index.md). `index.md` is only a status table — do not copy sprint content there.
 
-## Język
+## Language
 
-Logi i plany sprintów piszemy po polsku (dokumentacja procesu). Kod, komentarze w kodzie, dokumentacja architektoniczna w `docs/` — po angielsku, zgodnie z [docs/conventions.md](../../docs/conventions.md).
+All sprint plans, logs, code, and documentation in this repository are written in English, per [docs/conventions.md](../../docs/conventions.md). The Claude chat session is the only place where Polish is used.
+
+> Note: Sprint plans and logs for Sprint 0 through Sprint 3 were originally written in Polish during the early phase of the project; they remain in Polish as historical artefacts. A separate chore PR can translate them retroactively if desired. All sprints from Sprint 4 onward are in English.

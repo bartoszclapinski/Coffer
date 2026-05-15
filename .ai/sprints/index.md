@@ -1,25 +1,28 @@
-# Index sprintów
+# Sprint index
 
-Status na: 2026-05-12
+Status as of: 2026-05-14
 
-| Sprint | Faza | Cel | Status |
+| Sprint | Phase | Goal | Status |
 |---|---|---|---|
-| [sprint-0](sprint-0/sprint-0.md) | 0 | Repo na GitHubie, `Coffer.sln` z 5 projektami + 3 testowymi, `dotnet build` zielono, CI zielony | Zamknięty (2026-05-12) |
-| [sprint-1](sprint-1/sprint-1.md) | 0 | DI plumbing, Serilog (konsola+plik), Avalonia uruchamiane z DI bootstrap, `MainWindow` z `ILogger<MainWindow>` | Zamknięty (2026-05-13) |
-| [sprint-2](sprint-2/sprint-2.md) | 0 | `IKeyVault` w Core, `WindowsDpapiKeyVault` (DPAPI, 7-day TTL), `InMemoryKeyVault` (cross-platform fallback), testy round-trip | Zamknięty (2026-05-13) |
-| [sprint-3](sprint-3/sprint-3.md) | 0 | `Argon2KeyDerivation`, `Bip39SeedManager`, `AesGcmCrypto`, `DekFile` format + serializer, 17 testów (w tym z oficjalnymi BIP39 vectorami) | Zamknięty (2026-05-14) |
+| [sprint-0](sprint-0/sprint-0.md) | 0 | Repo on GitHub, `Coffer.sln` with 5 production + 3 test projects, `dotnet build` green, CI green | Closed (2026-05-12) |
+| [sprint-1](sprint-1/sprint-1.md) | 0 | DI plumbing, Serilog (console + file), Avalonia booted via DI, `MainWindow` with `ILogger<MainWindow>` | Closed (2026-05-13) |
+| [sprint-2](sprint-2/sprint-2.md) | 0 | `IKeyVault` in Core, `WindowsDpapiKeyVault` (DPAPI, 7-day TTL), `InMemoryKeyVault` (cross-platform fallback), round-trip tests | Closed (2026-05-13) |
+| [sprint-3](sprint-3/sprint-3.md) | 0 | `Argon2KeyDerivation`, `Bip39SeedManager`, `AesGcmCrypto`, `DekFile` format + serializer, 17 tests (including official BIP39 vectors) | Closed (2026-05-14) |
+| [sprint-4](sprint-4/sprint-4.md) | 0 | `CofferDbContext` + `_SchemaInfo`, `SqlCipherKeyInterceptor` (PRAGMA key per connection), `MigrationRunner` with pre-migration backup callback, first migration `InitialCreate`, 7 integration tests | Planned |
 
-## Zaplanowane sprinty Fazy 0 (pełne plany powstają na początku każdego sprintu)
-- **Sprint 4** — `CofferDbContext` + `_SchemaInfo`, `SqlCipherKeyInterceptor`, `IDbContextFactory`, pierwsza migracja, szkielet `MigrationRunner` z hookiem na backup, test integracyjny szyfrowania
-- **Sprint 5** — Avalonia setup wizard (welcome → password z zxcvbn → BIP39 display z `SetWindowDisplayAffinity` → verification → confirm); pierwszy run tworzy DEK
-- **Sprint 6** — Login window (DPAPI cache), `LastActivityTracker` + auto-lock 15 min, `MainWindow` placeholder "logged in as", zamknięcie Fazy 0
+## Planned sprints in Phase 0 (full plans drafted at the start of each sprint)
 
-## Po Fazie 0
+- **Sprint 5** — Avalonia setup wizard (welcome → password with zxcvbn → BIP39 display with `SetWindowDisplayAffinity` → verification → confirm); first run creates the DEK
+- **Sprint 6** — Login window (DPAPI cache), `LastActivityTracker` + 15-min auto-lock, `MainWindow` placeholder "logged in as", Phase 0 closure
 
-- **Faza 1** — parser PKO BP (sprinty rozplanowane po zamknięciu Fazy 0)
-- **Faza 2** — import flow + lista transakcji
-- **Faza 3** — sync via Google Drive
-- **Faza 4** — auto-kategoryzacja
-- **Faza 5+** — paragony (od tej fazy potrzebne mobile/MAUI)
+## After Phase 0
 
-Mobile (`Coffer.Mobile`, MAUI) — odłożone do momentu zbliżania się do Fazy 5 lub gdy będzie potrzebne wcześniej.
+- **Phase 1** — PKO BP parser (sprints planned once Phase 0 closes)
+- **Phase 2** — Import flow + transaction list
+- **Phase 3** — Sync via Google Drive
+- **Phase 4** — Auto-categorisation
+- **Phase 5+** — Receipts (from this phase, mobile/MAUI is needed)
+
+Mobile (`Coffer.Mobile`, MAUI) — postponed until Phase 5 is approaching or it is needed earlier.
+
+> Note: Sprint plans and logs for Sprints 0-3 are in Polish (historical artefacts from the early phase of the project). All sprints from Sprint 4 onward are in English. See [.ai/sprints/README.md](README.md) for the language policy.
