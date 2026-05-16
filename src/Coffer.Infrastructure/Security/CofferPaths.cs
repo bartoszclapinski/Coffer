@@ -12,4 +12,7 @@ public static class CofferPaths
 
     public static string EncryptedDekFilePath() =>
         Path.Combine(LocalAppDataFolder(), "dek.encrypted");
+
+    public static string DatabaseFile() =>
+        Path.Combine(LocalAppDataFolder(), "coffer.db");
 }

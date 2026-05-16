@@ -1,7 +1,7 @@
 # Sprint 4 — CofferDbContext + SQLCipher + first migration
 
 **Phase:** 0 (Foundation)
-**Status:** Planned
+**Status:** In progress
 **Depends on:** sprint-3
 
 ## Goal
@@ -25,13 +25,13 @@ Three PRs in the established issue-per-PR workflow (issue #10):
 
 ### A. NuGet packages and tooling
 
-- [ ] 4.1 `Coffer.Infrastructure` — add `Microsoft.EntityFrameworkCore` (`9.*`), `Microsoft.EntityFrameworkCore.Sqlite` (`9.*`), `Microsoft.EntityFrameworkCore.Design` (`9.*`), `SQLitePCLRaw.bundle_e_sqlcipher` (`2.*`)
-- [ ] 4.2 `dotnet new tool-manifest` at the repo root + `dotnet tool install dotnet-ef --version 9.*` — local tool for migration generation. Commit `.config/dotnet-tools.json`.
-- [ ] 4.3 `tests/Coffer.Infrastructure.Tests` — no new packages (MS.DI concrete + xUnit + FluentAssertions already present)
+- [x] 4.1 `Coffer.Infrastructure` — add `Microsoft.EntityFrameworkCore` (`9.*`), `Microsoft.EntityFrameworkCore.Sqlite` (`9.*`), `Microsoft.EntityFrameworkCore.Design` (`9.*`), `SQLitePCLRaw.bundle_e_sqlcipher` (`2.*`)
+- [x] 4.2 `dotnet new tool-manifest` at the repo root + `dotnet tool install dotnet-ef --version 9.*` — local tool for migration generation. Commit `.config/dotnet-tools.json`.
+- [x] 4.3 `tests/Coffer.Infrastructure.Tests` — no new packages (MS.DI concrete + xUnit + FluentAssertions already present)
 
 ### B. Schema entity
 
-- [ ] 4.4 `Coffer.Infrastructure/Persistence/SchemaInfoEntry.cs`:
+- [x] 4.4 `Coffer.Infrastructure/Persistence/SchemaInfoEntry.cs`:
   - `public class SchemaInfoEntry`
   - `int Id { get; set; }` (PK auto-increment)
   - `string Version { get; set; } = "";` (EF migration name, e.g. `"InitialCreate"`)
@@ -40,13 +40,13 @@ Three PRs in the established issue-per-PR workflow (issue #10):
 
 ### C. DbContext and encryption interceptor
 
-- [ ] 4.5 `Coffer.Infrastructure/Persistence/CofferDbContext.cs`:
+- [x] 4.5 `Coffer.Infrastructure/Persistence/CofferDbContext.cs`:
   - `public sealed class CofferDbContext : DbContext`
   - Constructor `(DbContextOptions<CofferDbContext> options) : base(options)` — DEK is delivered through the interceptor, not the constructor, per [02-database-and-encryption.md](../../../docs/architecture/02-database-and-encryption.md)
   - `DbSet<SchemaInfoEntry> SchemaInfo`
   - `OnModelCreating`: table name `_SchemaInfo`, PK `Id`, unique index on `Version`
   - Global decimal precision via `ConfigureConventions`: `configurationBuilder.Properties<decimal>().HavePrecision(18, 2)` — ready for future monetary fields per hard rule #1
-- [ ] 4.6 `Coffer.Infrastructure/Persistence/Encryption/SqlCipherKeyInterceptor.cs`:
+- [x] 4.6 `Coffer.Infrastructure/Persistence/Encryption/SqlCipherKeyInterceptor.cs`:
   - Subclass of `DbConnectionInterceptor`
   - Constructor `(byte[] dek)` — holds DEK as a field for the interceptor's lifetime
   - Override `ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)`:
@@ -54,21 +54,21 @@ Three PRs in the established issue-per-PR workflow (issue #10):
     2. `cmd.CommandText = $"PRAGMA key = \"x'{Convert.ToHexString(_dek)}'\";"` (hex form per the architecture doc)
     3. `cmd.ExecuteNonQuery();`
   - Memory hygiene: DEK is held as a `byte[]` field. The hex string is short-lived inside the command text. Strings are immutable in .NET — we accept the known limitation per [09-security-key-management.md](../../../docs/architecture/09-security-key-management.md).
-- [ ] 4.7 `Coffer.Infrastructure/Security/CofferPaths.cs` — add `DatabaseFile()` returning `Path.Combine(LocalAppDataFolder(), "coffer.db")`
+- [x] 4.7 `Coffer.Infrastructure/Security/CofferPaths.cs` — add `DatabaseFile()` returning `Path.Combine(LocalAppDataFolder(), "coffer.db")`
 
 ### D. Migration infrastructure
 
-- [ ] 4.8 `Coffer.Infrastructure/Persistence/CofferDbContextDesignFactory.cs`:
+- [x] 4.8 `Coffer.Infrastructure/Persistence/CofferDbContextDesignFactory.cs`:
   - `IDesignTimeDbContextFactory<CofferDbContext>`
   - `CreateDbContext(string[] args)` returns a DbContext configured with `UseSqlite("Data Source=:memory:")` without SQLCipher — `dotnet ef migrations add` does not require a real connection or DEK
-- [ ] 4.9 Generate the first migration: `dotnet ef migrations add InitialCreate --project src/Coffer.Infrastructure`
+- [x] 4.9 Generate the first migration: `dotnet ef migrations add InitialCreate --project src/Coffer.Infrastructure`
   - Produces `Migrations/<timestamp>_InitialCreate.cs`, `<timestamp>_InitialCreate.Designer.cs`, `CofferDbContextModelSnapshot.cs`
   - All migration files committed to the repo
-- [ ] 4.10 `Coffer.Infrastructure/Persistence/MigrationResult.cs`:
+- [x] 4.10 `Coffer.Infrastructure/Persistence/MigrationResult.cs`:
   - `public sealed record MigrationResult(MigrationStatus Status, IReadOnlyList<string> AppliedMigrations)`
   - `public enum MigrationStatus { UpToDate, Migrated }`
   - Static helpers `UpToDate()` and `Migrated(IEnumerable<string> applied)`
-- [ ] 4.11 `Coffer.Infrastructure/Persistence/MigrationRunner.cs`:
+- [x] 4.11 `Coffer.Infrastructure/Persistence/MigrationRunner.cs`:
   - Constructor: `(CofferDbContext db, ILogger<MigrationRunner> logger, Func<CancellationToken, Task>? preMigrationBackup = null)`
   - `Task<MigrationResult> RunPendingMigrationsAsync(CancellationToken ct)`:
     1. `var pending = (await db.Database.GetPendingMigrationsAsync(ct)).ToList()`
@@ -83,7 +83,7 @@ Three PRs in the established issue-per-PR workflow (issue #10):
 
 ### E. DI registration (caller-invoked, not automatic)
 
-- [ ] 4.12 `Coffer.Infrastructure/DependencyInjection/ServiceRegistration.cs` — add `AddCofferDatabase(this IServiceCollection services, Func<IServiceProvider, byte[]> dekProvider)`:
+- [x] 4.12 `Coffer.Infrastructure/DependencyInjection/ServiceRegistration.cs` — add `AddCofferDatabase(this IServiceCollection services, Func<IServiceProvider, byte[]> dekProvider)`:
   ```csharp
   services.AddDbContextFactory<CofferDbContext>((sp, opts) =>
   {
@@ -96,15 +96,15 @@ Three PRs in the established issue-per-PR workflow (issue #10):
   return services;
   ```
   - `AddCofferInfrastructure` **does not** invoke `AddCofferDatabase` automatically — Sprint 5 setup wizard will call it explicitly once the master key is derived and the DEK is decrypted from the DekFile
-- [ ] 4.13 Register `MigrationRunner` as Transient inside `AddCofferDatabase` after `AddDbContextFactory`
+- [x] 4.13 Register `MigrationRunner` as Transient inside `AddCofferDatabase` after `AddDbContextFactory`
 
 ### F. Integration tests
 
-- [ ] 4.14 `tests/Coffer.Infrastructure.Tests/Persistence/CofferDbContextEncryptionTests.cs` (`IDisposable` cleanup, temp folder pattern from Sprint 2 DPAPI tests):
+- [x] 4.14 `tests/Coffer.Infrastructure.Tests/Persistence/CofferDbContextEncryptionTests.cs` (`IDisposable` cleanup, temp folder pattern from Sprint 2 DPAPI tests):
   - 4.14.a `WriteThenRead_WithSameDek_RoundTripsEntry` — create DB with a test DEK, write a `SchemaInfoEntry`, close, reopen with the same DEK, read back
   - 4.14.b `Read_WithDifferentDek_Throws` — write with DEK1, attempt to open with DEK2 → `SqliteException` (SQLCipher returns "file is not a database" or similar)
   - 4.14.c `RawFileBytes_DoNotContainPlaintextVersionString` — encryption sanity check: after writing an entry with `Version = "TEST_SENTINEL_12345"`, the raw DB file bytes must not contain that string
-- [ ] 4.15 `tests/Coffer.Infrastructure.Tests/Persistence/MigrationRunnerTests.cs` (`IDisposable` cleanup):
+- [x] 4.15 `tests/Coffer.Infrastructure.Tests/Persistence/MigrationRunnerTests.cs` (`IDisposable` cleanup):
   - 4.15.a `Run_WithPendingMigrations_InvokesBackupCallbackBeforeMigrate` — verify ordering via a recorded list (`["backup", "migrate-completed"]`)
   - 4.15.b `Run_WhenNoPendingMigrations_DoesNotInvokeBackupCallback`
   - 4.15.c `Run_AfterSuccessfulMigration_AppendsSchemaInfoEntry` — after `RunPendingMigrationsAsync`, `_SchemaInfo` contains an entry with `Version = "InitialCreate"` (or the actual generated name)
@@ -112,8 +112,8 @@ Three PRs in the established issue-per-PR workflow (issue #10):
 
 ### G. Validation and merge
 
-- [ ] 4.16 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally
-- [ ] 4.17 `gh issue create` for implementation — title `feat(sprint-4): CofferDbContext + SqlCipherKeyInterceptor + InitialCreate migration`, labels `feat` + `sprint-4`
+- [x] 4.16 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally
+- [x] 4.17 `gh issue create` for implementation — title `feat(sprint-4): CofferDbContext + SqlCipherKeyInterceptor + InitialCreate migration`, labels `feat` + `sprint-4`
 - [ ] 4.18 Commit on `feature/sprint-4-dbcontext-sqlcipher`, push, `gh pr create` with `Closes #<impl-issue>` in the body, labels `feat` + `sprint-4`
 - [ ] 4.19 CI green (Konscious and NBitcoin from earlier sprints still pass; SQLCipher is cross-platform), squash-merge, branch deleted
 - [ ] 4.20 `gh issue create` for closure → separate `chore/close-sprint-4` PR analogous to Sprints 1-3

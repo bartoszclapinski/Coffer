@@ -1,0 +1,7 @@
+# Auto-generated EF Core migration files. The generator does not respect every
+# repo style choice, so a few diagnostics are suppressed for this folder only.
+# Production code outside this folder still observes the project-wide rules.
+[*.cs]
+charset = utf-8-bom
+dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.IDE0161.severity = none
