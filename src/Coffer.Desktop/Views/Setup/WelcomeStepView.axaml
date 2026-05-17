@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="Coffer.Desktop.Views.Setup.WelcomeStepView"
+             x:CompileBindings="False">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Row="0" Spacing="8">
+            <TextBlock Text="Witaj w Coffer"
+                       FontSize="28"
+                       FontWeight="Light" />
+            <TextBlock TextWrapping="Wrap"
+                       Text="Coffer to lokalna, szyfrowana aplikacja do śledzenia finansów. Twoje dane nigdy nie opuszczają tego urządzenia w postaci niezaszyfrowanej." />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="12" VerticalAlignment="Center">
+            <TextBlock TextWrapping="Wrap"
+                       Text="Za chwilę skonfigurujemy bezpieczny sejf:" />
+            <TextBlock TextWrapping="Wrap"
+                       Margin="16,0,0,0"
+                       Text="1. Ustawisz hasło główne, które chroni wszystkie dane." />
+            <TextBlock TextWrapping="Wrap"
+                       Margin="16,0,0,0"
+                       Text="2. Otrzymasz 12-wyrazową frazę odzyskiwania — zapisz ją na papierze." />
+            <TextBlock TextWrapping="Wrap"
+                       Margin="16,0,0,0"
+                       Text="3. Potwierdzimy dwa losowe wyrazy frazy, żeby upewnić się że jest spisana." />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+            <Button Content="Dalej"
+                    MinWidth="120"
+                    Command="{Binding $parent[Window].DataContext.NextCommand}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

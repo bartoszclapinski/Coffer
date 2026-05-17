@@ -17,6 +17,7 @@ internal static class Program
             .AddCofferCore()
             .AddCofferApplication()
             .AddCofferInfrastructure()
+            .AddCofferDatabase()
             .AddCofferDesktopUi();
 
         App.Services = services.BuildServiceProvider();
