@@ -10,6 +10,8 @@ namespace Coffer.Infrastructure.Tests.Persistence;
 
 public class MigrationRunnerTests : IDisposable
 {
+    private const string _expectedInitialMigration = "20260516142523_InitialCreate";
+
     private readonly string _tempDir;
     private readonly string _dbPath;
     private readonly byte[] _dek;
@@ -41,33 +43,36 @@ public class MigrationRunnerTests : IDisposable
     [Fact]
     public async Task Run_WithPendingMigrations_InvokesBackupCallbackBeforeMigrate()
     {
-        var order = new List<string>();
-
         await using var db = CreateContext();
+
+        IReadOnlyList<string> pendingDuringBackup = Array.Empty<string>();
+        IReadOnlyList<string> appliedDuringBackup = Array.Empty<string>();
+
         var runner = new MigrationRunner(
             db,
             NullLogger<MigrationRunner>.Instance,
-            _ =>
+            async ct =>
             {
-                order.Add("backup");
-                return Task.CompletedTask;
+                pendingDuringBackup = (await db.Database.GetPendingMigrationsAsync(ct)).ToList();
+                appliedDuringBackup = (await db.Database.GetAppliedMigrationsAsync(ct)).ToList();
             });
 
         var result = await runner.RunPendingMigrationsAsync(CancellationToken.None);
-        order.Add("after-run");
 
-        order.Should().StartWith("backup");
+        pendingDuringBackup.Should().NotBeEmpty(
+            "the backup callback must run while migrations are still pending");
+        appliedDuringBackup.Should().BeEmpty(
+            "the backup callback must run before any migration is applied");
         result.Status.Should().Be(MigrationStatus.Migrated);
     }
 
     [Fact]
     public async Task Run_WhenNoPendingMigrations_DoesNotInvokeBackupCallback()
     {
-        // First run applies InitialCreate.
         await using (var db = CreateContext())
         {
-            var runner = new MigrationRunner(db, NullLogger<MigrationRunner>.Instance);
-            await runner.RunPendingMigrationsAsync(CancellationToken.None);
+            var firstRunner = new MigrationRunner(db, NullLogger<MigrationRunner>.Instance);
+            await firstRunner.RunPendingMigrationsAsync(CancellationToken.None);
         }
 
         SqliteConnection.ClearAllPools();
@@ -93,7 +98,7 @@ public class MigrationRunnerTests : IDisposable
     }
 
     [Fact]
-    public async Task Run_AfterSuccessfulMigration_AppendsSchemaInfoEntry()
+    public async Task Run_AfterSuccessfulMigration_AppendsSchemaInfoEntryWithExactVersion()
     {
         await using (var db = CreateContext())
         {
@@ -107,7 +112,7 @@ public class MigrationRunnerTests : IDisposable
         {
             var entries = await db.SchemaInfo.ToListAsync();
             entries.Should().HaveCount(1);
-            entries[0].Version.Should().NotBeNullOrWhiteSpace();
+            entries[0].Version.Should().Be(_expectedInitialMigration);
             entries[0].MigratedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         }
     }
@@ -121,7 +126,44 @@ public class MigrationRunnerTests : IDisposable
         var result = await runner.RunPendingMigrationsAsync(CancellationToken.None);
 
         result.Status.Should().Be(MigrationStatus.Migrated);
-        result.AppliedMigrations.Should().NotBeEmpty();
+        result.AppliedMigrations.Should().ContainSingle().Which.Should().Be(_expectedInitialMigration);
+    }
+
+    [Fact]
+    public async Task Run_RecordsAppVersionFromInjectedProvider()
+    {
+        await using var db = CreateContext();
+        var runner = new MigrationRunner(
+            db,
+            NullLogger<MigrationRunner>.Instance,
+            preMigrationBackup: null,
+            appVersionProvider: () => "1.2.3-test");
+
+        await runner.RunPendingMigrationsAsync(CancellationToken.None);
+
+        var entry = await db.SchemaInfo.SingleAsync();
+        entry.AppVersion.Should().Be("1.2.3-test");
+    }
+
+    [Fact]
+    public async Task Run_WhenBackupCallbackThrows_DoesNotApplyAnyMigration()
+    {
+        await using var db = CreateContext();
+        var runner = new MigrationRunner(
+            db,
+            NullLogger<MigrationRunner>.Instance,
+            _ => throw new InvalidOperationException("backup failed"));
+
+        var act = async () => await runner.RunPendingMigrationsAsync(CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("backup failed");
+
+        var pending = await db.Database.GetPendingMigrationsAsync();
+        pending.Should().NotBeEmpty(
+            "no migration should be applied when the pre-migration backup callback throws");
+        var applied = await db.Database.GetAppliedMigrationsAsync();
+        applied.Should().BeEmpty();
     }
 
     private CofferDbContext CreateContext()

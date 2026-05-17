@@ -44,10 +44,19 @@ public static class ServiceRegistration
     /// <summary>
     /// Registers <see cref="CofferDbContext"/> via a pooled factory and the
     /// <see cref="MigrationRunner"/>. The DEK is resolved lazily through the supplied
-    /// provider every time the factory creates a context, so the caller (Sprint 5 setup
-    /// wizard or Sprint 6 login flow) decides when and how the DEK becomes available.
-    /// Not invoked from <see cref="AddCofferInfrastructure"/> automatically.
+    /// provider so the caller (Sprint 5 setup wizard or Sprint 6 login flow) decides
+    /// when and how the DEK becomes available. Not invoked from
+    /// <see cref="AddCofferInfrastructure"/> automatically.
     /// </summary>
+    /// <param name="dekProvider">
+    /// Resolves the DEK on demand. <see cref="DbContextFactoryExtensions"/> builds
+    /// <see cref="DbContextOptions{TContext}"/> exactly once, lazily, when the first
+    /// <see cref="CofferDbContext"/> is created from the registered factory. The
+    /// returned byte array is captured by <see cref="Persistence.Encryption.SqlCipherKeyInterceptor"/>
+    /// for the lifetime of the DI container; rotating the DEK requires building a new
+    /// container. The provider may be expensive (for example, decrypting the on-disk
+    /// DEK file via <c>AesGcmCrypto</c>) — it still runs only once.
+    /// </param>
     public static IServiceCollection AddCofferDatabase(
         this IServiceCollection services,
         Func<IServiceProvider, byte[]> dekProvider)

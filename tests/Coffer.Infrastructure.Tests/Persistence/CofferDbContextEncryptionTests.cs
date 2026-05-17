@@ -86,7 +86,11 @@ public class CofferDbContextEncryptionTests : IDisposable
         await using var db2 = CreateContext(dek2);
         var act = async () => await db2.SchemaInfo.ToListAsync();
 
-        await act.Should().ThrowAsync<SqliteException>();
+        // SQLITE_NOTADB = 26 is the canonical SQLCipher response when the wrong key is
+        // supplied — locking up the assertion to that code prevents the test from
+        // passing on generic SqliteException categories (disk full, schema mismatch, …).
+        var thrown = await act.Should().ThrowAsync<SqliteException>();
+        thrown.Which.SqliteErrorCode.Should().Be(26);
     }
 
     [Fact]
