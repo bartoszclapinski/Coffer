@@ -1,7 +1,7 @@
 # Sprint 4 — CofferDbContext + SQLCipher + first migration
 
 **Phase:** 0 (Foundation)
-**Status:** In progress
+**Status:** Closed
 **Depends on:** sprint-3
 
 ## Goal
@@ -114,9 +114,9 @@ Three PRs in the established issue-per-PR workflow (issue #10):
 
 - [x] 4.16 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally
 - [x] 4.17 `gh issue create` for implementation — title `feat(sprint-4): CofferDbContext + SqlCipherKeyInterceptor + InitialCreate migration`, labels `feat` + `sprint-4`
-- [ ] 4.18 Commit on `feature/sprint-4-dbcontext-sqlcipher`, push, `gh pr create` with `Closes #<impl-issue>` in the body, labels `feat` + `sprint-4`
-- [ ] 4.19 CI green (Konscious and NBitcoin from earlier sprints still pass; SQLCipher is cross-platform), squash-merge, branch deleted
-- [ ] 4.20 `gh issue create` for closure → separate `chore/close-sprint-4` PR analogous to Sprints 1-3
+- [x] 4.18 Commit on `feature/sprint-4-dbcontext-sqlcipher`, push, `gh pr create` with `Closes #<impl-issue>` in the body, labels `feat` + `sprint-4`
+- [x] 4.19 CI green (Konscious and NBitcoin from earlier sprints still pass; SQLCipher is cross-platform), squash-merge, branch deleted
+- [x] 4.20 `gh issue create` for closure → separate `chore/close-sprint-4` PR analogous to Sprints 1-3
 
 ## Definition of Done
 
