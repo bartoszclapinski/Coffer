@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Coffer.Core.Security;
 using Coffer.Infrastructure.Persistence;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -52,6 +53,22 @@ public sealed class SetupService : ISetupService
     {
         ArgumentNullException.ThrowIfNull(masterPassword);
         ArgumentNullException.ThrowIfNull(mnemonic);
+
+        // Pre-flight: refuse to run setup on top of an existing vault. The App routing
+        // should have shown the placeholder or the partial-state error window before we
+        // got here; if it didn't, fail loudly rather than overwrite user data.
+        var dekPath = CofferPaths.EncryptedDekFilePath();
+        var dbPath = CofferPaths.DatabaseFile();
+        if (File.Exists(dekPath))
+        {
+            throw new InvalidOperationException(
+                $"Refusing to run setup: {dekPath} already exists. Remove it manually before retrying.");
+        }
+        if (File.Exists(dbPath))
+        {
+            throw new InvalidOperationException(
+                $"Refusing to run setup: {dbPath} already exists. Remove it manually before retrying.");
+        }
 
         var parameters = Argon2Parameters.Default;
         var salt = RandomNumberGenerator.GetBytes(parameters.SaltBytes);
@@ -106,7 +123,7 @@ public sealed class SetupService : ISetupService
                     Tag: encryptionResult.Tag,
                     Ciphertext: encryptionResult.Ciphertext);
 
-                await DekFile.WriteAsync(file, CofferPaths.EncryptedDekFilePath(), ct).ConfigureAwait(false);
+                await DekFile.WriteAsync(file, dekPath, ct).ConfigureAwait(false);
                 dekFileWasWritten = true;
 
                 await _keyVault.SetCachedMasterKeyAsync(masterKey, TimeSpan.FromDays(7), ct).ConfigureAwait(false);
@@ -143,7 +160,7 @@ public sealed class SetupService : ISetupService
             {
                 SafeRollback(
                     "delete dek.encrypted",
-                    () => TryDelete(CofferPaths.EncryptedDekFilePath()));
+                    () => TryDelete(dekPath));
             }
 
             if (dekHolderWasSet)
@@ -153,9 +170,13 @@ public sealed class SetupService : ISetupService
 
             if (databaseWasCreated)
             {
-                SafeRollback(
-                    "delete coffer.db",
-                    () => TryDelete(CofferPaths.DatabaseFile()));
+                // SQLite connection pool keeps the file open even after DbContext disposal;
+                // ClearAllPools releases the handles so File.Delete can succeed. Also tidy
+                // the WAL/SHM side-files that journal mode leaves behind.
+                SafeRollback("clear sqlite connection pools", SqliteConnection.ClearAllPools);
+                SafeRollback("delete coffer.db", () => TryDelete(dbPath));
+                SafeRollback("delete coffer.db-wal", () => TryDelete(dbPath + "-wal"));
+                SafeRollback("delete coffer.db-shm", () => TryDelete(dbPath + "-shm"));
             }
 
             Array.Clear(masterKey, 0, masterKey.Length);
@@ -197,6 +218,6 @@ public sealed class SetupService : ISetupService
         }
     }
 
-    private ILogger<MigrationRunner> NullLoggerForSetup() =>
+    private static ILogger<MigrationRunner> NullLoggerForSetup() =>
         Microsoft.Extensions.Logging.Abstractions.NullLogger<MigrationRunner>.Instance;
 }
