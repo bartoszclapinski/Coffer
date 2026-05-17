@@ -16,6 +16,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.*" />
+    <PackageReference Include="zxcvbn-core" Version="7.*" />
   </ItemGroup>
 
   <ItemGroup>
