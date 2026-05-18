@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="Coffer.Desktop.Views.Setup.ConfirmStepView"
+             x:CompileBindings="False">
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+        <StackPanel Grid.Row="0" Spacing="8">
+            <TextBlock Text="Tworzenie sejfu"
+                       FontSize="22"
+                       FontWeight="Light" />
+            <TextBlock TextWrapping="Wrap"
+                       Text="Wszystko gotowe. Kliknij &quot;Utwórz sejf&quot;, aby zaszyfrować i zapisać konfigurację na dysku." />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="12" VerticalAlignment="Center">
+            <ProgressBar IsIndeterminate="True"
+                         IsVisible="{Binding IsBusy}"
+                         Height="6" />
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="#D73A4A"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Spacing="4" Margin="0,16,0,16">
+            <TextBlock Text="Po utworzeniu sejfu plik zostanie zapisany w katalogu lokalnym aplikacji."
+                       Foreground="#999"
+                       FontSize="12"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+            <Button Content="Wstecz"
+                    MinWidth="120"
+                    IsEnabled="{Binding !IsBusy}"
+                    Command="{Binding $parent[Window].DataContext.BackCommand}" />
+            <Button Content="Utwórz sejf"
+                    MinWidth="160"
+                    IsEnabled="{Binding !IsBusy}"
+                    Command="{Binding CreateVaultCommand}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

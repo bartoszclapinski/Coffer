@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="Coffer.Desktop.Views.Setup.BipSeedVerificationStepView"
+             x:CompileBindings="False">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Row="0" Spacing="8">
+            <TextBlock Text="Sprawdzenie frazy"
+                       FontSize="22"
+                       FontWeight="Light" />
+            <TextBlock TextWrapping="Wrap"
+                       Foreground="#999"
+                       Text="Aby upewnić się że zapisałeś słowa poprawnie, podaj słowo numer 3 i słowo numer 7 z frazy." />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="16" Margin="0,24,0,0">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Słowo #3" />
+                <TextBox Text="{Binding Word3, Mode=TwoWay}"
+                         FontFamily="Consolas, Menlo, monospace" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+                <TextBlock Text="Słowo #7" />
+                <TextBox Text="{Binding Word7, Mode=TwoWay}"
+                         FontFamily="Consolas, Menlo, monospace" />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+            <Button Content="Wstecz"
+                    MinWidth="120"
+                    Command="{Binding $parent[Window].DataContext.BackCommand}" />
+            <Button Content="Dalej"
+                    MinWidth="120"
+                    IsEnabled="{Binding IsValid}"
+                    Command="{Binding $parent[Window].DataContext.NextCommand}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

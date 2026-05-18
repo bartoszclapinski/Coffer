@@ -1,7 +1,7 @@
 # Sprint 5 — Avalonia setup wizard
 
 **Phase:** 0 (Foundation)
-**Status:** Planned
+**Status:** In progress
 **Depends on:** sprint-1 (DI bootstrap), sprint-2 (`IKeyVault`), sprint-3 (Argon2/BIP39/AES-GCM/DekFile), sprint-4 (`CofferDbContext`/`MigrationRunner`)
 
 ## Goal
