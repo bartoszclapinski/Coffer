@@ -1,3 +1,4 @@
+using Coffer.Core.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -29,6 +30,14 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
         try
         {
             await _completeAction().ConfigureAwait(false);
+        }
+        catch (VaultAlreadyExistsException ex)
+        {
+            // Specific failure surfaces the offending path so the user can investigate
+            // the existing vault rather than blindly retrying.
+            ErrorMessage =
+                $"Sejf już istnieje pod ścieżką:\n{ex.FilePath}\n\n" +
+                "Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.";
         }
         catch (Exception)
         {

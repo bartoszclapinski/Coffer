@@ -26,6 +26,11 @@ public partial class SetupWizardWindow : Window
         if (_viewModel?.IsBusy == true)
         {
             e.Cancel = true;
+            return;
         }
+
+        // Always zero the password and mnemonic on close — covers the success path,
+        // the abort-before-confirm path, and the failure-then-close path uniformly.
+        _viewModel?.ClearSensitive();
     }
 }

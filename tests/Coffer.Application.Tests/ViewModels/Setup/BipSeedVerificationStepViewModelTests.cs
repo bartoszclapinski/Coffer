@@ -50,7 +50,7 @@ public class BipSeedVerificationStepViewModelTests
     }
 
     [Fact]
-    public void IsValid_Empty_mnemonic_ReturnsFalse()
+    public void IsValid_EmptyMnemonic_ReturnsFalse()
     {
         var vm = new BipSeedVerificationStepViewModel(() => "");
         vm.Word3 = "anything";

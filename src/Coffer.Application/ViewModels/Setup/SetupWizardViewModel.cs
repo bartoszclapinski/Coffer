@@ -111,7 +111,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                 .CompleteSetupAsync(Password.Password, Mnemonic, CancellationToken.None)
                 .ConfigureAwait(false);
             OnSetupCompleted(success: true, error: null);
-            ClearSensitive();
         }
         catch (Exception ex)
         {
@@ -123,7 +122,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private void OnSetupCompleted(bool success, Exception? error) =>
         SetupCompleted?.Invoke(this, new SetupCompletedEventArgs(success, error));
 
-    private void ClearSensitive()
+    public void ClearSensitive()
     {
         Mnemonic = "";
         Welcome.ClearSensitive();

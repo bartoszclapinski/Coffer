@@ -61,13 +61,11 @@ public sealed class SetupService : ISetupService
         var dbPath = CofferPaths.DatabaseFile();
         if (File.Exists(dekPath))
         {
-            throw new InvalidOperationException(
-                $"Refusing to run setup: {dekPath} already exists. Remove it manually before retrying.");
+            throw new VaultAlreadyExistsException(dekPath);
         }
         if (File.Exists(dbPath))
         {
-            throw new InvalidOperationException(
-                $"Refusing to run setup: {dbPath} already exists. Remove it manually before retrying.");
+            throw new VaultAlreadyExistsException(dbPath);
         }
 
         var parameters = Argon2Parameters.Default;
@@ -138,16 +136,20 @@ public sealed class SetupService : ISetupService
 
             _logger.LogInformation("Setup completed successfully");
         }
-        catch (OperationCanceledException)
-        {
-            // Cancellation: do not surface as Failed, do not run rollback — the caller
-            // requested abort; partial side-effects mirror any other cancelled async op.
-            Array.Clear(masterKey, 0, masterKey.Length);
-            throw;
-        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Setup failed; rolling back any persisted state");
+            // Same rollback for cancellation and ordinary failure — both leave the same
+            // partial state (e.g. coffer.db written, dek.encrypted not yet) and the user
+            // wants a clean slate either way. The throw at the end preserves cancellation
+            // semantics for callers awaiting the task.
+            if (ex is OperationCanceledException)
+            {
+                _logger.LogWarning("Setup cancelled; rolling back any persisted state");
+            }
+            else
+            {
+                _logger.LogError(ex, "Setup failed; rolling back any persisted state");
+            }
 
             if (keyVaultCacheWasSet)
             {
@@ -179,11 +181,16 @@ public sealed class SetupService : ISetupService
                 SafeRollback("delete coffer.db-shm", () => TryDelete(dbPath + "-shm"));
             }
 
-            Array.Clear(masterKey, 0, masterKey.Length);
             throw;
         }
-
-        Array.Clear(masterKey, 0, masterKey.Length);
+        finally
+        {
+            // Zero out both key buffers regardless of the path taken. The DEK has its own
+            // defensive copy inside IDekHolder; the original byte[] in this method has no
+            // remaining purpose once Set has been called.
+            Array.Clear(masterKey, 0, masterKey.Length);
+            Array.Clear(dek, 0, dek.Length);
+        }
     }
 
     private void SafeRollback(string description, Action action)

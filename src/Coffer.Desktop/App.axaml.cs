@@ -82,10 +82,11 @@ public partial class App : Avalonia.Application
 
     private static Window BuildSprint6Placeholder()
     {
+        var folder = CofferPaths.LocalAppDataFolder();
         return BuildSimpleMessageWindow(
             title: "Coffer",
-            message: "Sejf już istnieje. Logowanie pojawi się w Sprint 6 — usuń " +
-                     "%LocalAppData%\\Coffer\\dek.encrypted oraz coffer.db (razem z " +
+            message: $"Sejf już istnieje. Logowanie pojawi się w Sprint 6 — usuń " +
+                     $"{folder}\\dek.encrypted oraz coffer.db (razem z " +
                      "coffer.db-wal i coffer.db-shm) jeśli chcesz przetestować " +
                      "ponowny setup.");
     }
@@ -94,10 +95,11 @@ public partial class App : Avalonia.Application
     {
         var present = dekExists ? "dek.encrypted" : "coffer.db";
         var missing = dekExists ? "coffer.db" : "dek.encrypted";
+        var folder = CofferPaths.LocalAppDataFolder();
         return BuildSimpleMessageWindow(
             title: "Coffer — niedopasowany stan sejfu",
             message:
-                $"Wykryto niedopasowany stan sejfu w %LocalAppData%\\Coffer\\: " +
+                $"Wykryto niedopasowany stan sejfu w {folder}\\: " +
                 $"{present} istnieje, ale {missing} brakuje.\n\n" +
                 "Sejf wymaga obu plików razem. Aby zacząć od nowa, usuń oba pliki " +
                 "(razem z coffer.db-wal i coffer.db-shm jeśli istnieją) " +
