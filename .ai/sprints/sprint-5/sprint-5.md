@@ -1,7 +1,7 @@
 # Sprint 5 — Avalonia setup wizard
 
 **Phase:** 0 (Foundation)
-**Status:** In progress
+**Status:** Closed (2026-05-18)
 **Depends on:** sprint-1 (DI bootstrap), sprint-2 (`IKeyVault`), sprint-3 (Argon2/BIP39/AES-GCM/DekFile), sprint-4 (`CofferDbContext`/`MigrationRunner`)
 
 ## Goal
@@ -29,32 +29,32 @@ Three PRs in the established issue-per-PR workflow:
 
 ### A. NuGet packages
 
-- [ ] 5.1 `Coffer.Application` — add `CommunityToolkit.Mvvm` (`8.*`) for `[ObservableProperty]`, `[RelayCommand]`, `ObservableObject`
-- [ ] 5.2 `Coffer.Infrastructure` — add `zxcvbn-core` (latest stable on NuGet) for password-strength scoring
+- [x] 5.1 `Coffer.Application` — add `CommunityToolkit.Mvvm` (`8.*`) for `[ObservableProperty]`, `[RelayCommand]`, `ObservableObject`
+- [x] 5.2 `Coffer.Infrastructure` — add `zxcvbn-core` (latest stable on NuGet) for password-strength scoring
 
 ### B. DEK holder bridge
 
-- [ ] 5.3 `Coffer.Core/Security/IDekHolder.cs` — explicit method-based API (no mutable property):
+- [x] 5.3 `Coffer.Core/Security/IDekHolder.cs` — explicit method-based API (no mutable property):
   - `byte[] Get()` — throws `InvalidOperationException` if not set
   - `void Set(byte[] dek)` — clears any previous bytes (`Array.Clear`) before overwriting; takes a defensive copy of the input
   - `void Clear()` — zeros the held bytes and marks the holder empty
   - `bool IsAvailable { get; }` — safe probe without throwing
   - Rationale: explicit `Set`/`Clear` gives Sprint 6 auto-lock a clean API to drop the DEK without re-extending the interface; "single writer" semantics are expressed in the type, not in docs.
-- [ ] 5.4 `Coffer.Infrastructure/Security/DekHolder.cs` — thread-safe in-memory holder; `Get` throws when empty; `Set` clears previous bytes before overwriting; `Clear` zeros and resets. All sensitive paths go through `Array.Clear` in try-finally.
-- [ ] 5.5 Register `IDekHolder` as Singleton in `AddCofferInfrastructure`
-- [ ] 5.6 Update `AddCofferDatabase` (Sprint 4) to default the `dekProvider` parameter to `sp => sp.GetRequiredService<IDekHolder>().Get()` when no provider is supplied — preserves the explicit override for tests but makes the production wiring straightforward. **No Sprint 4 test changes required** — existing Sprint 4 tests construct `CofferDbContext` directly via `DbContextOptionsBuilder` + `SqlCipherKeyInterceptor` and never call `AddCofferDatabase`. The optional parameter is additive.
+- [x] 5.4 `Coffer.Infrastructure/Security/DekHolder.cs` — thread-safe in-memory holder; `Get` throws when empty; `Set` clears previous bytes before overwriting; `Clear` zeros and resets. All sensitive paths go through `Array.Clear` in try-finally.
+- [x] 5.5 Register `IDekHolder` as Singleton in `AddCofferInfrastructure`
+- [x] 5.6 Update `AddCofferDatabase` (Sprint 4) to default the `dekProvider` parameter to `sp => sp.GetRequiredService<IDekHolder>().Get()` when no provider is supplied — preserves the explicit override for tests but makes the production wiring straightforward. **No Sprint 4 test changes required** — existing Sprint 4 tests construct `CofferDbContext` directly via `DbContextOptionsBuilder` + `SqlCipherKeyInterceptor` and never call `AddCofferDatabase`. The optional parameter is additive.
 
 ### C. Password strength service
 
-- [ ] 5.7 `Coffer.Core/Security/IPasswordStrengthChecker.cs` — interface with `PasswordStrength Evaluate(string password)`
-- [ ] 5.8 `Coffer.Core/Security/PasswordStrength.cs` — record `(int Score, string? Warning, IReadOnlyList<string> Suggestions)` (score 0-4 per zxcvbn convention)
-- [ ] 5.9 `Coffer.Infrastructure/Security/ZxcvbnPasswordStrengthChecker.cs` — implementation using `zxcvbn-core`
-- [ ] 5.10 Register as Singleton in `AddCofferInfrastructure`
+- [x] 5.7 `Coffer.Core/Security/IPasswordStrengthChecker.cs` — interface with `PasswordStrength Evaluate(string password)`
+- [x] 5.8 `Coffer.Core/Security/PasswordStrength.cs` — record `(int Score, string? Warning, IReadOnlyList<string> Suggestions)` (score 0-4 per zxcvbn convention)
+- [x] 5.9 `Coffer.Infrastructure/Security/ZxcvbnPasswordStrengthChecker.cs` — implementation using `zxcvbn-core`
+- [x] 5.10 Register as Singleton in `AddCofferInfrastructure`
 
 ### D. Setup orchestration
 
-- [ ] 5.11 `Coffer.Core/Security/ISetupService.cs` — interface with `Task CompleteSetupAsync(string masterPassword, string mnemonic, CancellationToken ct)`
-- [ ] 5.12 `Coffer.Infrastructure/Security/SetupService.cs` — orchestrates in an **atomic-success / full-rollback** pattern. The order persists `dek.encrypted` **last** so a partial failure never leaves a sentinel on disk pointing at a non-existent vault. All steps are wrapped in `try`/`catch (Exception)` with cleanup in the reverse order; `OperationCanceledException` is re-thrown without rollback (cancellation is the caller's responsibility):
+- [x] 5.11 `Coffer.Core/Security/ISetupService.cs` — interface with `Task CompleteSetupAsync(string masterPassword, string mnemonic, CancellationToken ct)`
+- [x] 5.12 `Coffer.Infrastructure/Security/SetupService.cs` — orchestrates in an **atomic-success / full-rollback** pattern. The order persists `dek.encrypted` **last** so a partial failure never leaves a sentinel on disk pointing at a non-existent vault. All steps are wrapped in `try`/`catch (Exception)` with cleanup in the reverse order; `OperationCanceledException` is re-thrown without rollback (cancellation is the caller's responsibility):
   1. `RandomNumberGenerator.GetBytes(Argon2Parameters.Default.SaltBytes)` → salt
   2. `IMasterKeyDerivation.DeriveMasterKeyAsync(password, salt, Argon2Parameters.Default, ct)` → master key
   3. `RandomNumberGenerator.GetBytes(32)` → DEK
@@ -73,13 +73,13 @@ Three PRs in the established issue-per-PR workflow:
   - Try delete `CofferPaths.DatabaseFile()` so a retry starts from a clean slate
   - Re-throw the original exception so the caller (`ConfirmStepViewModel`) can show the error in the UI
 
-- [ ] 5.13 Register `ISetupService` as Transient in `AddCofferInfrastructure`
+- [x] 5.13 Register `ISetupService` as Transient in `AddCofferInfrastructure`
 
 ### E. ViewModels (`Coffer.Application/ViewModels/Setup/`)
 
-- [ ] 5.14 `SetupWizardViewModel` — root coordinator. `ObservableObject` with `CurrentStep` enum and `Mnemonic` string (lifted to the wizard so the verification step can compare). `RelayCommand` `Next` / `Back`. Final `Complete` command awaits `ISetupService.CompleteSetupAsync`, on success raises `SetupCompleted` event with `SetupCompletedEventArgs(bool Success, Exception? Error)`; on failure (caught from `SetupService`'s rethrow after rollback) raises the same event with `Success = false, Error = ex`. After raising `SetupCompleted`, the wizard ViewModel clears its sensitive state: `Mnemonic = ""`, all step ViewModels invoked through `ClearSensitive()` (defined on each, see 5.15-5.19). String memory hygiene limitation per docs 09 is acknowledged — minimised lifetime, not eliminated.
-- [ ] 5.15 `WelcomeStepViewModel` — info-only; `RelayCommand` `Continue`. `ClearSensitive()` no-op.
-- [ ] 5.16 `MasterPasswordStepViewModel` — `[ObservableProperty]` `Password`, `Confirmation`, derived `Strength` (calls `IPasswordStrengthChecker`). `IsValid` is the AND of **all** of:
+- [x] 5.14 `SetupWizardViewModel` — root coordinator. `ObservableObject` with `CurrentStep` enum and `Mnemonic` string (lifted to the wizard so the verification step can compare). `RelayCommand` `Next` / `Back`. Final `Complete` command awaits `ISetupService.CompleteSetupAsync`, on success raises `SetupCompleted` event with `SetupCompletedEventArgs(bool Success, Exception? Error)`; on failure (caught from `SetupService`'s rethrow after rollback) raises the same event with `Success = false, Error = ex`. After raising `SetupCompleted`, the wizard ViewModel clears its sensitive state: `Mnemonic = ""`, all step ViewModels invoked through `ClearSensitive()` (defined on each, see 5.15-5.19). String memory hygiene limitation per docs 09 is acknowledged — minimised lifetime, not eliminated.
+- [x] 5.15 `WelcomeStepViewModel` — info-only; `RelayCommand` `Continue`. `ClearSensitive()` no-op.
+- [x] 5.16 `MasterPasswordStepViewModel` — `[ObservableProperty]` `Password`, `Confirmation`, derived `Strength` (calls `IPasswordStrengthChecker`). `IsValid` is the AND of **all** of:
   - `Password.Length >= 12` (docs 09 §"Master password" L51 minimum)
   - At least **3 of 4 character classes** present: `Password.Any(char.IsLower)` + `Password.Any(char.IsUpper)` + `Password.Any(char.IsDigit)` + `Password.Any(ch => !char.IsLetterOrDigit(ch))` ≥ 3 (docs 09 §"Master password" L52)
   - `Strength.Score >= 3` (zxcvbn — orthogonal to the structural rules above)
@@ -87,29 +87,29 @@ Three PRs in the established issue-per-PR workflow:
   - `!string.Equals(Password.Trim(), wizard.Mnemonic, StringComparison.OrdinalIgnoreCase)` (docs 09 §"Master password" L54 — password must not equal the BIP39 mnemonic)
   - The wizard injects `Mnemonic` accessor so this VM can perform the cross-step check.
   - `ClearSensitive()` sets `Password = ""`, `Confirmation = ""`.
-- [ ] 5.17 `BipSeedDisplayStepViewModel` — receives the mnemonic from the wizard; exposes `IReadOnlyList<string> Words` (12 entries) for the view to render in a grid. `ClearSensitive()` resets `Words` to an empty list (the underlying mnemonic string lives in the wizard and is cleared there).
-- [ ] 5.18 `BipSeedVerificationStepViewModel` — `[ObservableProperty]` `Word3`, `Word7`; `IsValid` compares case-insensitively to the actual words; the view reveals the positions visibly (no guessing). **Conscious trade-off, low-priority security note**: fixed positions are easier to attack if a partial leak occurs (shoulder-surfing during display); random positions per launch would be slightly safer at trivial UX cost. Staying with fixed for Sprint 5 simplicity; revisit if a security audit flags it. `ClearSensitive()` sets `Word3 = ""`, `Word7 = ""`.
-- [ ] 5.19 `ConfirmStepViewModel` — summary + `RelayCommand` `CreateVault` which invokes the wizard's `Complete` command. `[ObservableProperty]` `IsBusy` (disables the button + shows spinner during `CompleteSetupAsync`) and `[ObservableProperty]` `ErrorMessage` (Polish error text rendered when the wizard raises `SetupCompleted` with `Success = false`; the message is generic — "Nie udało się utworzyć sejfu. Spróbuj ponownie." — to avoid leaking internal failure details to the UI; full exception is logged). `ClearSensitive()` no-op.
+- [x] 5.17 `BipSeedDisplayStepViewModel` — receives the mnemonic from the wizard; exposes `IReadOnlyList<string> Words` (12 entries) for the view to render in a grid. `ClearSensitive()` resets `Words` to an empty list (the underlying mnemonic string lives in the wizard and is cleared there).
+- [x] 5.18 `BipSeedVerificationStepViewModel` — `[ObservableProperty]` `Word3`, `Word7`; `IsValid` compares case-insensitively to the actual words; the view reveals the positions visibly (no guessing). **Conscious trade-off, low-priority security note**: fixed positions are easier to attack if a partial leak occurs (shoulder-surfing during display); random positions per launch would be slightly safer at trivial UX cost. Staying with fixed for Sprint 5 simplicity; revisit if a security audit flags it. `ClearSensitive()` sets `Word3 = ""`, `Word7 = ""`.
+- [x] 5.19 `ConfirmStepViewModel` — summary + `RelayCommand` `CreateVault` which invokes the wizard's `Complete` command. `[ObservableProperty]` `IsBusy` (disables the button + shows spinner during `CompleteSetupAsync`) and `[ObservableProperty]` `ErrorMessage` (Polish error text rendered when the wizard raises `SetupCompleted` with `Success = false`; the message is generic — "Nie udało się utworzyć sejfu. Spróbuj ponownie." — to avoid leaking internal failure details to the UI; full exception is logged). `ClearSensitive()` no-op.
 
 ### F. Views (`Coffer.Desktop/Views/Setup/`)
 
-- [ ] 5.20 `SetupWizardWindow.axaml` — host window with `ContentControl` driven by `SetupWizardViewModel.CurrentStepViewModel`. `DataTemplate`-based step rendering. Polish window title `"Coffer — konfiguracja sejfu"`
-- [ ] 5.21 `WelcomeStepView.axaml` — explanation + "Dalej" button
-- [ ] 5.22 `MasterPasswordStepView.axaml` — password + confirmation `PasswordBox`, strength `ProgressBar` (4 segments), warning text, "Dalej" enabled when `IsValid`
-- [ ] 5.23 `BipSeedDisplayStepView.axaml` — 12-word grid (4×3), explanation, "Zapisałem słowa" button. Code-behind applies `IScreenCaptureBlocker.Apply(this)` on `Loaded`
-- [ ] 5.24 `BipSeedVerificationStepView.axaml` — 2 labelled text inputs ("Słowo #3", "Słowo #7"), "Sprawdź" button enabled when `IsValid`
-- [ ] 5.25 `ConfirmStepView.axaml` — recap + "Utwórz sejf" button; spinner bound to `IsBusy`; error `TextBlock` bound to `ErrorMessage` (red, hidden when empty). Window close is **disabled** while `IsBusy = true` (handled in `SetupWizardWindow` code-behind via `Closing` event — cancels close if any step VM reports busy) — prevents the bricked-state class of bugs from a mid-`CompleteSetupAsync` window close.
+- [x] 5.20 `SetupWizardWindow.axaml` — host window with `ContentControl` driven by `SetupWizardViewModel.CurrentStepViewModel`. `DataTemplate`-based step rendering. Polish window title `"Coffer — konfiguracja sejfu"`
+- [x] 5.21 `WelcomeStepView.axaml` — explanation + "Dalej" button
+- [x] 5.22 `MasterPasswordStepView.axaml` — password + confirmation `PasswordBox`, strength `ProgressBar` (4 segments), warning text, "Dalej" enabled when `IsValid`
+- [x] 5.23 `BipSeedDisplayStepView.axaml` — 12-word grid (4×3), explanation, "Zapisałem słowa" button. Code-behind applies `IScreenCaptureBlocker.Apply(this)` on `Loaded`
+- [x] 5.24 `BipSeedVerificationStepView.axaml` — 2 labelled text inputs ("Słowo #3", "Słowo #7"), "Sprawdź" button enabled when `IsValid`
+- [x] 5.25 `ConfirmStepView.axaml` — recap + "Utwórz sejf" button; spinner bound to `IsBusy`; error `TextBlock` bound to `ErrorMessage` (red, hidden when empty). Window close is **disabled** while `IsBusy = true` (handled in `SetupWizardWindow` code-behind via `Closing` event — cancels close if any step VM reports busy) — prevents the bricked-state class of bugs from a mid-`CompleteSetupAsync` window close.
 
 ### G. Win32 screen-capture blocker
 
-- [ ] 5.26 `Coffer.Core/Security/IScreenCaptureBlocker.cs` — `void Apply(nint hwnd)` — takes a native window handle (BCL type, no Avalonia dependency, no runtime cast risk). The caller (Desktop view code-behind) extracts the handle and passes it; this also makes the blocker trivially testable with any synthetic handle.
-- [ ] 5.27 `Coffer.Desktop/Platform/WindowsScreenCaptureBlocker.cs` — `[SupportedOSPlatform("windows")]`. Calls `SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE = 0x11)` via P/Invoke. The `BipSeedDisplayStepView` code-behind on `Loaded` resolves `TopLevel.GetTopLevel(this)?.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero` and feeds it to the blocker.
-- [ ] 5.28 `Coffer.Desktop/Platform/NoOpScreenCaptureBlocker.cs` — for non-Windows; logs a warning and returns
-- [ ] 5.29 Register the platform-correct implementation in the Desktop DI bootstrap (`OperatingSystem.IsWindows()` switch, same pattern as `IKeyVault`)
+- [x] 5.26 `Coffer.Core/Security/IScreenCaptureBlocker.cs` — `void Apply(nint hwnd)` — takes a native window handle (BCL type, no Avalonia dependency, no runtime cast risk). The caller (Desktop view code-behind) extracts the handle and passes it; this also makes the blocker trivially testable with any synthetic handle.
+- [x] 5.27 `Coffer.Desktop/Platform/WindowsScreenCaptureBlocker.cs` — `[SupportedOSPlatform("windows")]`. Calls `SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE = 0x11)` via P/Invoke. The `BipSeedDisplayStepView` code-behind on `Loaded` resolves `TopLevel.GetTopLevel(this)?.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero` and feeds it to the blocker.
+- [x] 5.28 `Coffer.Desktop/Platform/NoOpScreenCaptureBlocker.cs` — for non-Windows; logs a warning and returns
+- [x] 5.29 Register the platform-correct implementation in the Desktop DI bootstrap (`OperatingSystem.IsWindows()` switch, same pattern as `IKeyVault`)
 
 ### H. App routing
 
-- [ ] 5.30 Update `Coffer.Desktop/Program.cs` / `App.axaml.cs`:
+- [x] 5.30 Update `Coffer.Desktop/Program.cs` / `App.axaml.cs`:
   - Build service provider
   - On framework initialised: check `File.Exists(CofferPaths.EncryptedDekFilePath())`
   - **Missing** → resolve `SetupWizardWindow` from DI and set as `MainWindow`. Subscribe to `SetupWizardViewModel.SetupCompleted`; on `Success = true`, close the wizard window and open the Sprint-1 `MainWindow` placeholder. On `Success = false`, the wizard stays open (user retries; `ConfirmStepViewModel.ErrorMessage` shows the failure).
@@ -119,21 +119,21 @@ Three PRs in the established issue-per-PR workflow:
 
 ### I. Tests
 
-- [ ] 5.31 `DekHolderTests` (Coffer.Infrastructure.Tests):
+- [x] 5.31 `DekHolderTests` (Coffer.Infrastructure.Tests):
   - `Get_BeforeSet_Throws`
   - `Set_ThenGet_RoundTrips`
   - `Set_AfterSet_ZerosPreviousBytes` — write known buffer A, write known buffer B, hex of the original A array post-second-Set should be all zeros (verifies the in-place `Array.Clear` documented in 5.4)
   - `Clear_AfterSet_GetThrows` — verifies Sprint 6's auto-lock contract works
   - `IsAvailable_ReflectsState` — false before Set, true after Set, false after Clear
-- [ ] 5.32 `ZxcvbnPasswordStrengthCheckerTests`: weak password scores low, strong password scores ≥3, empty password returns score 0
-- [ ] 5.33 `SetupServiceTests` (integration, temp folder cleanup via `IDisposable`):
+- [x] 5.32 `ZxcvbnPasswordStrengthCheckerTests`: weak password scores low, strong password scores ≥3, empty password returns score 0
+- [x] 5.33 `SetupServiceTests` (integration, temp folder cleanup via `IDisposable`):
   - `CompleteSetupAsync_WritesValidDekFile` — round-trips through AES-GCM
   - `CompleteSetupAsync_CachesMasterKeyForSevenDays` — `IKeyVault.GetCachedMasterKeyAsync` returns the same bytes; in-memory holder used on non-Windows
   - `CompleteSetupAsync_SetsDekHolder_WithCorrectDek`
   - `CompleteSetupAsync_RunsInitialCreateMigration` — `_SchemaInfo` has the entry with `Version = "20260516142523_InitialCreate"`
   - **`CompleteSetupAsync_WhenMigrationFails_DoesNotLeaveDekEncryptedOnDisk`** — inject a `MigrationRunner` test double (or a real one whose backup callback throws to short-circuit the migration) and assert: file does not exist after the throw, `IKeyVault.GetCachedMasterKeyAsync` returns null, `IDekHolder.IsAvailable` is false, `coffer.db` does not exist. Verifies the rollback path from 5.12.
   - **`CompleteSetupAsync_WhenMigrationFails_InvalidatesKeyVault`** — same setup, focused on the cache invalidation rollback step alone
-- [ ] 5.34 `MasterPasswordStepViewModelTests` (Coffer.Application.Tests):
+- [x] 5.34 `MasterPasswordStepViewModelTests` (Coffer.Application.Tests):
   - `RejectsEmpty`
   - `RejectsBelow12Chars` — exactly 11 chars with high entropy still rejected
   - `RejectsLessThan3CharClasses` — 12+ chars, score ≥3, but only 2 char classes (e.g. `aaaaAAAA0000` → 3 classes pass; pick `aaaaaaaaaaaa1` → 2 classes fail)
@@ -141,8 +141,8 @@ Three PRs in the established issue-per-PR workflow:
   - `RejectsMismatchedConfirmation`
   - `RejectsPasswordEqualToMnemonic` — `Password.Trim() == wizard.Mnemonic` (case-insensitive)
   - `AcceptsStrongPasswordWithAllRulesMet`
-- [ ] 5.35 `BipSeedVerificationStepViewModelTests`: correct words → valid (case-insensitive), wrong words → invalid, trimmed input is compared
-- [ ] 5.36 `SetupWizardViewModelTests` (new file):
+- [x] 5.35 `BipSeedVerificationStepViewModelTests`: correct words → valid (case-insensitive), wrong words → invalid, trimmed input is compared
+- [x] 5.36 `SetupWizardViewModelTests` (new file):
   - `Next_FromInvalidStep_DoesNotAdvance` — `MasterPasswordStepViewModel.IsValid == false` keeps `CurrentStep`
   - `Complete_OnSuccess_RaisesSetupCompletedWithSuccessTrue` — uses an `ISetupService` test double that returns
   - `Complete_OnException_RaisesSetupCompletedWithErrorPopulated` — service double throws, wizard catches and surfaces
@@ -152,20 +152,20 @@ Approximately 6 new test files, 22-25 new tests. Combined with the existing 49 =
 
 ### J. Manual verification
 
-- [ ] 5.37 Delete `%LocalAppData%/Coffer/dek.encrypted` and `coffer.db` if present
-- [ ] 5.38 `dotnet run --project src/Coffer.Desktop` shows the welcome step
-- [ ] 5.39 Walk through the 5 steps; complete the wizard
-- [ ] 5.40 After completion, the placeholder `MainWindow` appears, `dek.encrypted` and `coffer.db` exist in `%LocalAppData%/Coffer/`, and a fresh log line `[INF] Setup completed successfully` is in `%LocalAppData%/Coffer/logs/coffer-<date>.log`
-- [ ] 5.41 **Partial-state scenario**: run setup again with `dek.encrypted` present but `coffer.db` deleted manually. Verify the placeholder window shows the Polish guidance about manual cleanup.
-- [ ] 5.42 **Mid-flow cancellation**: during `CompleteSetupAsync` (the ~1-2s Argon2 + migration window), confirm the `SetupWizardWindow` rejects the close attempt (`IsBusy = true` blocks `Closing` event). After completion finishes (success or failure), close becomes enabled again.
+- [x] 5.37 Delete `%LocalAppData%/Coffer/dek.encrypted` and `coffer.db` if present
+- [x] 5.38 `dotnet run --project src/Coffer.Desktop` shows the welcome step
+- [x] 5.39 Walk through the 5 steps; complete the wizard
+- [x] 5.40 After completion, the placeholder `MainWindow` appears, `dek.encrypted` and `coffer.db` exist in `%LocalAppData%/Coffer/`, and a fresh log line `[INF] Setup completed successfully` is in `%LocalAppData%/Coffer/logs/coffer-<date>.log`
+- [x] 5.41 **Partial-state scenario**: run setup again with `dek.encrypted` present but `coffer.db` deleted manually. Verify the placeholder window shows the Polish guidance about manual cleanup.
+- [x] 5.42 **Mid-flow cancellation**: during `CompleteSetupAsync` (the ~1-2s Argon2 + migration window), confirm the `SetupWizardWindow` rejects the close attempt (`IsBusy = true` blocks `Closing` event). After completion finishes (success or failure), close becomes enabled again.
 
 ### K. Validation and merge
 
-- [ ] 5.43 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally
-- [ ] 5.44 `gh issue create` for implementation — title `feat(sprint-5): Avalonia setup wizard (first interactive UI)`, labels `feat` + `sprint-5`
-- [ ] 5.45 Commit on `feature/sprint-5-setup-wizard`, push, `gh pr create` with `Closes #<impl-issue>`
-- [ ] 5.46 CI green (Avalonia builds on Ubuntu; UI rendering is not tested in CI, only build + ViewModel/service tests), squash-merge, branch deleted
-- [ ] 5.47 `gh issue create` for closure → separate `chore/close-sprint-5` PR analogous to Sprints 1-4
+- [x] 5.43 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally
+- [x] 5.44 `gh issue create` for implementation — title `feat(sprint-5): Avalonia setup wizard (first interactive UI)`, labels `feat` + `sprint-5`
+- [x] 5.45 Commit on `feature/sprint-5-setup-wizard`, push, `gh pr create` with `Closes #<impl-issue>`
+- [x] 5.46 CI green (Avalonia builds on Ubuntu; UI rendering is not tested in CI, only build + ViewModel/service tests), squash-merge, branch deleted
+- [x] 5.47 `gh issue create` for closure → separate `chore/close-sprint-5` PR analogous to Sprints 1-4
 
 ## Definition of Done
 
