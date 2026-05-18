@@ -1,6 +1,6 @@
 # Sprint index
 
-Status as of: 2026-05-14
+Status as of: 2026-05-18
 
 | Sprint | Phase | Goal | Status |
 |---|---|---|---|
@@ -9,7 +9,7 @@ Status as of: 2026-05-14
 | [sprint-2](sprint-2/sprint-2.md) | 0 | `IKeyVault` in Core, `WindowsDpapiKeyVault` (DPAPI, 7-day TTL), `InMemoryKeyVault` (cross-platform fallback), round-trip tests | Closed (2026-05-13) |
 | [sprint-3](sprint-3/sprint-3.md) | 0 | `Argon2KeyDerivation`, `Bip39SeedManager`, `AesGcmCrypto`, `DekFile` format + serializer, 17 tests (including official BIP39 vectors) | Closed (2026-05-14) |
 | [sprint-4](sprint-4/sprint-4.md) | 0 | `CofferDbContext` + `_SchemaInfo`, `SqlCipherKeyInterceptor` (PRAGMA key per connection), `MigrationRunner` with pre-migration backup callback, first migration `InitialCreate`, 9 integration tests | Closed (2026-05-17) |
-| [sprint-5](sprint-5/sprint-5.md) | 0 | Avalonia setup wizard (welcome → master password with zxcvbn → BIP39 display + verification → confirm), `IDekHolder`, `SetupService` orchestrator, `IScreenCaptureBlocker` (Win32 P/Invoke); first interactive UI | Planned |
+| [sprint-5](sprint-5/sprint-5.md) | 0 | Avalonia setup wizard (welcome → master password with zxcvbn → BIP39 display + verification → confirm), `IDekHolder`, `SetupService` orchestrator, `IScreenCaptureBlocker` (Win32 P/Invoke); first interactive UI | Closed (2026-05-18) |
 
 ## Planned sprints in Phase 0 (full plans drafted at the start of each sprint)
 
