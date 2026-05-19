@@ -2,15 +2,35 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Main;assembly=Coffer.Application"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Coffer.Desktop.MainWindow"
+        x:DataType="vm:MainViewModel"
+        x:CompileBindings="False"
         Title="Coffer"
-        Width="800" Height="450">
-    <Grid>
-        <TextBlock Text="Coffer"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontSize="48"
-                   FontWeight="Light" />
+        Width="800" Height="450"
+        WindowStartupLocation="CenterScreen">
+    <Grid RowDefinitions="*,Auto" Margin="48">
+        <StackPanel Grid.Row="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="12">
+            <TextBlock Text="Zalogowano"
+                       FontSize="36"
+                       FontWeight="Light"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding AppVersion, StringFormat='Wersja: {0}'}"
+                       Foreground="#888"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="12">
+            <Button Content="Wyloguj"
+                    MinWidth="120"
+                    IsEnabled="{Binding !IsBusy}"
+                    Command="{Binding LogoutCommand}" />
+        </StackPanel>
     </Grid>
 </Window>

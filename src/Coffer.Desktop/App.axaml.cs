@@ -3,7 +3,12 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
+using Coffer.Application.ViewModels.Login;
+using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Setup;
+using Coffer.Core.Security;
+using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
 using Coffer.Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +20,9 @@ public partial class App : Avalonia.Application
 {
     public static IServiceProvider Services { get; set; } = null!;
 
+    private IAutoLockMonitor? _autoLockMonitor;
+    private IClassicDesktopStyleApplicationLifetime? _desktop;
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -24,13 +32,14 @@ public partial class App : Avalonia.Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            _desktop = desktop;
             desktop.MainWindow = ResolveStartupWindow(desktop);
         }
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static Window ResolveStartupWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    private Window ResolveStartupWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
         var dekFilePath = CofferPaths.EncryptedDekFilePath();
         var databasePath = CofferPaths.DatabaseFile();
@@ -39,8 +48,24 @@ public partial class App : Avalonia.Application
 
         if (dekExists && dbExists)
         {
-            Log.Information("Vault detected at {Path}; showing Sprint 6 placeholder", dekFilePath);
-            return BuildSprint6Placeholder();
+            // Silent cold-start path: if the DPAPI cache still holds a valid master
+            // key, unlock the vault without any UI. The sync .GetResult() blocks the
+            // bootstrap by ~10-30 ms (DPAPI unprotect + AES-GCM decrypt of ~60 B) —
+            // tolerable for the bootstrap; revisit with a splash screen if the
+            // perceptible delay ever grows.
+            var loginService = Services.GetRequiredService<ILoginService>();
+            var cachedLoginSucceeded = loginService
+                .TryLoginFromCachedKeyAsync(CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            if (cachedLoginSucceeded)
+            {
+                Log.Information("Cold start unlocked via cached master key; showing MainWindow");
+                return BuildMainWindow(desktop);
+            }
+
+            Log.Information("Cached master key unavailable; showing LoginWindow");
+            return BuildLoginWindow(desktop);
         }
 
         if (dekExists != dbExists)
@@ -60,7 +85,88 @@ public partial class App : Avalonia.Application
         return wizardWindow;
     }
 
-    private static void OnSetupCompleted(
+    private Window BuildLoginWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var window = Services.GetRequiredService<LoginWindow>();
+        var vm = Services.GetRequiredService<LoginViewModel>();
+        window.DataContext = vm;
+        vm.LoginCompleted += (_, _) => OnLoginCompleted(desktop, window);
+        return window;
+    }
+
+    private void OnLoginCompleted(IClassicDesktopStyleApplicationLifetime desktop, Window loginWindow)
+    {
+        Log.Information("Login completed; swapping to MainWindow");
+        var mainWindow = BuildMainWindow(desktop);
+        desktop.MainWindow = mainWindow;
+        mainWindow.Show();
+        loginWindow.Close();
+    }
+
+    private Window BuildMainWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var window = Services.GetRequiredService<MainWindow>();
+        var vm = Services.GetRequiredService<MainViewModel>();
+        window.DataContext = vm;
+        vm.LoggedOut += (_, _) => HandleLogout(desktop, window);
+
+        StartAutoLockMonitor(desktop);
+        return window;
+    }
+
+    private void StartAutoLockMonitor(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var monitor = Services.GetRequiredService<IAutoLockMonitor>();
+        var options = Services.GetRequiredService<AutoLockOptions>();
+
+        // Detach any previous subscription before re-subscribing — the monitor is a
+        // singleton that survives logout / login cycles.
+        if (_autoLockMonitor is not null)
+        {
+            _autoLockMonitor.AutoLockTriggered -= OnAutoLockTriggered;
+        }
+
+        _autoLockMonitor = monitor;
+        monitor.AutoLockTriggered += OnAutoLockTriggered;
+        monitor.Start(options.IdleTimeout);
+    }
+
+    private void OnAutoLockTriggered(object? sender, EventArgs e)
+    {
+        // Monitor raises on a thread-pool thread; UI swap must run on the UI thread.
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (_desktop?.MainWindow is { } window)
+            {
+                Log.Information("Auto-lock triggered; locking session");
+                HandleLogout(_desktop, window);
+            }
+        });
+    }
+
+    private void HandleLogout(IClassicDesktopStyleApplicationLifetime desktop, Window currentWindow)
+    {
+        // Single source of truth for both manual logout (Wyloguj) and auto-lock —
+        // every path goes through here so the two cannot drift apart.
+        if (_autoLockMonitor is not null)
+        {
+            _autoLockMonitor.AutoLockTriggered -= OnAutoLockTriggered;
+            _autoLockMonitor.Stop();
+        }
+
+        var loginService = Services.GetRequiredService<ILoginService>();
+        // Fire-and-forget: LoginService.LogoutAsync is internally defensive; the
+        // window swap should not wait on it because cache invalidation can block
+        // briefly on disk I/O. Errors are logged inside the service.
+        _ = loginService.LogoutAsync(CancellationToken.None);
+
+        var loginWindow = BuildLoginWindow(desktop);
+        desktop.MainWindow = loginWindow;
+        loginWindow.Show();
+        currentWindow.Close();
+    }
+
+    private void OnSetupCompleted(
         IClassicDesktopStyleApplicationLifetime desktop,
         Window wizardWindow,
         SetupCompletedEventArgs args)
@@ -74,21 +180,10 @@ public partial class App : Avalonia.Application
 
         Log.Information("Setup wizard completed successfully; swapping to MainWindow");
 
-        var mainWindow = Services.GetRequiredService<MainWindow>();
+        var mainWindow = BuildMainWindow(desktop);
         desktop.MainWindow = mainWindow;
         mainWindow.Show();
         wizardWindow.Close();
-    }
-
-    private static Window BuildSprint6Placeholder()
-    {
-        var folder = CofferPaths.LocalAppDataFolder();
-        return BuildSimpleMessageWindow(
-            title: "Coffer",
-            message: $"Sejf już istnieje. Logowanie pojawi się w Sprint 6 — usuń " +
-                     $"{folder}\\dek.encrypted oraz coffer.db (razem z " +
-                     "coffer.db-wal i coffer.db-shm) jeśli chcesz przetestować " +
-                     "ponowny setup.");
     }
 
     private static Window BuildPartialStateError(bool dekExists, bool dbExists)
@@ -104,8 +199,7 @@ public partial class App : Avalonia.Application
                 "Sejf wymaga obu plików razem. Aby zacząć od nowa, usuń oba pliki " +
                 "(razem z coffer.db-wal i coffer.db-shm jeśli istnieją) " +
                 "i uruchom aplikację ponownie. Aby zalogować się do istniejącego " +
-                "sejfu, przywróć brakujący plik z kopii zapasowej.\n\n" +
-                "Sprint 6 doda obsługę tej sytuacji w UI.");
+                "sejfu, przywróć brakujący plik z kopii zapasowej.");
     }
 
     private static Window BuildSimpleMessageWindow(string title, string message)

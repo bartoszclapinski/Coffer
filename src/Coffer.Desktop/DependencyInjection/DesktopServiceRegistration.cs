@@ -1,6 +1,9 @@
+using Coffer.Application.ViewModels.Login;
+using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Setup;
 using Coffer.Core.Security;
 using Coffer.Desktop.Platform;
+using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,7 +14,14 @@ public static class DesktopServiceRegistration
 {
     public static IServiceCollection AddCofferDesktopUi(this IServiceCollection services)
     {
-        services.AddSingleton<MainWindow>();
+        // MainWindow is Transient — App rebuilds it after every logout so the
+        // top-level event subscriptions and the VM state start fresh. Sprint 1's
+        // Singleton registration would have reused a torn-down window.
+        services.AddTransient<MainWindow>();
+        services.AddTransient<MainViewModel>();
+
+        services.AddTransient<LoginWindow>();
+        services.AddTransient<LoginViewModel>();
 
         services.AddTransient<SetupWizardViewModel>();
         services.AddTransient<SetupWizardWindow>();
