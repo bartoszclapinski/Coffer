@@ -16,7 +16,9 @@ public static class ServiceRegistration
             .AddCofferLogging()
             .AddCofferKeyVault()
             .AddCofferCrypto()
-            .AddCofferSetup();
+            .AddCofferSetup()
+            .AddCofferLogin()
+            .AddCofferAutoLock();
 
     public static IServiceCollection AddCofferCrypto(this IServiceCollection services)
     {
@@ -54,6 +56,33 @@ public static class ServiceRegistration
         services.AddTransient<Func<IDbContextFactory<CofferDbContext>>>(sp =>
             () => sp.GetRequiredService<IDbContextFactory<CofferDbContext>>());
         services.AddTransient<ISetupService, SetupService>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the Sprint-6 login orchestrator. <see cref="ILoginService"/>
+    /// is transient so each call gets a fresh logger scope; the underlying
+    /// <see cref="IDekHolder"/> and <see cref="IKeyVault"/> stay singletons.
+    /// </summary>
+    public static IServiceCollection AddCofferLogin(this IServiceCollection services)
+    {
+        services.AddTransient<ILoginService, LoginService>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the Sprint-6 auto-lock primitives. <see cref="ILastActivityTracker"/>
+    /// is a singleton so every UI input registers against the same instance the
+    /// monitor polls. <see cref="IAutoLockMonitor"/> is a singleton reused across
+    /// the logged-in / logged-out lifecycle by <c>App.axaml.cs</c>. The default
+    /// 15-minute timeout is exposed as <see cref="AutoLockOptions"/>; Sprint 7+'s
+    /// Settings UI replaces the registration with a configurable source.
+    /// </summary>
+    public static IServiceCollection AddCofferAutoLock(this IServiceCollection services)
+    {
+        services.AddSingleton(AutoLockOptions.Default);
+        services.AddSingleton<ILastActivityTracker, LastActivityTracker>();
+        services.AddSingleton<IAutoLockMonitor, AutoLockMonitor>();
         return services;
     }
 

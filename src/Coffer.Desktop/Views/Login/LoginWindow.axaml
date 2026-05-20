@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Login;assembly=Coffer.Application"
+        mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="320"
+        x:Class="Coffer.Desktop.Views.Login.LoginWindow"
+        x:DataType="vm:LoginViewModel"
+        x:CompileBindings="False"
+        Title="Coffer — logowanie"
+        Width="480" Height="320"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="32">
+        <StackPanel Grid.Row="0" Spacing="6">
+            <TextBlock Text="Logowanie"
+                       FontSize="22"
+                       FontWeight="Light" />
+            <TextBlock Text="Wpisz hasło główne, aby odblokować sejf."
+                       TextWrapping="Wrap"
+                       Foreground="#999" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="12" Margin="0,24,0,0" VerticalAlignment="Center">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Hasło" />
+                <TextBox x:Name="PasswordBox"
+                         PasswordChar="●"
+                         IsEnabled="{Binding !IsBusy}"
+                         Text="{Binding Password, Mode=TwoWay}"
+                         KeyDown="OnPasswordKeyDown" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="#D14"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <ProgressBar IsIndeterminate="True"
+                         Height="4"
+                         IsVisible="{Binding IsBusy}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+            <Button Content="Zaloguj"
+                    MinWidth="120"
+                    IsDefault="True"
+                    IsEnabled="{Binding !IsBusy}"
+                    Command="{Binding LoginCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>
