@@ -22,12 +22,15 @@ public partial class MainWindow : Window
         _logger = logger;
         _logger.LogInformation("MainWindow created");
 
-        // Top-level pointer and key events feed the activity tracker that the
-        // AutoLockMonitor polls. Subscribing here keeps the wiring co-located with
-        // the window lifetime — the events stop firing as soon as the window closes.
-        AddHandler(KeyDownEvent, OnUiActivity, Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble);
-        AddHandler(PointerPressedEvent, OnUiActivity, Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble);
-        AddHandler(PointerMovedEvent, OnUiActivity, Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble);
+        // Top-level pointer and key events feed the activity tracker the
+        // AutoLockMonitor polls. Tunnel-only subscription sees input before any
+        // inner handler can mark it Handled, and avoids the double-fire that
+        // Tunnel | Bubble would produce. PointerMoved is deliberately omitted:
+        // KeyDown + PointerPressed already capture "user is active" with
+        // sub-second precision against the 60-second polling cadence, and
+        // pointer-moved fires per-frame on the UI thread.
+        AddHandler(KeyDownEvent, OnUiActivity, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        AddHandler(PointerPressedEvent, OnUiActivity, Avalonia.Interactivity.RoutingStrategies.Tunnel);
     }
 
     private void OnUiActivity(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>
