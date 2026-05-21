@@ -7,26 +7,28 @@
 - **Deterministic before AI.** Get manual workflows working, then add AI conveniences on top.
 - **Test the security primitives early.** Master password, BIP39, encryption — these can't be retrofitted safely.
 
-## Phase 0 — Foundation (1–2 weekends)
+## Phase 0 — Foundation (1–2 weekends) — **CLOSED 2026-05-20**
 
 **Goal:** A solution that builds, runs, and has all infrastructure abstractions in place.
 
 **First commit (literally before anything else):**
-- [ ] `git init`, push to public GitHub repo `Coffer`
-- [ ] `.github/workflows/build.yml` (already in this package) — verify it runs green on the empty repo
-- [ ] README badge linking to the workflow status
+- [x] `git init`, push to public GitHub repo `Coffer`
+- [x] `.github/workflows/build.yml` (already in this package) — verify it runs green on the empty repo
+- [x] README badge linking to the workflow status
 
 **Then:**
-- [ ] Solution: `Coffer.sln` with all projects from `01-stack-and-projects.md`
-- [ ] DI configured in both Desktop and Mobile entry points
-- [ ] EF Core 9 + SQLite + SQLCipher with `SqlCipherKeyInterceptor`
-- [ ] First migration creates empty schema with `_SchemaInfo` table
-- [ ] `IKeyVault` with `WindowsDpapiKeyVault` and `MauiSecureStorageKeyVault` stubs
-- [ ] Setup wizard: master password creation + Argon2id + BIP39 seed display + verification
-- [ ] First `MainWindow` (Avalonia) and first MAUI page that show "logged in as: [user]"
-- [ ] `.editorconfig`, `.gitignore`, `README.md`
+- [x] Solution: `Coffer.sln` with all projects from `01-stack-and-projects.md`
+- [x] DI configured in both Desktop and Mobile entry points _(Desktop only — MAUI postponed to Phase 5)_
+- [x] EF Core 9 + SQLite + SQLCipher with `SqlCipherKeyInterceptor`
+- [x] First migration creates empty schema with `_SchemaInfo` table
+- [x] `IKeyVault` with `WindowsDpapiKeyVault` and `MauiSecureStorageKeyVault` stubs _(MauiSecureStorageKeyVault postponed with the mobile project; `InMemoryKeyVault` covers non-Windows hosts)_
+- [x] Setup wizard: master password creation + Argon2id + BIP39 seed display + verification
+- [x] First `MainWindow` (Avalonia) and first MAUI page that show "logged in as: [user]" _(Avalonia only; MAUI postponed)_
+- [x] `.editorconfig`, `.gitignore`, `README.md`
 
 **Definition of done:** Cold start asks for master password; correct password shows the empty main window; restart within 7 days bypasses password (DPAPI cache); clear cache forces password again. Same on mobile (with `SecureStorage`).
+
+**Status:** Desktop closed end-to-end on 2026-05-20 (Sprint 6 implementation merged in PR #41, manual verification on Windows passed steps 6.31-6.37). Mobile (`Coffer.Mobile`, MAUI) is postponed per the original phasing — the `IKeyVault` / `ILoginService` / `IDekHolder` abstractions are shaped to accept a `MauiSecureStorageKeyVault` implementation when Phase 5 begins.
 
 ## Phase 1 — Statement parser for PKO BP (2–3 weekendy)
 

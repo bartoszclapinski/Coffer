@@ -1,7 +1,7 @@
 # Sprint 6 — Login window, auto-lock, Phase 0 closure
 
 **Phase:** 0 (Foundation — closing sprint)
-**Status:** Planned
+**Status:** Closed (2026-05-20)
 **Depends on:** sprint-2 (`IKeyVault` / DPAPI cache), sprint-3 (`IMasterKeyDerivation`, `AesGcmCrypto`, `DekFile`), sprint-4 (`CofferDbContext`, `MigrationRunner`), sprint-5 (`IDekHolder`, `SetupWizardWindow`, app routing for partial state)
 
 ## Goal
@@ -32,14 +32,14 @@ Three PRs in the established issue-per-PR workflow:
 
 ### A. Login orchestration (Core + Infrastructure)
 
-- [ ] 6.1 `Coffer.Core/Security/ILoginService.cs` — three methods:
+- [x] 6.1 `Coffer.Core/Security/ILoginService.cs` — three methods:
   - `Task<bool> TryLoginFromCachedKeyAsync(CancellationToken ct)` — returns `true` only on full success (cache hit + DEK decrypted + holder published); any failure path returns `false` without throwing (cold-start best-effort)
   - `Task LoginWithPasswordAsync(string masterPassword, CancellationToken ct)` — throws `InvalidMasterPasswordException` on wrong password, `VaultCorruptedException` on format / tag failure unrelated to the password, `VaultMissingException` if pre-flight files are gone
   - `Task LogoutAsync(CancellationToken ct)` — clear `IDekHolder` + invalidate DPAPI cache
-- [ ] 6.2 `Coffer.Core/Security/InvalidMasterPasswordException.cs` — sealed, parameterless message ("The master password did not unlock the vault.")
-- [ ] 6.3 `Coffer.Core/Security/VaultCorruptedException.cs` — sealed, includes `Reason` (enum or string) so the UI can render a more specific Polish message when the failure is "dek.encrypted parse error" vs "AES-GCM tag mismatch with cached key"
-- [ ] 6.4 `Coffer.Core/Security/VaultMissingException.cs` — sealed; rare path (defensive — the App routing should catch this earlier)
-- [ ] 6.5 `Coffer.Infrastructure/Security/LoginService.cs` — orchestrator. Dependencies: `IMasterKeyDerivation`, `IKeyVault`, `IDekHolder`, `Func<IDbContextFactory<CofferDbContext>>` (same lazy-factory trick as `SetupService`), `ILogger<LoginService>`. Flow for `LoginWithPasswordAsync`:
+- [x] 6.2 `Coffer.Core/Security/InvalidMasterPasswordException.cs` — sealed, parameterless message ("The master password did not unlock the vault.")
+- [x] 6.3 `Coffer.Core/Security/VaultCorruptedException.cs` — sealed, includes `Reason` (enum or string) so the UI can render a more specific Polish message when the failure is "dek.encrypted parse error" vs "AES-GCM tag mismatch with cached key"
+- [x] 6.4 `Coffer.Core/Security/VaultMissingException.cs` — sealed; rare path (defensive — the App routing should catch this earlier)
+- [x] 6.5 `Coffer.Infrastructure/Security/LoginService.cs` — orchestrator. Dependencies: `IMasterKeyDerivation`, `IKeyVault`, `IDekHolder`, `Func<IDbContextFactory<CofferDbContext>>` (same lazy-factory trick as `SetupService`), `ILogger<LoginService>`. Flow for `LoginWithPasswordAsync`:
   1. Pre-flight: `File.Exists(CofferPaths.EncryptedDekFilePath())` — throw `VaultMissingException` if not
   2. `await DekFile.ReadAsync(dekPath, ct)` — throws on format error; wrap in `try`/`catch` and rethrow as `VaultCorruptedException(reason: "dek-file-format")`
   3. `await _keyDerivation.DeriveMasterKeyAsync(masterPassword, file.Salt, file.ArgonParameters, ct)` — note: parameters are read from the file, not the hardcoded `Argon2Parameters.Default`, so old vaults remain decryptable if defaults change
@@ -47,33 +47,33 @@ Three PRs in the established issue-per-PR workflow:
   5. `_dekHolder.Set(dek)` — publishes for `CofferDbContext`
   6. `await _keyVault.SetCachedMasterKeyAsync(masterKey, TimeSpan.FromDays(7), ct)` — sliding TTL; cache write failure logs Warning but does NOT fail the login
   7. Zero `masterKey` and `dek` (and `file.Ciphertext` / `file.Tag` / `file.Iv` on the way out) in `finally`
-- [ ] 6.6 `LoginService.TryLoginFromCachedKeyAsync` — flow:
+- [x] 6.6 `LoginService.TryLoginFromCachedKeyAsync` — flow:
   1. `var cachedMasterKey = await _keyVault.GetCachedMasterKeyAsync(ct)` — returns null on cache miss / expired
   2. If null, return `false`
   3. Read `dek.encrypted` and `AesGcmCrypto.Decrypt` with the cached master key
   4. On any exception (format, AES-GCM tag, missing file), log at Warning ("Cached key does not unlock the vault — falling back to password"), `await _keyVault.InvalidateMasterKeyCacheAsync(ct)`, return `false`
   5. On success, `_dekHolder.Set(dek)`, return `true`
   6. Zero buffers
-- [ ] 6.7 `LoginService.LogoutAsync` — `_dekHolder.Clear()`, then `await _keyVault.InvalidateMasterKeyCacheAsync(ct)`. No exceptions propagate (use the same `SafeRollback` pattern from `SetupService`)
-- [ ] 6.8 Register `ILoginService` as Transient in `AddCofferSetup` (or rename to `AddCofferAuthentication` if that reads better — the sprint-5 registration is in a method named for setup, but it logically covers all auth-orchestration services; rename + keep the API surface)
+- [x] 6.7 `LoginService.LogoutAsync` — `_dekHolder.Clear()`, then `await _keyVault.InvalidateMasterKeyCacheAsync(ct)`. No exceptions propagate (use the same `SafeRollback` pattern from `SetupService`)
+- [x] 6.8 Register `ILoginService` as Transient in `AddCofferSetup` (or rename to `AddCofferAuthentication` if that reads better — the sprint-5 registration is in a method named for setup, but it logically covers all auth-orchestration services; rename + keep the API surface)
 
 ### B. Activity tracking and auto-lock
 
-- [ ] 6.9 `Coffer.Core/Security/ILastActivityTracker.cs` — two members:
+- [x] 6.9 `Coffer.Core/Security/ILastActivityTracker.cs` — two members:
   - `void RegisterActivity()` — sets `LastActivityUtc = DateTime.UtcNow`
   - `DateTime LastActivityUtc { get; }` — last registered timestamp; defaults to `DateTime.UtcNow` at construction time so the very first idle check sees a sensible value
-- [ ] 6.10 `Coffer.Infrastructure/Security/LastActivityTracker.cs` — thread-safe via `Volatile.Write`/`Read` on the underlying `DateTime` ticks, OR a simple `lock`. Pick whichever stays readable. Registered as Singleton in `AddCofferInfrastructure`.
-- [ ] 6.11 `Coffer.Core/Security/IAutoLockMonitor.cs`:
+- [x] 6.10 `Coffer.Infrastructure/Security/LastActivityTracker.cs` — thread-safe via `Volatile.Write`/`Read` on the underlying `DateTime` ticks, OR a simple `lock`. Pick whichever stays readable. Registered as Singleton in `AddCofferInfrastructure`.
+- [x] 6.11 `Coffer.Core/Security/IAutoLockMonitor.cs`:
   - `void Start(TimeSpan idleTimeout)` — schedules the periodic check
   - `void Stop()` — disposes the timer
   - `event EventHandler? AutoLockTriggered` — raised once per `Start` call when `DateTime.UtcNow - LastActivityUtc >= idleTimeout`; the monitor calls `Stop()` internally before raising to prevent double-fire
   - Inherits `IDisposable` so `using` works in tests
-- [ ] 6.12 `Coffer.Infrastructure/Security/AutoLockMonitor.cs` — `System.Threading.Timer` with a 1-minute period (configurable in DI registration as a constant; not a public option for Sprint 6). Compares the elapsed time on every tick; thread-safe `Start`/`Stop` via `lock`. The Timer callback marshals through `lock` to avoid the rare race where `Stop` runs concurrently with a tick. Registered as Singleton.
-- [ ] 6.13 `Coffer.Core/Security/AutoLockOptions.cs` — `record AutoLockOptions(TimeSpan IdleTimeout)`. Default is `TimeSpan.FromMinutes(15)`, registered as a Singleton via `AddSingleton` in `AddCofferInfrastructure`. Sprint-7+ Settings UI replaces this with a configurable source; for Sprint 6 it's a constant.
+- [x] 6.12 `Coffer.Infrastructure/Security/AutoLockMonitor.cs` — `System.Threading.Timer` with a 1-minute period (configurable in DI registration as a constant; not a public option for Sprint 6). Compares the elapsed time on every tick; thread-safe `Start`/`Stop` via `lock`. The Timer callback marshals through `lock` to avoid the rare race where `Stop` runs concurrently with a tick. Registered as Singleton.
+- [x] 6.13 `Coffer.Core/Security/AutoLockOptions.cs` — `record AutoLockOptions(TimeSpan IdleTimeout)`. Default is `TimeSpan.FromMinutes(15)`, registered as a Singleton via `AddSingleton` in `AddCofferInfrastructure`. Sprint-7+ Settings UI replaces this with a configurable source; for Sprint 6 it's a constant.
 
 ### C. Login ViewModel + View (`Coffer.Application/ViewModels/Login/` + `Coffer.Desktop/Views/Login/`)
 
-- [ ] 6.14 `Coffer.Application/ViewModels/Login/LoginViewModel.cs` — `[ObservableProperty]` `Password`, `[ObservableProperty]` `ErrorMessage`, `[ObservableProperty]` `IsBusy`. `[RelayCommand]` `LoginAsync`:
+- [x] 6.14 `Coffer.Application/ViewModels/Login/LoginViewModel.cs` — `[ObservableProperty]` `Password`, `[ObservableProperty]` `ErrorMessage`, `[ObservableProperty]` `IsBusy`. `[RelayCommand]` `LoginAsync`:
   1. Set `IsBusy = true`, clear `ErrorMessage`
   2. `await _loginService.LoginWithPasswordAsync(Password, CancellationToken.None)`
   3. On `InvalidMasterPasswordException`: `ErrorMessage = "Nieprawidłowe hasło."`, `Password = ""`
@@ -82,34 +82,34 @@ Three PRs in the established issue-per-PR workflow:
   6. On any other exception: log full at Error, `ErrorMessage = "Nie udało się zalogować. Spróbuj ponownie."`
   7. On success: raise `LoginCompleted` event (analogous to Sprint 5's `SetupCompleted`)
   8. `finally`: `IsBusy = false`
-- [ ] 6.15 `LoginCompletedEventArgs` — empty marker for now; future sprints (or the same one if needed) can attach context. Sprint 5's `SetupCompletedEventArgs(bool Success, Exception?)` is heavier because setup has more failure modes; login's failure is handled inside the VM and never reaches App-level handler.
-- [ ] 6.16 `LoginViewModel.ClearSensitive()` — `Password = ""`. Called by `LoginWindow.OnClosing` (mirrors Sprint 5 pattern).
-- [ ] 6.17 `Coffer.Desktop/Views/Login/LoginWindow.axaml` — single screen, FluentTheme defaults:
+- [x] 6.15 `LoginCompletedEventArgs` — empty marker for now; future sprints (or the same one if needed) can attach context. Sprint 5's `SetupCompletedEventArgs(bool Success, Exception?)` is heavier because setup has more failure modes; login's failure is handled inside the VM and never reaches App-level handler.
+- [x] 6.16 `LoginViewModel.ClearSensitive()` — `Password = ""`. Called by `LoginWindow.OnClosing` (mirrors Sprint 5 pattern).
+- [x] 6.17 `Coffer.Desktop/Views/Login/LoginWindow.axaml` — single screen, FluentTheme defaults:
   - Polish title "Coffer — logowanie"
   - Password input (`TextBox` with `PasswordChar="●"` — same fallback as Sprint 5)
   - "Zaloguj" button bound to `LoginCommand`, disabled when `IsBusy` or `string.IsNullOrEmpty(Password)`
   - `ProgressBar` / spinner bound to `IsBusy`
   - Error `TextBlock` bound to `ErrorMessage` (red, hidden when empty)
   - Window `Closing` blocked while `IsBusy = true` (same code-behind pattern as `SetupWizardWindow`)
-- [ ] 6.18 `LoginWindow.axaml.cs` — code-behind subscribes `Closing` to block close while busy, calls `ClearSensitive()` on close, and forwards Enter key on the password box to the `LoginCommand`
+- [x] 6.18 `LoginWindow.axaml.cs` — code-behind subscribes `Closing` to block close while busy, calls `ClearSensitive()` on close, and forwards Enter key on the password box to the `LoginCommand`
 
 ### D. MainWindow upgrade (`Coffer.Application/ViewModels/Main/` + existing `Coffer.Desktop/Views/MainWindow.axaml`)
 
-- [ ] 6.19 `Coffer.Application/ViewModels/Main/MainViewModel.cs`:
+- [x] 6.19 `Coffer.Application/ViewModels/Main/MainViewModel.cs`:
   - `string AppVersion` — initialised from `Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown"`
   - `[RelayCommand]` `LogoutAsync` — calls `_loginService.LogoutAsync`, then raises `LoggedOut` event
   - `event EventHandler? LoggedOut`
-- [ ] 6.20 `src/Coffer.Desktop/Views/MainWindow.axaml` — replace the Sprint-1 `TextBlock` placeholder with:
+- [x] 6.20 `src/Coffer.Desktop/Views/MainWindow.axaml` — replace the Sprint-1 `TextBlock` placeholder with:
   - Polish heading "Zalogowano"
   - "Wersja: {AppVersion}" line bound to VM
   - "Wyloguj" button bound to `LogoutCommand`
   - Plain Avalonia FluentTheme — no design tokens yet (Phase 1+ owns the styling)
-- [ ] 6.21 `src/Coffer.Desktop/Views/MainWindow.axaml.cs` — code-behind subscribes the top-level pointer and key events on `AttachedToVisualTree`, calling `_activityTracker.RegisterActivity()` on each. The tracker is resolved through `App.Services` (same pragma as `BipSeedDisplayStepView` — flagged as follow-up issue [#31](https://github.com/bartoszclapinski/Coffer/issues/31); fixing that for both views in one go is a candidate chore but out of Sprint 6 scope)
-- [ ] 6.22 Register `MainViewModel` and `LoginViewModel` as Transient in `AddCofferApplication` (or wherever the existing setup VMs are registered — keep the convention)
+- [x] 6.21 `src/Coffer.Desktop/Views/MainWindow.axaml.cs` — code-behind subscribes the top-level pointer and key events on `AttachedToVisualTree`, calling `_activityTracker.RegisterActivity()` on each. The tracker is resolved through `App.Services` (same pragma as `BipSeedDisplayStepView` — flagged as follow-up issue [#31](https://github.com/bartoszclapinski/Coffer/issues/31); fixing that for both views in one go is a candidate chore but out of Sprint 6 scope)
+- [x] 6.22 Register `MainViewModel` and `LoginViewModel` as Transient in `AddCofferApplication` (or wherever the existing setup VMs are registered — keep the convention)
 
 ### E. App routing
 
-- [ ] 6.23 Update `Coffer.Desktop/App.axaml.cs`. `ResolveStartupWindow` after Sprint 5 has four routes (setup wizard, sprint-6 placeholder, partial-state error, would-be vault-exists). Sprint 6 replaces the "vault exists, both files present" branch with:
+- [x] 6.23 Update `Coffer.Desktop/App.axaml.cs`. `ResolveStartupWindow` after Sprint 5 has four routes (setup wizard, sprint-6 placeholder, partial-state error, would-be vault-exists). Sprint 6 replaces the "vault exists, both files present" branch with:
   ```csharp
   if (dekExists && dbExists)
   {
@@ -128,12 +128,12 @@ Three PRs in the established issue-per-PR workflow:
   ```
   `BuildLoginWindow` resolves `LoginWindow` + `LoginViewModel`, subscribes `LoginCompleted` to swap to `MainWindow`.
   `BuildMainWindow` resolves `MainWindow` + `MainViewModel`, subscribes `LoggedOut` to swap back to `LoginWindow`, and `Start`s the `AutoLockMonitor` with the configured `IdleTimeout`. The `AutoLockTriggered` event handler marshals via `Dispatcher.UIThread.Post`, calls `ILoginService.LogoutAsync`, and swaps to `LoginWindow`.
-- [ ] 6.24 Block: the synchronous `.GetAwaiter().GetResult()` on `TryLoginFromCachedKeyAsync` in `ResolveStartupWindow` is the same trade-off Sprint 5 made (Argon2 inside `SetupService.CompleteSetupAsync` is run via `await` from a `RelayCommand`, but Sprint 6 needs to decide *which window to show* before any UI exists). Cache-lookup is fast (~10-30 ms for DPAPI unprotect + AES-GCM decrypt of 60-ish bytes), so blocking the UI bootstrap is acceptable. If it becomes a perceptible delay, splash-screen pattern in Sprint 7+.
-- [ ] 6.25 Logout path consolidation — both manual logout (button) and auto-lock route through one method: `App.HandleLogoutAsync()` which calls `ILoginService.LogoutAsync`, stops the `AutoLockMonitor`, disposes the current `MainWindow`, builds and shows a fresh `LoginWindow`. Single source of truth prevents drift between the two paths.
+- [x] 6.24 Block: the synchronous `.GetAwaiter().GetResult()` on `TryLoginFromCachedKeyAsync` in `ResolveStartupWindow` is the same trade-off Sprint 5 made (Argon2 inside `SetupService.CompleteSetupAsync` is run via `await` from a `RelayCommand`, but Sprint 6 needs to decide *which window to show* before any UI exists). Cache-lookup is fast (~10-30 ms for DPAPI unprotect + AES-GCM decrypt of 60-ish bytes), so blocking the UI bootstrap is acceptable. If it becomes a perceptible delay, splash-screen pattern in Sprint 7+.
+- [x] 6.25 Logout path consolidation — both manual logout (button) and auto-lock route through one method: `App.HandleLogoutAsync()` which calls `ILoginService.LogoutAsync`, stops the `AutoLockMonitor`, disposes the current `MainWindow`, builds and shows a fresh `LoginWindow`. Single source of truth prevents drift between the two paths.
 
 ### F. Tests
 
-- [ ] 6.26 `Coffer.Infrastructure.Tests/Security/LoginServiceTests.cs`:
+- [x] 6.26 `Coffer.Infrastructure.Tests/Security/LoginServiceTests.cs`:
   - `LoginWithPassword_WithCorrectPassword_PublishesDek` — uses real `Argon2KeyDerivation` + `AesGcmCrypto` with a pre-built `dek.encrypted` in a temp dir; asserts `IDekHolder.IsAvailable == true` after
   - `LoginWithPassword_WithWrongPassword_ThrowsInvalidMasterPasswordException` — asserts the specific exception type
   - `LoginWithPassword_WhenDekFileMissing_ThrowsVaultMissingException`
@@ -145,34 +145,34 @@ Three PRs in the established issue-per-PR workflow:
   - `TryLoginFromCachedKey_WithCacheKeyThatDoesNotDecryptDek_ReturnsFalseAndInvalidatesCache`
   - `Logout_ClearsHolderAndInvalidatesCache`
   - `Logout_WhenCacheInvalidationFails_StillClearsHolder` — defensive
-- [ ] 6.27 `Coffer.Infrastructure.Tests/Security/LastActivityTrackerTests.cs`:
+- [x] 6.27 `Coffer.Infrastructure.Tests/Security/LastActivityTrackerTests.cs`:
   - `LastActivityUtc_AfterRegisterActivity_AdvancesForward`
   - `LastActivityUtc_AfterConstruction_IsRecent` — within 1 second of `DateTime.UtcNow`
   - `RegisterActivity_FromMultipleThreads_DoesNotCorrupt` — 100 parallel calls, final value within range
-- [ ] 6.28 `Coffer.Infrastructure.Tests/Security/AutoLockMonitorTests.cs`:
+- [x] 6.28 `Coffer.Infrastructure.Tests/Security/AutoLockMonitorTests.cs`:
   - `Start_WhenIdleExceedsTimeout_RaisesEventOnce` — use a very short timeout (e.g. 50 ms) and a stubbed `ILastActivityTracker` that returns a fixed-past timestamp; assert event raised exactly once
   - `Start_WhenIdleBelowTimeout_DoesNotRaiseEvent`
   - `Start_AfterAutoLockTriggered_StopsItself` — explicitly verify Stop is internally called on raise
   - `Dispose_DuringActiveTimer_DoesNotThrow`
-- [ ] 6.29 `Coffer.Application.Tests/ViewModels/Login/LoginViewModelTests.cs`:
+- [x] 6.29 `Coffer.Application.Tests/ViewModels/Login/LoginViewModelTests.cs`:
   - `LoginCommand_WithCorrectPassword_RaisesLoginCompleted` — uses a fake `ILoginService`
   - `LoginCommand_WithWrongPassword_SetsErrorMessageAndClearsPassword`
   - `LoginCommand_WhenServiceThrowsGenericException_SetsGenericErrorMessage`
   - `IsBusy_DuringLogin_IsTrue` — fake service awaits a `TaskCompletionSource` so the test can observe the busy state
-- [ ] 6.30 `Coffer.Application.Tests/ViewModels/Main/MainViewModelTests.cs`:
+- [x] 6.30 `Coffer.Application.Tests/ViewModels/Main/MainViewModelTests.cs`:
   - `LogoutCommand_CallsLoginServiceLogout`
   - `LogoutCommand_OnSuccess_RaisesLoggedOut`
   - `AppVersion_Returns_NonEmptyString`
 
 ### G. Manual verification
 
-- [ ] 6.31 Cold start with `dek.encrypted` + `coffer.db` present + valid DPAPI cache → `MainWindow` appears with "Zalogowano" + version; **no password prompt** shown
-- [ ] 6.32 Delete `%LocalAppData%\Coffer\master-key.dpapi.cache`, restart app → `LoginWindow` appears, correct password lands on `MainWindow`, cache file recreated
-- [ ] 6.33 Wrong password → red Polish error visible, password field cleared, retry with correct password works
-- [ ] 6.34 Click "Wyloguj" → app drops back to `LoginWindow`; `master-key.dpapi.cache` deleted; correct password required again
-- [ ] 6.35 Idle for the configured timeout (override to 30 seconds via a temporary `AutoLockOptions` modification for the manual test — restore to 15 minutes before commit) → app drops back to `LoginWindow` without user action
-- [ ] 6.36 Corrupt `dek.encrypted` manually (open in hex editor, flip a byte in the ciphertext region), restart → login attempt fails with "Plik sejfu jest uszkodzony" message
-- [ ] 6.37 Walk through Phase 0 Definition of Done end-to-end:
+- [x] 6.31 Cold start with `dek.encrypted` + `coffer.db` present + valid DPAPI cache → `MainWindow` appears with "Zalogowano" + version; **no password prompt** shown
+- [x] 6.32 Delete `%LocalAppData%\Coffer\master-key.dpapi.cache`, restart app → `LoginWindow` appears, correct password lands on `MainWindow`, cache file recreated
+- [x] 6.33 Wrong password → red Polish error visible, password field cleared, retry with correct password works
+- [x] 6.34 Click "Wyloguj" → app drops back to `LoginWindow`; `master-key.dpapi.cache` deleted; correct password required again
+- [x] 6.35 Idle for the configured timeout (override to 30 seconds via a temporary `AutoLockOptions` modification for the manual test — restore to 15 minutes before commit) → app drops back to `LoginWindow` without user action
+- [x] 6.36 Corrupt `dek.encrypted` manually (open in hex editor, flip a byte in the ciphertext region), restart → login attempt fails with "Plik sejfu jest uszkodzony" message
+- [x] 6.37 Walk through Phase 0 Definition of Done end-to-end:
   - Cold start without vault → setup wizard (Sprint 5)
   - Cold start with vault, no cache → login window
   - Correct password → MainWindow
@@ -182,12 +182,12 @@ Three PRs in the established issue-per-PR workflow:
 
 ### H. Phase 0 closure and validation
 
-- [ ] 6.38 Update `docs/architecture/10-roadmap.md` Phase 0 checkboxes — every bullet from `git init` through the setup-wizard / DPAPI verification gets `[x]`
-- [ ] 6.39 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally
-- [ ] 6.40 `gh issue create` for implementation — title `feat(sprint-6): login window, auto-lock, MainWindow upgrade`, labels `feat` + `sprint-6`
-- [ ] 6.41 Commit on `feature/sprint-6-login-autolock`, push, `gh pr create` with `Closes #<impl-issue>`
-- [ ] 6.42 CI green (`build-and-test` + `format-check`), squash-merge, branch deleted
-- [ ] 6.43 `gh issue create` for closure → separate `chore/close-sprint-6` PR analogous to Sprints 1-5
+- [x] 6.38 Update `docs/architecture/10-roadmap.md` Phase 0 checkboxes — every bullet from `git init` through the setup-wizard / DPAPI verification gets `[x]`
+- [x] 6.39 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally
+- [x] 6.40 `gh issue create` for implementation — title `feat(sprint-6): login window, auto-lock, MainWindow upgrade`, labels `feat` + `sprint-6`
+- [x] 6.41 Commit on `feature/sprint-6-login-autolock`, push, `gh pr create` with `Closes #<impl-issue>`
+- [x] 6.42 CI green (`build-and-test` + `format-check`), squash-merge, branch deleted
+- [x] 6.43 `gh issue create` for closure → separate `chore/close-sprint-6` PR analogous to Sprints 1-5
 
 ## Definition of Done
 
