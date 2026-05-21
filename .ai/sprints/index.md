@@ -1,6 +1,6 @@
 # Sprint index
 
-Status as of: 2026-05-18
+Status as of: 2026-05-20
 
 | Sprint | Phase | Goal | Status |
 |---|---|---|---|
@@ -10,7 +10,9 @@ Status as of: 2026-05-18
 | [sprint-3](sprint-3/sprint-3.md) | 0 | `Argon2KeyDerivation`, `Bip39SeedManager`, `AesGcmCrypto`, `DekFile` format + serializer, 17 tests (including official BIP39 vectors) | Closed (2026-05-14) |
 | [sprint-4](sprint-4/sprint-4.md) | 0 | `CofferDbContext` + `_SchemaInfo`, `SqlCipherKeyInterceptor` (PRAGMA key per connection), `MigrationRunner` with pre-migration backup callback, first migration `InitialCreate`, 9 integration tests | Closed (2026-05-17) |
 | [sprint-5](sprint-5/sprint-5.md) | 0 | Avalonia setup wizard (welcome → master password with zxcvbn → BIP39 display + verification → confirm), `IDekHolder`, `SetupService` orchestrator, `IScreenCaptureBlocker` (Win32 P/Invoke); first interactive UI | Closed (2026-05-18) |
-| [sprint-6](sprint-6/sprint-6.md) | 0 | `ILoginService` (DPAPI cache → password fallback), `ILastActivityTracker` + `AutoLockMonitor` (15-min idle), `LoginWindow`, `MainWindow` upgrade ("Zalogowano" + version + "Wyloguj"); closes Phase 0 | Planned |
+| [sprint-6](sprint-6/sprint-6.md) | 0 | `ILoginService` (DPAPI cache → password fallback), `ILastActivityTracker` + `AutoLockMonitor` (15-min idle), `LoginWindow`, `MainWindow` upgrade ("Zalogowano" + version + "Wyloguj"); closes Phase 0 | Closed (2026-05-20) |
+
+**Phase 0 closed end-to-end on 2026-05-20.** Cold-start setup → wizard → `MainWindow`; subsequent cold start → DPAPI cache bypass OR login window → `MainWindow`; 15-min idle → auto-lock → login. ~95 automated tests, CI green. Phase 1 starts next.
 
 ## After Phase 0
 
