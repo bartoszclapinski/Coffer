@@ -41,8 +41,9 @@ public partial class App : Avalonia.Application
 
     private Window ResolveStartupWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
-        var dekFilePath = CofferPaths.EncryptedDekFilePath();
-        var databasePath = CofferPaths.DatabaseFile();
+        var vaultPaths = Services.GetRequiredService<IVaultPaths>();
+        var dekFilePath = vaultPaths.EncryptedDekFilePath;
+        var databasePath = vaultPaths.DatabaseFile;
         var dekExists = File.Exists(dekFilePath);
         var dbExists = File.Exists(databasePath);
 
@@ -190,7 +191,7 @@ public partial class App : Avalonia.Application
     {
         var present = dekExists ? "dek.encrypted" : "coffer.db";
         var missing = dekExists ? "coffer.db" : "dek.encrypted";
-        var folder = CofferPaths.LocalAppDataFolder();
+        var folder = Services.GetRequiredService<IVaultPaths>().LocalAppDataFolder;
         return BuildSimpleMessageWindow(
             title: "Coffer — niedopasowany stan sejfu",
             message:

@@ -18,6 +18,7 @@ public sealed class SetupService : ISetupService
     private readonly IMasterKeyDerivation _keyDerivation;
     private readonly IKeyVault _keyVault;
     private readonly IDekHolder _dekHolder;
+    private readonly IVaultPaths _vaultPaths;
     private readonly Func<IDbContextFactory<CofferDbContext>> _getDbContextFactory;
     private readonly ILogger<SetupService> _logger;
 
@@ -33,18 +34,21 @@ public sealed class SetupService : ISetupService
         IMasterKeyDerivation keyDerivation,
         IKeyVault keyVault,
         IDekHolder dekHolder,
+        IVaultPaths vaultPaths,
         Func<IDbContextFactory<CofferDbContext>> getDbContextFactory,
         ILogger<SetupService> logger)
     {
         ArgumentNullException.ThrowIfNull(keyDerivation);
         ArgumentNullException.ThrowIfNull(keyVault);
         ArgumentNullException.ThrowIfNull(dekHolder);
+        ArgumentNullException.ThrowIfNull(vaultPaths);
         ArgumentNullException.ThrowIfNull(getDbContextFactory);
         ArgumentNullException.ThrowIfNull(logger);
 
         _keyDerivation = keyDerivation;
         _keyVault = keyVault;
         _dekHolder = dekHolder;
+        _vaultPaths = vaultPaths;
         _getDbContextFactory = getDbContextFactory;
         _logger = logger;
     }
@@ -57,8 +61,8 @@ public sealed class SetupService : ISetupService
         // Pre-flight: refuse to run setup on top of an existing vault. The App routing
         // should have shown the placeholder or the partial-state error window before we
         // got here; if it didn't, fail loudly rather than overwrite user data.
-        var dekPath = CofferPaths.EncryptedDekFilePath();
-        var dbPath = CofferPaths.DatabaseFile();
+        var dekPath = _vaultPaths.EncryptedDekFilePath;
+        var dbPath = _vaultPaths.DatabaseFile;
         if (File.Exists(dekPath))
         {
             throw new VaultAlreadyExistsException(dekPath);

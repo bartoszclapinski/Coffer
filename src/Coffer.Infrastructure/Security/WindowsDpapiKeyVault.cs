@@ -9,13 +9,21 @@ public sealed class WindowsDpapiKeyVault : IKeyVault
 {
     private readonly string _cacheFilePath;
 
-    public WindowsDpapiKeyVault() : this(CofferPaths.MasterKeyCacheFile())
+    public WindowsDpapiKeyVault(IVaultPaths vaultPaths)
+        : this(ResolveCachePath(vaultPaths))
     {
     }
 
     public WindowsDpapiKeyVault(string cacheFilePath)
     {
+        ArgumentNullException.ThrowIfNull(cacheFilePath);
         _cacheFilePath = cacheFilePath;
+    }
+
+    private static string ResolveCachePath(IVaultPaths vaultPaths)
+    {
+        ArgumentNullException.ThrowIfNull(vaultPaths);
+        return vaultPaths.MasterKeyCacheFile;
     }
 
     public async Task<byte[]?> GetCachedMasterKeyAsync(CancellationToken ct)
