@@ -17,28 +17,32 @@ public sealed class LoginService : ILoginService
     private readonly IMasterKeyDerivation _keyDerivation;
     private readonly IKeyVault _keyVault;
     private readonly IDekHolder _dekHolder;
+    private readonly IVaultPaths _vaultPaths;
     private readonly ILogger<LoginService> _logger;
 
     public LoginService(
         IMasterKeyDerivation keyDerivation,
         IKeyVault keyVault,
         IDekHolder dekHolder,
+        IVaultPaths vaultPaths,
         ILogger<LoginService> logger)
     {
         ArgumentNullException.ThrowIfNull(keyDerivation);
         ArgumentNullException.ThrowIfNull(keyVault);
         ArgumentNullException.ThrowIfNull(dekHolder);
+        ArgumentNullException.ThrowIfNull(vaultPaths);
         ArgumentNullException.ThrowIfNull(logger);
 
         _keyDerivation = keyDerivation;
         _keyVault = keyVault;
         _dekHolder = dekHolder;
+        _vaultPaths = vaultPaths;
         _logger = logger;
     }
 
     public async Task<bool> TryLoginFromCachedKeyAsync(CancellationToken ct)
     {
-        var dekPath = CofferPaths.EncryptedDekFilePath();
+        var dekPath = _vaultPaths.EncryptedDekFilePath;
         if (!File.Exists(dekPath))
         {
             _logger.LogDebug("Cached-key login skipped — DEK file does not exist");
@@ -104,7 +108,7 @@ public sealed class LoginService : ILoginService
     {
         ArgumentNullException.ThrowIfNull(masterPassword);
 
-        var dekPath = CofferPaths.EncryptedDekFilePath();
+        var dekPath = _vaultPaths.EncryptedDekFilePath;
         if (!File.Exists(dekPath))
         {
             throw new VaultMissingException(dekPath);

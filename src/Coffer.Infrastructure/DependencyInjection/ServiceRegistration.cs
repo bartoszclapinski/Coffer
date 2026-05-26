@@ -14,11 +14,23 @@ public static class ServiceRegistration
     public static IServiceCollection AddCofferInfrastructure(this IServiceCollection services) =>
         services
             .AddCofferLogging()
+            .AddCofferVaultPaths()
             .AddCofferKeyVault()
             .AddCofferCrypto()
             .AddCofferSetup()
             .AddCofferLogin()
             .AddCofferAutoLock();
+
+    /// <summary>
+    /// Registers <see cref="IVaultPaths"/> as a Singleton wrapping the production
+    /// <see cref="CofferVaultPaths"/>. Tests inject their own <see cref="IVaultPaths"/>
+    /// pointing at a temp directory before resolving services from the container.
+    /// </summary>
+    public static IServiceCollection AddCofferVaultPaths(this IServiceCollection services)
+    {
+        services.AddSingleton<IVaultPaths, CofferVaultPaths>();
+        return services;
+    }
 
     public static IServiceCollection AddCofferCrypto(this IServiceCollection services)
     {
@@ -33,7 +45,7 @@ public static class ServiceRegistration
         {
             if (OperatingSystem.IsWindows())
             {
-                return new WindowsDpapiKeyVault();
+                return new WindowsDpapiKeyVault(sp.GetRequiredService<IVaultPaths>());
             }
 
             var logger = sp.GetRequiredService<ILogger<InMemoryKeyVault>>();
@@ -112,7 +124,7 @@ public static class ServiceRegistration
         services.AddDbContextFactory<CofferDbContext>((sp, opts) =>
         {
             var dek = effectiveProvider(sp);
-            var dbPath = CofferPaths.DatabaseFile();
+            var dbPath = sp.GetRequiredService<IVaultPaths>().DatabaseFile;
             var directory = Path.GetDirectoryName(dbPath);
             if (!string.IsNullOrEmpty(directory))
             {
