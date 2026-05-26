@@ -2,7 +2,6 @@ using Coffer.Infrastructure.Persistence;
 using Coffer.Infrastructure.Persistence.Encryption;
 using Coffer.Infrastructure.Security;
 using FluentAssertions;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -35,27 +34,24 @@ public class SetupServiceTests
             () => factory,
             NullLogger<SetupService>.Instance);
 
-        try
-        {
-            await setupService.CompleteSetupAsync(
-                "StrongTestPassword123!",
-                _validMnemonic,
-                CancellationToken.None);
+        await setupService.CompleteSetupAsync(
+            "StrongTestPassword123!",
+            _validMnemonic,
+            CancellationToken.None);
 
-            File.Exists(paths.EncryptedDekFilePath).Should().BeTrue(
-                "dek.encrypted is the on-disk success sentinel; it must be present after a clean setup");
-            File.Exists(paths.DatabaseFile).Should().BeTrue(
-                "coffer.db is created by the InitialCreate migration during setup");
-            dekHolder.IsAvailable.Should().BeTrue(
-                "the DEK must be published to the holder so CofferDbContext can open the encrypted DB");
-            var cachedKey = await keyVault.GetCachedMasterKeyAsync(CancellationToken.None);
-            cachedKey.Should().NotBeNull(
-                "successful setup must refresh the DPAPI cache with the derived master key");
-        }
-        finally
-        {
-            SqliteConnection.ClearAllPools();
-        }
+        File.Exists(paths.EncryptedDekFilePath).Should().BeTrue(
+            "dek.encrypted is the on-disk success sentinel; it must be present after a clean setup");
+        File.Exists(paths.DatabaseFile).Should().BeTrue(
+            "coffer.db is created by the InitialCreate migration during setup");
+        dekHolder.IsAvailable.Should().BeTrue(
+            "the DEK must be published to the holder so CofferDbContext can open the encrypted DB");
+        var cachedKey = await keyVault.GetCachedMasterKeyAsync(CancellationToken.None);
+        cachedKey.Should().NotBeNull(
+            "successful setup must refresh the DPAPI cache with the derived master key");
+
+        // Pooling=False on the connection string keeps SQLite from caching handles,
+        // and TestVaultPaths.Dispose absorbs any best-effort IOException from a
+        // straggling lock — no explicit pool-flush needed.
     }
 
     [Fact]

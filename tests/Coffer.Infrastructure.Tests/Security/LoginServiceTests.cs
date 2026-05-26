@@ -16,10 +16,10 @@ namespace Coffer.Infrastructure.Tests.Security;
 public class LoginServiceTests
 {
     private const string _correctPassword = "StrongTestPassword123!";
-    private const string _wrongPassword = "WrongPassword456!";
+    private const string _wrongPassword = "_wrongPassword456!";
 
     [Fact]
-    public async Task LoginWithPasswordAsync_WithCorrectPassword_PublishesDekAndRefreshesCache()
+    public async Task LoginWithPasswordAsync_With_correctPassword_PublishesDekAndRefreshesCache()
     {
         using var paths = new TestVaultPaths();
         var (originalDek, _) = await WriteValidDekFileAsync(paths, _correctPassword);
@@ -36,7 +36,7 @@ public class LoginServiceTests
     }
 
     [Fact]
-    public async Task LoginWithPasswordAsync_WithWrongPassword_ThrowsInvalidMasterPasswordException()
+    public async Task LoginWithPasswordAsync_With_wrongPassword_ThrowsInvalidMasterPasswordException()
     {
         using var paths = new TestVaultPaths();
         await WriteValidDekFileAsync(paths, _correctPassword);

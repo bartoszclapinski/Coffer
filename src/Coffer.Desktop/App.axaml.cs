@@ -75,7 +75,7 @@ public partial class App : Avalonia.Application
                 "Partial vault state — dek.encrypted exists: {DekExists}, coffer.db exists: {DbExists}",
                 dekExists,
                 dbExists);
-            return BuildPartialStateError(dekExists, dbExists);
+            return BuildPartialStateError(dekExists, dbExists, vaultPaths.LocalAppDataFolder);
         }
 
         Log.Information("No vault file detected; starting setup wizard");
@@ -187,11 +187,10 @@ public partial class App : Avalonia.Application
         wizardWindow.Close();
     }
 
-    private static Window BuildPartialStateError(bool dekExists, bool dbExists)
+    private static Window BuildPartialStateError(bool dekExists, bool dbExists, string folder)
     {
         var present = dekExists ? "dek.encrypted" : "coffer.db";
         var missing = dekExists ? "coffer.db" : "dek.encrypted";
-        var folder = Services.GetRequiredService<IVaultPaths>().LocalAppDataFolder;
         return BuildSimpleMessageWindow(
             title: "Coffer — niedopasowany stan sejfu",
             message:

@@ -6,7 +6,7 @@ namespace Coffer.Infrastructure.Tests.Security;
 /// Test fixture that points <see cref="IVaultPaths"/> at a per-test temp directory.
 /// Implements <see cref="IDisposable"/> so the directory and any vault artefacts
 /// inside it are torn down after the test, regardless of whether the test passes
-/// or throws. Sprint-7 chore #45 — replaces the static <c>CofferPaths</c> that
+/// or throws. Sprint-6 chore #45 — replaces the static <c>CofferPaths</c> that
 /// previously blocked integration tests from running against anything other than
 /// the developer's real <c>%LocalAppData%\Coffer\</c>.
 /// </summary>
