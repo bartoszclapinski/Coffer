@@ -1,6 +1,6 @@
 # Sprint index
 
-Status as of: 2026-05-20
+Status as of: 2026-05-22
 
 | Sprint | Phase | Goal | Status |
 |---|---|---|---|
@@ -11,12 +11,14 @@ Status as of: 2026-05-20
 | [sprint-4](sprint-4/sprint-4.md) | 0 | `CofferDbContext` + `_SchemaInfo`, `SqlCipherKeyInterceptor` (PRAGMA key per connection), `MigrationRunner` with pre-migration backup callback, first migration `InitialCreate`, 9 integration tests | Closed (2026-05-17) |
 | [sprint-5](sprint-5/sprint-5.md) | 0 | Avalonia setup wizard (welcome → master password with zxcvbn → BIP39 display + verification → confirm), `IDekHolder`, `SetupService` orchestrator, `IScreenCaptureBlocker` (Win32 P/Invoke); first interactive UI | Closed (2026-05-18) |
 | [sprint-6](sprint-6/sprint-6.md) | 0 | `ILoginService` (DPAPI cache → password fallback), `ILastActivityTracker` + `AutoLockMonitor` (15-min idle), `LoginWindow`, `MainWindow` upgrade ("Zalogowano" + version + "Wyloguj"); closes Phase 0 | Closed (2026-05-20) |
+| [sprint-7](sprint-7/sprint-7.md) | 1 | Parsing foundations: `IStatementParser` / `IBankDetector` / `StatementParserRegistry`, Polish-format helpers, `FingerprintBankDetector` (PKO + 6 inert), `PkoBpStatementParser` standard checking, `TransactionHash`, FsCheck property-based tests + synthetic QuestPDF fixtures | Planned |
 
-**Phase 0 closed end-to-end on 2026-05-20.** Cold-start setup → wizard → `MainWindow`; subsequent cold start → DPAPI cache bypass OR login window → `MainWindow`; 15-min idle → auto-lock → login. ~95 automated tests, CI green. Phase 1 starts next.
+**Phase 0 closed end-to-end on 2026-05-20.** Cold-start setup → wizard → `MainWindow`; subsequent cold start → DPAPI cache bypass OR login window → `MainWindow`; 15-min idle → auto-lock → login. ~104 automated tests, CI green.
 
-## After Phase 0
+**Phase 1 opens with Sprint 7** — deterministic PKO BP parser for the standard checking layout plus the surrounding infrastructure (interfaces, Polish helpers, registry, dedup hash). Sprint 8 will add the AI fallback, Anonymizer CLI, remaining PKO layouts, and golden-file tests against anonymized samples.
 
-- **Phase 1** — PKO BP parser (sprints planned once Phase 0 closes)
+## Beyond Phase 1
+
 - **Phase 2** — Import flow + transaction list
 - **Phase 3** — Sync via Google Drive
 - **Phase 4** — Auto-categorisation
