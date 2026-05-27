@@ -1,5 +1,8 @@
+using Coffer.Core.Parsing;
 using Coffer.Core.Security;
 using Coffer.Infrastructure.Logging;
+using Coffer.Infrastructure.Parsing;
+using Coffer.Infrastructure.Parsing.Pko;
 using Coffer.Infrastructure.Persistence;
 using Coffer.Infrastructure.Persistence.Encryption;
 using Coffer.Infrastructure.Security;
@@ -19,7 +22,22 @@ public static class ServiceRegistration
             .AddCofferCrypto()
             .AddCofferSetup()
             .AddCofferLogin()
-            .AddCofferAutoLock();
+            .AddCofferAutoLock()
+            .AddCofferParsing();
+
+    /// <summary>
+    /// Registers the Sprint-7 parsing primitives: the bank detector, every
+    /// concrete <see cref="IStatementParser"/>, and the registry that resolves
+    /// one parser per detected bank. Sprint 8 swaps the registry's "unknown
+    /// bank → throw" path for an AI-assisted parser without callsite changes.
+    /// </summary>
+    public static IServiceCollection AddCofferParsing(this IServiceCollection services)
+    {
+        services.AddSingleton<IBankDetector, FingerprintBankDetector>();
+        services.AddSingleton<IStatementParser, PkoBpStatementParser>();
+        services.AddSingleton<StatementParserRegistry>();
+        return services;
+    }
 
     /// <summary>
     /// Registers <see cref="IVaultPaths"/> as a Singleton wrapping the production

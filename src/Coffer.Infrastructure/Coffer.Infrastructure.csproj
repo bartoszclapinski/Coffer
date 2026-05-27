@@ -17,6 +17,7 @@
     </PackageReference>
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.*" />
     <PackageReference Include="zxcvbn-core" Version="7.*" />
+    <PackageReference Include="PdfPig" Version="0.1.*" />
   </ItemGroup>
 
   <ItemGroup>
