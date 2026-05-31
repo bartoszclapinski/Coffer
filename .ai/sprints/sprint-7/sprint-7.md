@@ -1,8 +1,16 @@
 # Sprint 7 — Parsing foundations + PKO BP standard checking
 
 **Phase:** 1 (Statement parser for PKO BP — opener)
-**Status:** Planned
+**Status:** Closed (2026-05-31)
 **Depends on:** sprint-0 (project layout), sprint-4 (`Transaction` schema in `_SchemaInfo`-versioned DB; Sprint 8's import flow will persist parsed transactions through it)
+
+> **Closure note (2026-05-31):** foundations + the deterministic PKO PDF parser shipped via PR #53.
+> Manual verification (step K) revealed the freely-available PKO export is **"Historia rachunku"**
+> (CSV/PDF/XML), **not** the paid **"Wyciąg z rachunku"** this parser targets — so the PKO **PDF**
+> parser is speculative (synthetic-verified only). **Sprint 8 pivots PKO parsing to the
+> "Historia rachunku" CSV export** and generalises `IStatementParser` off `PdfDocument`. See
+> [log.md](log.md) for the CSV schema and the full finding. Foundations (DTOs, Polish helpers,
+> registry, dedup hash) carry over to the CSV path unchanged.
 
 ## Goal
 
@@ -38,42 +46,42 @@ Three PRs in the established workflow:
 
 ### A. NuGet packages
 
-- [ ] 7.1 `Coffer.Infrastructure` — add `PdfPig` (`0.1.*` or latest stable). License: Apache 2.0 per CLAUDE.md tech-stack note.
-- [ ] 7.2 `Coffer.Infrastructure.Tests` — add `FsCheck.Xunit` (`3.*`) for property-based tests.
-- [ ] 7.3 `Coffer.Infrastructure.Tests` — add `QuestPDF` (`2024.*`) **with community license attribute** in the test project (QuestPDF is free for personal/small-team use; the attribute satisfies the license check). Used to generate synthetic PKO PDFs for CI tests.
+- [x] 7.1 `Coffer.Infrastructure` — add `PdfPig` (`0.1.*` or latest stable). License: Apache 2.0 per CLAUDE.md tech-stack note.
+- [x] 7.2 `Coffer.Infrastructure.Tests` — add `FsCheck.Xunit` (`3.*`) for property-based tests.
+- [x] 7.3 `Coffer.Infrastructure.Tests` — add `QuestPDF` (`2024.*`) **with community license attribute** in the test project (QuestPDF is free for personal/small-team use; the attribute satisfies the license check). Used to generate synthetic PKO PDFs for CI tests.
 
 ### B. Core contracts (`Coffer.Core/Parsing/`)
 
-- [ ] 7.4 `BankFingerprint` record — `(string BankCode, string BankName, int Priority)`. Polish bank names go through XML doc, codes stay ASCII.
-- [ ] 7.5 `ParserConfidence` enum — `High | Medium | Low`. Deterministic parsers return `High`; the future AI fallback returns `Medium`.
-- [ ] 7.6 `IBankDetector` — `BankFingerprint? Detect(UglyToad.PdfPig.PdfDocument doc)`. PdfPig type leaks into the interface; acceptable because every detector implementation operates on the same PDF model, and `Coffer.Core` already has zero ban on third-party value types (the ban is on UI/framework deps per hard rule #3).
-- [ ] 7.7 `IStatementParser` — `BankCode`, `CanHandle(BankFingerprint)`, `Task<ParseResult> ParseAsync(PdfDocument doc, CancellationToken ct)`.
-- [ ] 7.8 `UnsupportedBankException(string bankCode)` and `UnsupportedPkoLayoutException(string layoutHint)`. Both sealed; carry just the identifier so logs cannot leak statement content.
+- [x] 7.4 `BankFingerprint` record — `(string BankCode, string BankName, int Priority)`. Polish bank names go through XML doc, codes stay ASCII.
+- [x] 7.5 `ParserConfidence` enum — `High | Medium | Low`. Deterministic parsers return `High`; the future AI fallback returns `Medium`.
+- [x] 7.6 `IBankDetector` — `BankFingerprint? Detect(UglyToad.PdfPig.PdfDocument doc)`. PdfPig type leaks into the interface; acceptable because every detector implementation operates on the same PDF model, and `Coffer.Core` already has zero ban on third-party value types (the ban is on UI/framework deps per hard rule #3).
+- [x] 7.7 `IStatementParser` — `BankCode`, `CanHandle(BankFingerprint)`, `Task<ParseResult> ParseAsync(PdfDocument doc, CancellationToken ct)`.
+- [x] 7.8 `UnsupportedBankException(string bankCode)` and `UnsupportedPkoLayoutException(string layoutHint)`. Both sealed; carry just the identifier so logs cannot leak statement content.
 
 ### C. Shared DTOs (`Coffer.Shared/Parsing/`)
 
-- [ ] 7.9 `ParsedTransaction` — `Date` (DateOnly), `BookingDate` (DateOnly?), `Amount` (decimal), `Currency` (string), `Description` (string raw), `Merchant` (string?). Per hard rule #1 + #9 — decimal money, currency always present, dates are `DateOnly`.
-- [ ] 7.10 `ParseResult` — `BankCode`, `AccountNumber` (normalized), `Currency`, `PeriodFrom` / `PeriodTo` (DateOnly), `Transactions` (IReadOnlyList), `Confidence`, `Warnings` (IReadOnlyList<string>).
+- [x] 7.9 `ParsedTransaction` — `Date` (DateOnly), `BookingDate` (DateOnly?), `Amount` (decimal), `Currency` (string), `Description` (string raw), `Merchant` (string?). Per hard rule #1 + #9 — decimal money, currency always present, dates are `DateOnly`.
+- [x] 7.10 `ParseResult` — `BankCode`, `AccountNumber` (normalized), `Currency`, `PeriodFrom` / `PeriodTo` (DateOnly), `Transactions` (IReadOnlyList), `Confidence`, `Warnings` (IReadOnlyList<string>).
 
 ### D. Polish-format helpers (`Coffer.Infrastructure/Parsing/Polish/`)
 
-- [ ] 7.11 `PolishAmountParser.TryParse(string raw, out decimal value)` and `Parse(string raw)`. Strips ` ` (NBSP), regular spaces, `zł`, `PLN`, swaps comma for dot, parses with `CultureInfo.InvariantCulture`. Handles negatives (leading `-` or trailing `-`, both seen on Polish statements).
-- [ ] 7.12 `PolishDateParser.Parse(string raw)` returning `DateOnly`. Accepts `dd.MM.yyyy`, `dd-MM-yyyy`, `yyyy-MM-dd`.
-- [ ] 7.13 `DescriptionNormalizer.Normalize(string raw)` — collapses whitespace, strips card-number suffixes (`/****1234/`, `**1234`), removes `/PL/` / `/EU/` country codes, strips `BLIK`/`KRD` prefixes, uppercases. Used both for `NormalizedDescription` column and for `TransactionHash` input.
-- [ ] 7.14 `AccountNumberNormalizer.Normalize(string raw)` — strips spaces and dashes, uppercases, preserves the country prefix (`PL61109010140000071219812874`).
-- [ ] 7.15 `PdfLetterGrouping.GroupIntoRows(IReadOnlyList<Letter> letters, double yTolerance = 2.0)` per the docs/03 example. Returns `IEnumerable<IReadOnlyList<Letter>>` sorted top-to-bottom; each row is left-to-right.
-- [ ] 7.16 `PdfRowExtensions.TextAt(this IReadOnlyList<Letter> row, double xMin, double xMax)` — concatenates `letter.Value` for letters in the X band. Used by `PkoBpStatementParser` to pull date / description / amount columns.
+- [x] 7.11 `PolishAmountParser.TryParse(string raw, out decimal value)` and `Parse(string raw)`. Strips ` ` (NBSP), regular spaces, `zł`, `PLN`, swaps comma for dot, parses with `CultureInfo.InvariantCulture`. Handles negatives (leading `-` or trailing `-`, both seen on Polish statements).
+- [x] 7.12 `PolishDateParser.Parse(string raw)` returning `DateOnly`. Accepts `dd.MM.yyyy`, `dd-MM-yyyy`, `yyyy-MM-dd`.
+- [x] 7.13 `DescriptionNormalizer.Normalize(string raw)` — collapses whitespace, strips card-number suffixes (`/****1234/`, `**1234`), removes `/PL/` / `/EU/` country codes, strips `BLIK`/`KRD` prefixes, uppercases. Used both for `NormalizedDescription` column and for `TransactionHash` input.
+- [x] 7.14 `AccountNumberNormalizer.Normalize(string raw)` — strips spaces and dashes, uppercases, preserves the country prefix (`PL61109010140000071219812874`).
+- [x] 7.15 `PdfLetterGrouping.GroupIntoRows(IReadOnlyList<Letter> letters, double yTolerance = 2.0)` per the docs/03 example. Returns `IEnumerable<IReadOnlyList<Letter>>` sorted top-to-bottom; each row is left-to-right.
+- [x] 7.16 `PdfRowExtensions.TextAt(this IReadOnlyList<Letter> row, double xMin, double xMax)` — concatenates `letter.Value` for letters in the X band. Used by `PkoBpStatementParser` to pull date / description / amount columns.
 
 ### E. Bank detection (`Coffer.Infrastructure/Parsing/`)
 
-- [ ] 7.17 `FingerprintBankDetector : IBankDetector`. Static-readonly array of 7-8 `BankFingerprint` entries (PKO BP, ING, mBank, Pekao, Santander, Millennium, Citi, Alior). Reads first page text via `doc.GetPage(1).Text`, matches case-insensitively, returns highest-priority match or `null`.
-- [ ] 7.18 Register `IBankDetector` as Singleton via a new `AddCofferParsing` DI extension (registers detector + registry + the PKO parser).
+- [x] 7.17 `FingerprintBankDetector : IBankDetector`. Static-readonly array of 7-8 `BankFingerprint` entries (PKO BP, ING, mBank, Pekao, Santander, Millennium, Citi, Alior). Reads first page text via `doc.GetPage(1).Text`, matches case-insensitively, returns highest-priority match or `null`.
+- [x] 7.18 Register `IBankDetector` as Singleton via a new `AddCofferParsing` DI extension (registers detector + registry + the PKO parser).
 
 ### F. PKO BP parser (`Coffer.Infrastructure/Parsing/Pko/`)
 
-- [ ] 7.19 `PkoStandardCheckingHeader` — small static helper that extracts (account number, currency, period from/to) from the header rows of a "Wyciąg z rachunku" statement. Column-position constants captured at the top of the file with comments mapping each X coordinate to the column it represents.
-- [ ] 7.20 `PkoTransactionRowParser` — turns one grouped row (or a row-plus-continuation-rows block) into a `ParsedTransaction`. Handles the multi-line description case from docs/03 — when the next row has no date/amount columns but has description-region text, concatenate with a single space.
-- [ ] 7.21 `PkoBpStatementParser : IStatementParser` — composes the above. `CanHandle` returns true only for `BankCode == "PKO_BP"`. Inside `ParseAsync`:
+- [x] 7.19 `PkoStandardCheckingHeader` — small static helper that extracts (account number, currency, period from/to) from the header rows of a "Wyciąg z rachunku" statement. Column-position constants captured at the top of the file with comments mapping each X coordinate to the column it represents.
+- [x] 7.20 `PkoTransactionRowParser` — turns one grouped row (or a row-plus-continuation-rows block) into a `ParsedTransaction`. Handles the multi-line description case from docs/03 — when the next row has no date/amount columns but has description-region text, concatenate with a single space.
+- [x] 7.21 `PkoBpStatementParser : IStatementParser` — composes the above. `CanHandle` returns true only for `BankCode == "PKO_BP"`. Inside `ParseAsync`:
   1. Detect layout from page-1 header keywords. If not "Wyciąg z rachunku", throw `UnsupportedPkoLayoutException`.
   2. Extract header (account, currency, period).
   3. Walk pages, group letters into rows, identify transaction rows by "row has a date in the date column and an amount in the amount column".
@@ -83,67 +91,67 @@ Three PRs in the established workflow:
 
 ### G. Registry (`Coffer.Infrastructure/Parsing/`)
 
-- [ ] 7.22 `StatementParserRegistry` — constructor takes `IEnumerable<IStatementParser>` resolved by DI; builds `Dictionary<string, IStatementParser>` keyed on `BankCode`. `Resolve(BankFingerprint? fp)` throws `UnsupportedBankException` when the fingerprint is null or unrecognised — Sprint 8 swaps the throw for the AI fallback resolution.
+- [x] 7.22 `StatementParserRegistry` — constructor takes `IEnumerable<IStatementParser>` resolved by DI; builds `Dictionary<string, IStatementParser>` keyed on `BankCode`. `Resolve(BankFingerprint? fp)` throws `UnsupportedBankException` when the fingerprint is null or unrecognised — Sprint 8 swaps the throw for the AI fallback resolution.
 
 ### H. Transaction dedup hash (`Coffer.Core/Domain/`)
 
-- [ ] 7.23 `TransactionHash.Compute(string accountNumber, DateOnly date, decimal amount, string normalizedDescription)` returns uppercase hex SHA-256 over `accountNumber|date(yyyy-MM-dd)|amount(F2 invariant)|normalizedDescription`. Pure static. The Sprint-8 import flow uses this to dedup re-imports of the same statement.
+- [x] 7.23 `TransactionHash.Compute(string accountNumber, DateOnly date, decimal amount, string normalizedDescription)` returns uppercase hex SHA-256 over `accountNumber|date(yyyy-MM-dd)|amount(F2 invariant)|normalizedDescription`. Pure static. The Sprint-8 import flow uses this to dedup re-imports of the same statement.
 
 ### I. DI wiring
 
-- [ ] 7.24 `AddCofferParsing(this IServiceCollection)` extension on `Coffer.Infrastructure/DependencyInjection/`:
+- [x] 7.24 `AddCofferParsing(this IServiceCollection)` extension on `Coffer.Infrastructure/DependencyInjection/`:
   - `IBankDetector` → `FingerprintBankDetector` (Singleton)
   - All `IStatementParser` implementations as Singletons (Sprint 7 has one: PKO BP)
   - `StatementParserRegistry` as Singleton — constructor pulls `IEnumerable<IStatementParser>` automatically
-- [ ] 7.25 Plug `AddCofferParsing` into `AddCofferInfrastructure`.
+- [x] 7.25 Plug `AddCofferParsing` into `AddCofferInfrastructure`.
 
 ### J. Tests (Coffer.Infrastructure.Tests)
 
-- [ ] 7.26 `PolishAmountParserTests`:
+- [x] 7.26 `PolishAmountParserTests`:
   - `Parse_KnownPositive_ReturnsExpected` (a few hand-picked PKO sample strings)
   - `Parse_KnownNegative_ReturnsExpected` (both leading and trailing minus variants)
   - `Parse_HandlesNonBreakingSpace_AsThousandsSeparator`
   - `Parse_RejectsGarbage_ThrowsFormatException`
   - **Property:** `decimal → format → ParseDecimal → original` round-trip for arbitrary `decimal` values (FsCheck)
-- [ ] 7.27 `PolishDateParserTests`:
+- [x] 7.27 `PolishDateParserTests`:
   - One-each for the three accepted formats
   - `Parse_RejectsAmbiguous_ThrowsFormatException` (e.g. `02-13-2025` — 13 is not a month)
   - **Property:** `DateOnly → "dd.MM.yyyy" → Parse → original` round-trip
-- [ ] 7.28 `DescriptionNormalizerTests` — table-driven (one Polish-statement-derived raw → expected normalized) for ~6 cases: trailing card number, country code, BLIK prefix, multi-space, mixed-case, multi-line concatenated input.
-- [ ] 7.29 `AccountNumberNormalizerTests` — IBAN with spaces, IBAN with dashes, IBAN with mixed case.
-- [ ] 7.30 `PdfLetterGroupingTests` — fabricate `Letter`-shaped value objects (small private record + adapter), assert grouping handles single-row, multi-row, tight-row (Y within tolerance), and split-row (Y just outside tolerance).
-- [ ] 7.31 `FingerprintBankDetectorTests`:
+- [x] 7.28 `DescriptionNormalizerTests` — table-driven (one Polish-statement-derived raw → expected normalized) for ~6 cases: trailing card number, country code, BLIK prefix, multi-space, mixed-case, multi-line concatenated input.
+- [x] 7.29 `AccountNumberNormalizerTests` — IBAN with spaces, IBAN with dashes, IBAN with mixed case.
+- [x] 7.30 `PdfLetterGroupingTests` — fabricate `Letter`-shaped value objects (small private record + adapter), assert grouping handles single-row, multi-row, tight-row (Y within tolerance), and split-row (Y just outside tolerance).
+- [x] 7.31 `FingerprintBankDetectorTests`:
   - `Detect_PkoBpStatement_ReturnsPkoFingerprint` (synthetic page text containing "PKO Bank Polski")
   - `Detect_UnknownText_ReturnsNull`
   - `Detect_EmptyDocument_ReturnsNull`
   - `Detect_CaseInsensitive_StillMatches`
-- [ ] 7.32 `StatementParserRegistryTests`:
+- [x] 7.32 `StatementParserRegistryTests`:
   - `Resolve_PkoFingerprint_ReturnsPkoParser`
   - `Resolve_UnknownFingerprint_Throws`
   - `Resolve_NullFingerprint_Throws`
-- [ ] 7.33 `PkoBpStatementParserTests` — generate a synthetic PKO-shaped PDF with QuestPDF that contains:
+- [x] 7.33 `PkoBpStatementParserTests` — generate a synthetic PKO-shaped PDF with QuestPDF that contains:
   - Header with bank name, account number (a fake `PL61 1090 1014 0000 0712 1981 2874`), currency, period
   - 10-15 transaction rows with mixed debits/credits, multi-line descriptions on some, NBSP-separated thousands on amounts
   - Test: `Parse_SyntheticChecking_ReturnsAllTransactions` — asserts count, period, account; spot-checks 2-3 specific transactions (date, amount, normalized description).
   - Test: `Parse_NonCheckingLayout_ThrowsUnsupportedPkoLayoutException`
-- [ ] 7.34 `TransactionHashTests`:
+- [x] 7.34 `TransactionHashTests`:
   - `Compute_ForSameInputs_IsStable`
   - `Compute_ChangingAnyComponent_ChangesHash`
   - `Compute_NormalizationApplied_DifferentRawSameNormalizedYieldsSameHash`
 
 ### K. Manual verification
 
-- [ ] 7.35 Drop a real PKO BP "Wyciąg z rachunku" PDF into `tests/.local-fixtures/pko-checking.real.pdf` (gitignored — hard rule #5). Verify `.gitignore` already covers `*.real.pdf` per CLAUDE.md hard rule #5; add if missing.
-- [ ] 7.36 Run a small console harness (a `dotnet run --project tests/Coffer.Infrastructure.Tests -- verify-pko <path>` or a `[Trait("Category","ManualOnly")]` test invoked via `dotnet test --filter`) that parses the real PDF and prints `ParseResult` to stdout. Eyeball the output: account number matches the real one (locally only — do NOT paste it into commits), period correct, transactions sane.
-- [ ] 7.37 Confirm `tests/.local-fixtures/` is gitignored and the file does NOT show in `git status`.
+- [x] 7.35 Drop a real PKO BP "Wyciąg z rachunku" PDF into `tests/.local-fixtures/pko-checking.real.pdf` (gitignored — hard rule #5). Verify `.gitignore` already covers `*.real.pdf` per CLAUDE.md hard rule #5; add if missing.
+- [x] 7.36 Run a small console harness (a `dotnet run --project tests/Coffer.Infrastructure.Tests -- verify-pko <path>` or a `[Trait("Category","ManualOnly")]` test invoked via `dotnet test --filter`) that parses the real PDF and prints `ParseResult` to stdout. Eyeball the output: account number matches the real one (locally only — do NOT paste it into commits), period correct, transactions sane.
+- [x] 7.37 Confirm `tests/.local-fixtures/` is gitignored and the file does NOT show in `git status`.
 
 ### L. Validation and merge
 
-- [ ] 7.38 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally
-- [ ] 7.39 `gh issue create` for implementation — title `feat(sprint-7): parsing foundations + PKO BP standard checking`, labels `feat` + `sprint-7`
-- [ ] 7.40 Commit on `feature/sprint-7-parsing-foundations`, push, `gh pr create` with `Closes #<impl-issue>`
-- [ ] 7.41 CI green, squash-merge, branch deleted
-- [ ] 7.42 `gh issue create` for closure → separate `chore/close-sprint-7` PR
+- [x] 7.38 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally
+- [x] 7.39 `gh issue create` for implementation — title `feat(sprint-7): parsing foundations + PKO BP standard checking`, labels `feat` + `sprint-7`
+- [x] 7.40 Commit on `feature/sprint-7-parsing-foundations`, push, `gh pr create` with `Closes #<impl-issue>`
+- [x] 7.41 CI green, squash-merge, branch deleted
+- [x] 7.42 `gh issue create` for closure → separate `chore/close-sprint-7` PR
 
 ## Definition of Done
 
@@ -155,7 +163,7 @@ Three PRs in the established workflow:
 6. `PkoBpStatementParser` handles the standard checking layout; other PKO layouts throw `UnsupportedPkoLayoutException`.
 7. `TransactionHash.Compute` in `Coffer.Core/Domain/`.
 8. **~30-35 new tests pass** locally and on CI Ubuntu, including property-based amount/date round-trips and a QuestPDF-generated synthetic PKO checking PDF.
-9. Manual verification against a gitignored real PKO PDF: parser produces sensible output (eyeball check), nothing leaks into git history.
+9. Manual verification against a gitignored real PKO PDF: nothing leaked into git history (✓). **Outcome correction:** the only freely-available real export is "Historia rachunku", not the "Wyciąg z rachunku" this parser targets, so the parser correctly threw `UnsupportedPkoLayoutException` rather than producing output. This is the intended layout-gate behaviour, not a parser failure — but it means real-data verification of PKO parsing moves to Sprint 8 against the CSV export. See [log.md](log.md).
 10. `Coffer.Core` and `Coffer.Shared` stay free of `Avalonia`, `CommunityToolkit.Mvvm`, `Anthropic.SDK`, Win32 references. `Coffer.Core` is allowed to reference `UglyToad.PdfPig` (read-only PDF value model) via `IBankDetector` — see Open Questions.
 
 ## Files affected
