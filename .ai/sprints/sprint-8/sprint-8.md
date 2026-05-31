@@ -1,7 +1,7 @@
 # Sprint 8 — PKO BP "Historia rachunku" CSV parser + parser-input generalisation
 
 **Phase:** 1 (Statement parser for PKO BP)
-**Status:** Planned
+**Status:** Closed
 **Depends on:** sprint-7 (parsing foundations: DTOs, Polish helpers, registry, `TransactionHash`)
 
 ## Goal
@@ -194,9 +194,9 @@ Three PRs in the established workflow:
 - [x] 8.28 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally.
 - [x] 8.29 `gh issue create` for implementation — `feat(sprint-8): PKO BP Historia rachunku CSV
   parser`, labels `feat` + `sprint-8`.
-- [ ] 8.30 Commit on `feature/sprint-8-pko-csv`, push, `gh pr create` with `Closes #<impl-issue>`.
-- [ ] 8.31 CI green, squash-merge, branch deleted.
-- [ ] 8.32 `gh issue create` for closure → `chore/close-sprint-8` PR.
+- [x] 8.30 Commit on `feature/sprint-8-pko-csv`, push, `gh pr create` with `Closes #58` (PR #59).
+- [x] 8.31 CI green, squash-merge, branch deleted.
+- [x] 8.32 `gh issue create` for closure (#60) → `chore/close-sprint-8` PR.
 
 ## Definition of Done
 
