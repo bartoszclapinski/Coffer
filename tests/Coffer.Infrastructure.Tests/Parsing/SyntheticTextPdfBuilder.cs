@@ -1,7 +1,6 @@
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using UglyToad.PdfPig;
 
 namespace Coffer.Infrastructure.Tests.Parsing;
 
@@ -19,7 +18,7 @@ internal static class SyntheticTextPdfBuilder
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
-    public static PdfDocument Build(string text)
+    public static MemoryStream Build(string text)
     {
         var bytes = Document.Create(container =>
         {
@@ -32,6 +31,6 @@ internal static class SyntheticTextPdfBuilder
             });
         }).GeneratePdf();
 
-        return PdfDocument.Open(bytes);
+        return new MemoryStream(bytes);
     }
 }

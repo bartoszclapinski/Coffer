@@ -1,12 +1,17 @@
 using Coffer.Infrastructure.Parsing;
+using Coffer.Infrastructure.Tests.Parsing.Pko;
+using Coffer.Shared.Parsing;
 using FluentAssertions;
 
 namespace Coffer.Infrastructure.Tests.Parsing;
 
 public class FingerprintBankDetectorTests
 {
+    private static StatementInput Pdf(string firstPageText) =>
+        new(SyntheticTextPdfBuilder.Build(firstPageText), StatementFormat.Pdf);
+
     /// <summary>
-    /// The detector reads the first page's text and matches against the
+    /// For PDFs the detector reads the first page's text and matches against the
     /// fingerprint table. Tests construct a tiny synthetic PDF in memory that
     /// contains just the bank-name phrase on page one.
     /// </summary>
@@ -16,37 +21,57 @@ public class FingerprintBankDetectorTests
     [InlineData("mBank S.A. statement", "MBANK")]
     [InlineData("Bank Millennium - zestawienie operacji", "MILLENNIUM")]
     [InlineData("Alior Bank - wyciąg z rachunku", "ALIOR")]
-    public void Detect_KnownBank_ReturnsExpectedFingerprint(string firstPageText, string expectedCode)
+    public void Detect_KnownPdfBank_ReturnsExpectedFingerprint(string firstPageText, string expectedCode)
     {
-        using var pdf = SyntheticTextPdfBuilder.Build(firstPageText);
-
         var detector = new FingerprintBankDetector();
-        var result = detector.Detect(pdf);
+
+        var result = detector.Detect(Pdf(firstPageText));
 
         result.Should().NotBeNull();
         result!.BankCode.Should().Be(expectedCode);
     }
 
     [Fact]
-    public void Detect_UnknownText_ReturnsNull()
+    public void Detect_UnknownPdfText_ReturnsNull()
     {
-        using var pdf = SyntheticTextPdfBuilder.Build("Some random statement without any known bank name");
-
         var detector = new FingerprintBankDetector();
-        var result = detector.Detect(pdf);
+
+        var result = detector.Detect(Pdf("Some random statement without any known bank name"));
 
         result.Should().BeNull();
     }
 
     [Fact]
-    public void Detect_LowerCaseBankName_StillMatches()
+    public void Detect_LowerCasePdfBankName_StillMatches()
     {
-        using var pdf = SyntheticTextPdfBuilder.Build("wyciąg z konta - pko bank polski");
-
         var detector = new FingerprintBankDetector();
-        var result = detector.Detect(pdf);
+
+        var result = detector.Detect(Pdf("wyciąg z konta - pko bank polski"));
 
         result.Should().NotBeNull();
         result!.BankCode.Should().Be("PKO_BP");
+    }
+
+    [Fact]
+    public void Detect_PkoHistoriaCsvHeader_ReturnsPkoFingerprint()
+    {
+        var detector = new FingerprintBankDetector();
+        var input = CsvStatementInputFactory.FromGoldenFile();
+
+        var result = detector.Detect(input);
+
+        result.Should().NotBeNull();
+        result!.BankCode.Should().Be("PKO_BP");
+    }
+
+    [Fact]
+    public void Detect_UnknownCsvHeader_ReturnsNull()
+    {
+        var detector = new FingerprintBankDetector();
+        var input = CsvStatementInputFactory.FromCsv("\"Date\",\"Amount\",\"Memo\"\n\"2026-01-01\",\"1.00\",\"x\"\n");
+
+        var result = detector.Detect(input);
+
+        result.Should().BeNull();
     }
 }

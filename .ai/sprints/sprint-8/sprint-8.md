@@ -77,46 +77,50 @@ Three PRs in the established workflow:
 
 ### A. NuGet packages
 
-- [ ] 8.1 `Coffer.Infrastructure` — add `CsvHelper` (latest stable) for RFC-4180-correct quoted-field
+- [x] 8.1 `Coffer.Infrastructure` — add `CsvHelper` (latest stable) for RFC-4180-correct quoted-field
   parsing. License: dual MS-PL / Apache 2.0 — fine for a public repo.
-- [ ] 8.2 `Coffer.Infrastructure` — add `System.Text.Encoding.CodePages` and register
+- [x] 8.2 `Coffer.Infrastructure` — add `System.Text.Encoding.CodePages` and register
   `CodePagesEncodingProvider.Instance` so `Encoding.GetEncoding(1250)` works on .NET 9 (Windows-1250
   is not a built-in code page on non-Windows / modern .NET).
 
 ### B. Generalise parser input (`Coffer.Core/Parsing/`, `Coffer.Shared/Parsing/`)
 
-- [ ] 8.3 `StatementFormat` enum in `Coffer.Shared/Parsing/` — `Pdf | Csv` (Xml/Xls/Html added when
+- [x] 8.3 `StatementFormat` enum in `Coffer.Shared/Parsing/` — `Pdf | Csv` (Xml/Xls/Html added when
   needed; do not pre-add).
-- [ ] 8.4 `StatementInput` in `Coffer.Shared/Parsing/` — carries the raw content and format:
+- [x] 8.4 `StatementInput` in `Coffer.Shared/Parsing/` — carries the raw content and format:
   `Stream Content`, `StatementFormat Format`, `string? FileName`. The reader owns the stream;
   parsers must not dispose it.
-- [ ] 8.5 Change `IStatementParser` — `ParseAsync(StatementInput input, CancellationToken ct)`; add a
+- [x] 8.5 Change `IStatementParser` — `ParseAsync(StatementInput input, CancellationToken ct)`; add a
   `StatementFormat Format { get; }` (or fold format into `CanHandle`) so the registry can resolve by
   (bank, format). Update the XML docs (remove the PdfPig reference).
-- [ ] 8.6 Change `IBankDetector` — `BankFingerprint? Detect(StatementInput input)`. Drop the
+- [x] 8.6 Change `IBankDetector` — `BankFingerprint? Detect(StatementInput input)`. Drop the
   `PdfDocument` dependency from the interface; PdfPig stays an Infrastructure-only dependency now.
-- [ ] 8.7 Re-evaluate the `UglyToad.PdfPig` reference in `Coffer.Core.csproj`. With detection moved
+- [x] 8.7 Re-evaluate the `UglyToad.PdfPig` reference in `Coffer.Core.csproj`. With detection moved
   to `StatementInput`, Core no longer needs PdfPig — **remove it from Core** and revert the hard
   rule #3 carve-out note (Core goes back to zero third-party runtime deps). PdfPig stays only in
   Infrastructure.
 
 ### C. Remove the speculative PKO PDF "Wyciąg" parser (`Coffer.Infrastructure/Parsing/Pko/`)
 
-- [ ] 8.8 Delete `PkoBpStatementParser.cs`, `PkoColumnAnchors.cs`, `PkoColumnDetector.cs`,
+- [x] 8.8 Delete `PkoBpStatementParser.cs`, `PkoColumnAnchors.cs`, `PkoColumnDetector.cs`,
   `PkoStandardCheckingHeader.cs`, `PkoTransactionRowParser.cs`, `UnsupportedPkoLayoutException.cs`.
-- [ ] 8.9 Delete the corresponding tests + fixtures: `Pko/PkoBpStatementParserTests.cs`,
+- [x] 8.9 Delete the corresponding tests + fixtures: `Pko/PkoBpStatementParserTests.cs`,
   `Pko/SyntheticPkoPdfBuilder.cs`, `Pko/PkoBpRealStatementManualHarness.cs`, and
-  `Parsing/SyntheticTextPdfBuilder.cs` if unused after.
-- [ ] 8.10 Remove the `QuestPDF` package from `Coffer.Infrastructure.Tests.csproj` and any
-  `LicenseType.Community` bootstrap, if no remaining test generates PDFs.
-- [ ] 8.11 Keep `PdfLetterGrouping` / `PdfRowExtensions` (generic, reused by future PDF parsers) and
+  `Parsing/SyntheticTextPdfBuilder.cs` if unused after. **Outcome:** the three PKO-PDF
+  test files were deleted; `SyntheticTextPdfBuilder.cs` was **kept** — it is still used by
+  the detector's ported PDF cases (8.22), so the "if unused" condition did not apply.
+- [x] 8.10 Remove the `QuestPDF` package from `Coffer.Infrastructure.Tests.csproj` and any
+  `LicenseType.Community` bootstrap, if no remaining test generates PDFs. **Outcome:**
+  `QuestPDF` was **kept** — `FingerprintBankDetectorTests` still generates synthetic text
+  PDFs to exercise PDF detection, so the condition did not apply.
+- [x] 8.11 Keep `PdfLetterGrouping` / `PdfRowExtensions` (generic, reused by future PDF parsers) and
   their tests. Confirm they still build with no PKO-PDF callers.
 
 ### D. CSV parser (`Coffer.Infrastructure/Parsing/Pko/`)
 
-- [ ] 8.12 `PkoHistoriaCsvParser : IStatementParser` — `BankCode => "PKO_BP"`,
+- [x] 8.12 `PkoHistoriaCsvParser : IStatementParser` — `BankCode => "PKO_BP"`,
   `Format => StatementFormat.Csv`. Reads `input.Content` as Windows-1250 via CsvHelper.
-- [ ] 8.13 Column mapping per record → `ParsedTransaction`:
+- [x] 8.13 Column mapping per record → `ParsedTransaction`:
   - `Date` ← `Data operacji` (via `PolishDateParser`, ISO accepted).
   - `BookingDate` ← `Data waluty` (nullable).
   - `Amount` ← `Kwota` — signed dot-decimal; parse with invariant culture after stripping a leading
@@ -126,69 +130,69 @@ Three PRs in the established workflow:
   - `Description` ← join of non-empty columns 6–11 with a single space; trim; strip a leading `'`.
   - `Merchant` ← extracted from the `Nazwa odbiorcy:` / `Nazwa nadawcy:` sub-field when present,
     else `null`.
-- [ ] 8.14 Header extraction for `ParseResult`: `AccountNumber` and period are **not** in the CSV
+- [x] 8.14 Header extraction for `ParseResult`: `AccountNumber` and period are **not** in the CSV
   body rows. Derive `PeriodFrom`/`PeriodTo` from the min/max `Data operacji` across rows; set
   `AccountNumber` to empty (or parse from `FileName` / a header line if present) and add a `Warning`
   when it cannot be determined. `Currency` from the first row (assert single-currency, warn if mixed).
-- [ ] 8.15 Validate column shape: confirm the header matches the expected 12-column PKO Historia
+- [x] 8.15 Validate column shape: confirm the header matches the expected 12-column PKO Historia
   signature; if not, throw a CSV-specific `UnsupportedCsvLayoutException` (sealed, carries a hint —
   no row content in the message, per the no-leak rule).
-- [ ] 8.16 `Confidence = High` (deterministic).
+- [x] 8.16 `Confidence = High` (deterministic).
 
 ### E. Detection + registry
 
-- [ ] 8.17 `FingerprintBankDetector` — make it format-aware via `StatementInput`:
+- [x] 8.17 `FingerprintBankDetector` — make it format-aware via `StatementInput`:
   - `Pdf` → existing first-page text fingerprint match (unchanged logic, now opens PdfPig from the
     stream).
   - `Csv` → match the PKO "Historia rachunku" header signature (and/or `FileName` like
     `Zestawienie operacji ...`) → `PKO_BP` fingerprint; else `null`.
-- [ ] 8.18 `StatementParserRegistry.Resolve` — resolve by (`BankCode`, `Format`). Update so a PKO
+- [x] 8.18 `StatementParserRegistry.Resolve` — resolve by (`BankCode`, `Format`). Update so a PKO
   fingerprint + `Csv` resolves to `PkoHistoriaCsvParser`. Unknown bank/format still throws
   `UnsupportedBankException` (AI fallback swaps this in a later sprint).
-- [ ] 8.19 DI: register `PkoHistoriaCsvParser` as the PKO `IStatementParser` in `AddCofferParsing`;
+- [x] 8.19 DI: register `PkoHistoriaCsvParser` as the PKO `IStatementParser` in `AddCofferParsing`;
   remove the deleted PDF parser registration.
 
 ### F. Tests (`Coffer.Infrastructure.Tests`)
 
-- [ ] 8.20 Committed **synthetic golden CSV** fixture under
+- [x] 8.20 Committed **synthetic golden CSV** fixture under
   `tests/Coffer.Infrastructure.Tests/Parsing/Pko/Fixtures/pko-historia.golden.csv` — Windows-1250,
   real schema, **fake** accounts/names/IBANs/merchants (hard rule #5/#11), ~10–15 rows covering:
   debit + credit, multi-column description, embedded comma in a quoted field, leading-`'` field,
   multi-line description if representable.
-- [ ] 8.21 `PkoHistoriaCsvParserTests`:
+- [x] 8.21 `PkoHistoriaCsvParserTests`:
   - `Parse_GoldenCsv_ReturnsAllTransactions` — asserts row count, period (min/max date), currency;
     spot-checks 2–3 transactions (date, signed amount, joined description, merchant).
   - `Parse_DebitAndCredit_SignsCorrect` — negative for debit, positive for credit.
   - `Parse_EmbeddedCommaInQuotedField_NotSplit`.
   - `Parse_WrongHeaderShape_ThrowsUnsupportedCsvLayoutException`.
   - `Parse_Windows1250_DecodesPolishDiacritics` (e.g. `Świadczenie`, `Łubianka`).
-- [ ] 8.22 `FingerprintBankDetectorTests` — add CSV cases: PKO Historia header → `PKO_BP`; unknown
+- [x] 8.22 `FingerprintBankDetectorTests` — add CSV cases: PKO Historia header → `PKO_BP`; unknown
   CSV → `null`. Keep/port existing PDF cases to `StatementInput`.
-- [ ] 8.23 `StatementParserRegistryTests` — update to (bank, format) resolution; PKO+Csv → CSV parser;
+- [x] 8.23 `StatementParserRegistryTests` — update to (bank, format) resolution; PKO+Csv → CSV parser;
   unknown → throws.
-- [ ] 8.24 Decide amount-parse home (8.13): add a `PolishAmountParserTests` case for dot-decimal
+- [x] 8.24 Decide amount-parse home (8.13): add a `PolishAmountParserTests` case for dot-decimal
   signed input if the helper is extended, or a local parser test in the CSV parser tests.
 
 ### G. Manual verification
 
-- [ ] 8.25 Reuse the gitignored fixture folder: real export already at
+- [x] 8.25 Reuse the gitignored fixture folder: real export already at
   `tests/.local-fixtures/Zestawienie operacji za 01.01.2026 - 31.01.2026.csv`. Add a
   `[SkippableFact]` `PkoHistoriaCsvRealStatementManualHarness` that parses it (Windows-1250) and
   prints the `ParseResult` via `ITestOutputHelper`; skips when the file is absent.
-- [ ] 8.26 Run locally, eyeball: 39 transactions, correct signs, sane joined descriptions, period
+- [x] 8.26 Run locally, eyeball: 39 transactions, correct signs, sane joined descriptions, period
   2026-01-01 → 2026-01-31. Confirm nothing leaks into git (`.local-fixtures/` stays ignored).
 
 ### H. Docs
 
-- [ ] 8.27 Update `docs/architecture/03-statement-parsers.md` — add a "Historia rachunku CSV" section
+- [x] 8.27 Update `docs/architecture/03-statement-parsers.md` — add a "Historia rachunku CSV" section
   documenting the schema and the `StatementInput` generalisation; note PKO is parsed via CSV, not
   PDF, and why. Revert/adjust the hard rule #3 PdfPig carve-out note in CLAUDE.md (Core no longer
   references PdfPig).
 
 ### I. Validation and merge
 
-- [ ] 8.28 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally.
-- [ ] 8.29 `gh issue create` for implementation — `feat(sprint-8): PKO BP Historia rachunku CSV
+- [x] 8.28 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally.
+- [x] 8.29 `gh issue create` for implementation — `feat(sprint-8): PKO BP Historia rachunku CSV
   parser`, labels `feat` + `sprint-8`.
 - [ ] 8.30 Commit on `feature/sprint-8-pko-csv`, push, `gh pr create` with `Closes #<impl-issue>`.
 - [ ] 8.31 CI green, squash-merge, branch deleted.
