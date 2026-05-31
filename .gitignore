@@ -108,6 +108,9 @@ ProfileGenerator.app/
 *real-statement*.pdf
 samples/private/
 
+# Per-developer test fixtures (real PDFs dropped in for manual parser verification)
+tests/.local-fixtures/
+
 # Real receipt photos
 *.real.jpg
 *.real.png
