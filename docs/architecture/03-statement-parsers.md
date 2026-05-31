@@ -12,19 +12,19 @@ Every Polish bank exports PDF statements in a different layout. Even a single ba
 ## Architecture: registry + strategy + AI fallback
 
 ```
-PDF input
+Statement input (PDF or CSV)
    │
    ▼
-BankDetector ── reads first page, matches fingerprints ──▶ BankFingerprint
+BankDetector ── PDF: first-page text · CSV: header signature ──▶ BankFingerprint
    │
    ▼
-StatementParserRegistry.Resolve(fingerprint) ──▶ IStatementParser
+StatementParserRegistry.Resolve(fingerprint, format) ──▶ IStatementParser
    │
-   ├── PkoBpStatementParser
-   ├── MBankStatementParser
-   ├── IngStatementParser
-   ├── ... (one per supported bank)
-   └── AiAssistedParser (fallback when no specific parser)
+   ├── PkoHistoriaCsvParser            (PKO_BP, Csv)
+   ├── MBankStatementParser            (future, Pdf)
+   ├── IngStatementParser              (future, Pdf)
+   ├── ... (one per supported bank+format)
+   └── AiAssistedParser (future fallback when no specific parser)
    │
    ▼
 ParseResult { Account, Period, Transactions[], Source }
@@ -35,10 +35,21 @@ Normalization → Deduplication → Persistence
 
 ## Interfaces
 
+Detector and parser operate on a format-neutral `StatementInput` (a `Stream` +
+`StatementFormat` + optional file name), not on a `PdfDocument`. This keeps
+`Coffer.Core` free of any third-party runtime dependency (hard rule #3) and lets
+a single registry route both PDF and CSV statements. PDF parsers open PdfPig from
+the stream themselves; the CSV parser reads the stream as Windows-1250.
+
 ```csharp
+public enum StatementFormat { Pdf, Csv }
+
+public sealed record StatementInput(Stream Content, StatementFormat Format, string? FileName = null);
+
 public interface IBankDetector
 {
-    BankFingerprint? Detect(PdfDocument doc);
+    // Switches on input.Format: first-page text for PDF, header signature for CSV.
+    BankFingerprint? Detect(StatementInput input);
 }
 
 public record BankFingerprint(string BankCode, string BankName, int Priority);
@@ -46,8 +57,9 @@ public record BankFingerprint(string BankCode, string BankName, int Priority);
 public interface IStatementParser
 {
     string BankCode { get; }
+    StatementFormat Format { get; }            // registry resolves on (BankCode, Format)
     bool CanHandle(BankFingerprint fingerprint);
-    Task<ParseResult> ParseAsync(PdfDocument doc, CancellationToken ct);
+    Task<ParseResult> ParseAsync(StatementInput input, CancellationToken ct);
 }
 
 public class StatementParserRegistry
@@ -238,41 +250,51 @@ public static string NormalizeAccountNumber(string raw)
 }
 ```
 
-## PKO BP parser specifics (primary bank)
+## PKO BP — parsed via CSV ("Historia rachunku"), not PDF
 
-PKO has at least three layouts seen in practice:
-1. Standard checking account ("Wyciąg z rachunku")
-2. Credit card statement ("Wyciąg z karty kredytowej")
-3. Savings account ("Wyciąg z konta oszczędnościowego")
-4. Foreign currency account ("Wyciąg z rachunku walutowego")
+PKO BP is parsed from its **"Historia rachunku" CSV export**, implemented in
+`PkoHistoriaCsvParser` (`Format => StatementFormat.Csv`).
 
-Each has slightly different column positions and headers. Strategy: detect sub-layout from header keywords on page 1, then dispatch to a specific column-position table.
+**Why CSV, not the PDF "Wyciąg z rachunku":** Sprint 7 built a deterministic PDF
+parser for the monthly "Wyciąg z rachunku" statement. Manual verification then
+showed that the only freely-available PKO export is the on-demand "Historia
+rachunku" (available as CSV/PDF/XML/XLS/HTML) — the formal "Wyciąg z rachunku" is
+a paid document. The two have entirely different layouts. CSV is the far more
+robust target: explicit columns (no positional X-coordinate guessing), ISO dates,
+signed dot-decimal amounts, explicit per-row currency, and it commits cleanly as
+golden-file tests. The speculative PDF "Wyciąg" parser and its PKO-specific
+helpers were removed in Sprint 8 (recoverable from git history if PKO PDF ever
+becomes free); the generic PDF letter-grouping helpers and the detector's
+first-page text-matching path are retained as the multi-bank PDF backbone for
+future banks that only offer PDF.
 
-```csharp
-public class PkoBpStatementParser : IStatementParser
-{
-    public string BankCode => "PKO_BP";
+### "Historia rachunku" CSV schema
 
-    public bool CanHandle(BankFingerprint fp) => fp.BankCode == BankCode;
+- **Windows-1250**, no BOM, comma-separated, every field quoted (`"..."`) —
+  embedded commas occur inside description fields, so an RFC-4180-correct reader
+  (CsvHelper) is required, not `Split(',')`.
+- Fixed **12 columns**; the header names the first seven, then five unnamed
+  overflow columns hold the description sub-fields:
+  `Data operacji, Data waluty, Typ transakcji, Kwota, Waluta, Saldo po transakcji, Opis transakcji`
+  + 5 empty headers (indices 7–11). Fields are read **positionally** because the
+  overflow columns share an empty header name.
+- `Kwota`: single **signed, dot-decimal** value (`-10.00`, `+2400.00`) — parsed
+  with invariant culture after stripping a leading `+` (not the Polish comma
+  helper).
+- Dates: ISO `yyyy-MM-dd` for both `Data operacji` (→ `Date`) and `Data waluty`
+  (→ `BookingDate`).
+- `Waluta`: explicit per row (→ `Currency`).
+- `Description`: join of non-empty columns from index 6 onward; labelled
+  sub-fields like `Nazwa nadawcy/odbiorcy:`, `Tytuł:`, `Lokalizacja:`. `Merchant`
+  is extracted from the `Nazwa …:` sub-field when present. One field may carry a
+  leading `'` (Excel text-guard) → stripped.
+- **No account number or period in the body.** `PeriodFrom`/`PeriodTo` are derived
+  from the min/max `Data operacji`; `AccountNumber` is left empty with a warning
+  (the Phase-2 import flow confirms the target account with the user).
+- `Confidence = High` (deterministic).
 
-    public async Task<ParseResult> ParseAsync(PdfDocument doc, CancellationToken ct)
-    {
-        var layout = DetectLayout(doc);                 // checking | creditCard | savings | foreignCurrency
-        var (account, currency, period) = ExtractHeader(doc, layout);
-        var transactions = ExtractTransactions(doc, layout, ct);
-        return new ParseResult
-        {
-            BankCode = BankCode,
-            AccountNumber = account,
-            Currency = currency,
-            PeriodFrom = period.From,
-            PeriodTo = period.To,
-            Transactions = transactions,
-            Confidence = ParserConfidence.High
-        };
-    }
-}
-```
+A wrong header shape throws `UnsupportedCsvLayoutException` (sealed; carries a
+structural hint only — never row content, per hard rules #6/#11).
 
 ## AI-assisted fallback parser
 

@@ -26,15 +26,15 @@ public static class ServiceRegistration
             .AddCofferParsing();
 
     /// <summary>
-    /// Registers the Sprint-7 parsing primitives: the bank detector, every
+    /// Registers the parsing primitives: the format-aware bank detector, every
     /// concrete <see cref="IStatementParser"/>, and the registry that resolves
-    /// one parser per detected bank. Sprint 8 swaps the registry's "unknown
-    /// bank → throw" path for an AI-assisted parser without callsite changes.
+    /// one parser per (detected bank, format). A later sprint swaps the registry's
+    /// "unknown bank → throw" path for an AI-assisted parser without callsite changes.
     /// </summary>
     public static IServiceCollection AddCofferParsing(this IServiceCollection services)
     {
         services.AddSingleton<IBankDetector, FingerprintBankDetector>();
-        services.AddSingleton<IStatementParser, PkoBpStatementParser>();
+        services.AddSingleton<IStatementParser, PkoHistoriaCsvParser>();
         services.AddSingleton<StatementParserRegistry>();
         return services;
     }

@@ -1,17 +1,20 @@
 using Coffer.Shared.Parsing;
-using UglyToad.PdfPig;
 
 namespace Coffer.Core.Parsing;
 
 /// <summary>
-/// Bank-specific parser that turns a PdfPig <see cref="PdfDocument"/> into a
-/// <see cref="ParseResult"/>. One implementation per supported bank; the future
-/// AI-assisted fallback in Sprint 8 also implements this contract.
+/// Bank-specific parser that turns a <see cref="StatementInput"/> into a
+/// <see cref="ParseResult"/>. One implementation per supported (bank, format)
+/// pair. A parser declares the single <see cref="StatementFormat"/> it consumes;
+/// the registry resolves on (<see cref="BankCode"/>, <see cref="Format"/>).
 /// </summary>
 public interface IStatementParser
 {
     /// <summary>Stable bank code matching <see cref="BankFingerprint.BankCode"/>.</summary>
     string BankCode { get; }
+
+    /// <summary>The export format this parser consumes.</summary>
+    StatementFormat Format { get; }
 
     /// <summary>
     /// Whether this parser handles the supplied fingerprint. Implementations
@@ -22,10 +25,10 @@ public interface IStatementParser
     bool CanHandle(BankFingerprint fingerprint);
 
     /// <summary>
-    /// Parses the document. Throws bank-specific exceptions for unsupported
-    /// layouts (e.g. PKO BP throws <c>UnsupportedPkoLayoutException</c> for
-    /// credit-card / savings / foreign-currency statements until Sprint 8 adds
-    /// support).
+    /// Parses the statement. Reads <see cref="StatementInput.Content"/> from
+    /// position 0; does not dispose it. Throws a parser-specific exception for
+    /// an unsupported layout (e.g. <c>UnsupportedCsvLayoutException</c> when the
+    /// CSV header shape does not match).
     /// </summary>
-    Task<ParseResult> ParseAsync(PdfDocument document, CancellationToken ct);
+    Task<ParseResult> ParseAsync(StatementInput input, CancellationToken ct);
 }

@@ -1,44 +1,59 @@
 using Coffer.Core.Parsing;
 using Coffer.Infrastructure.Parsing;
 using Coffer.Infrastructure.Parsing.Pko;
+using Coffer.Shared.Parsing;
 using FluentAssertions;
 
 namespace Coffer.Infrastructure.Tests.Parsing;
 
 public class StatementParserRegistryTests
 {
+    private static StatementParserRegistry Registry() =>
+        new(new IStatementParser[] { new PkoHistoriaCsvParser() });
+
     [Fact]
-    public void Resolve_PkoFingerprint_ReturnsPkoParser()
+    public void Resolve_PkoFingerprintCsv_ReturnsPkoCsvParser()
     {
-        var registry = new StatementParserRegistry(new IStatementParser[] { new PkoBpStatementParser() });
+        var registry = Registry();
         var fingerprint = new BankFingerprint("PKO_BP", "PKO Bank Polski", 1);
 
-        var parser = registry.Resolve(fingerprint);
+        var parser = registry.Resolve(fingerprint, StatementFormat.Csv);
 
         parser.BankCode.Should().Be("PKO_BP");
+        parser.Format.Should().Be(StatementFormat.Csv);
     }
 
     [Fact]
-    public void Resolve_UnknownFingerprint_ThrowsUnsupportedBankException()
+    public void Resolve_PkoFingerprintPdf_ThrowsUnsupportedBankException()
     {
-        var registry = new StatementParserRegistry(new IStatementParser[] { new PkoBpStatementParser() });
+        var registry = Registry();
+        var fingerprint = new BankFingerprint("PKO_BP", "PKO Bank Polski", 1);
+
+        // No PDF parser is registered — PKO is parsed via CSV only.
+        var act = () => registry.Resolve(fingerprint, StatementFormat.Pdf);
+
+        act.Should().Throw<UnsupportedBankException>().Which.BankCode.Should().Be("PKO_BP");
+    }
+
+    [Fact]
+    public void Resolve_UnknownBank_ThrowsUnsupportedBankException()
+    {
+        var registry = Registry();
         var fingerprint = new BankFingerprint("MBANK", "mBank S.A.", 1);
 
-        var act = () => registry.Resolve(fingerprint);
+        var act = () => registry.Resolve(fingerprint, StatementFormat.Csv);
 
-        var thrown = act.Should().Throw<UnsupportedBankException>();
-        thrown.Which.BankCode.Should().Be("MBANK");
+        act.Should().Throw<UnsupportedBankException>().Which.BankCode.Should().Be("MBANK");
     }
 
     [Fact]
     public void Resolve_NullFingerprint_ThrowsUnsupportedBankException()
     {
-        var registry = new StatementParserRegistry(new IStatementParser[] { new PkoBpStatementParser() });
+        var registry = Registry();
 
-        var act = () => registry.Resolve(null);
+        var act = () => registry.Resolve(null, StatementFormat.Csv);
 
-        var thrown = act.Should().Throw<UnsupportedBankException>();
-        thrown.Which.BankCode.Should().Be("UNKNOWN");
+        act.Should().Throw<UnsupportedBankException>().Which.BankCode.Should().Be("UNKNOWN");
     }
 
     [Fact]
@@ -47,7 +62,7 @@ public class StatementParserRegistryTests
         var registry = new StatementParserRegistry(Array.Empty<IStatementParser>());
         var fingerprint = new BankFingerprint("PKO_BP", "PKO Bank Polski", 1);
 
-        var act = () => registry.Resolve(fingerprint);
+        var act = () => registry.Resolve(fingerprint, StatementFormat.Csv);
 
         act.Should().Throw<UnsupportedBankException>();
     }

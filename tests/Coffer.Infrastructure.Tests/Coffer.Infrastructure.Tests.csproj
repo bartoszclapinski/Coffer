@@ -21,6 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Parsing\Pko\Fixtures\pko-historia.golden.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Coffer.Infrastructure\Coffer.Infrastructure.csproj" />
   </ItemGroup>
 
