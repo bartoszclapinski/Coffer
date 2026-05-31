@@ -37,3 +37,8 @@
     cases (8.22) need synthetic text PDFs. Removal was conditional ("if unused after"); they
     are still used, so they stay. CLAUDE.md hard rule #3 had no PdfPig carve-out note to
     revert (the carve-out lived only in the Sprint-7 interface XML docs, now rewritten).
+  - Implementation PR #59 (`Closes #58`) squash-merged into `main` (`9ba4c1a`); CI green
+    (build-and-test + format-check), feature branch deleted.
+  - **Sprint closed.** Closure bookkeeping (`chore/close-sprint-8`, issue #60): status flipped
+    in `index.md` + `sprint-8.md`, steps 8.30–8.32 ticked, Phase 1 narrative updated. All eight
+    DoD items met; 177 tests green. Next: AI fallback / Anonymizer CLI / remaining PKO layouts.
