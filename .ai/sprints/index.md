@@ -1,6 +1,6 @@
 # Sprint index
 
-Status as of: 2026-05-31
+Status as of: 2026-06-02
 
 | Sprint | Phase | Goal | Status |
 |---|---|---|---|
@@ -13,6 +13,7 @@ Status as of: 2026-05-31
 | [sprint-6](sprint-6/sprint-6.md) | 0 | `ILoginService` (DPAPI cache → password fallback), `ILastActivityTracker` + `AutoLockMonitor` (15-min idle), `LoginWindow`, `MainWindow` upgrade ("Zalogowano" + version + "Wyloguj"); closes Phase 0 | Closed (2026-05-20) |
 | [sprint-7](sprint-7/sprint-7.md) | 1 | Parsing foundations: `IStatementParser` / `IBankDetector` / `StatementParserRegistry`, Polish-format helpers, `FingerprintBankDetector` (PKO + 6 inert), `PkoBpStatementParser` standard checking, `TransactionHash`, FsCheck property-based tests + synthetic QuestPDF fixtures | Closed (2026-05-31) |
 | [sprint-8](sprint-8/sprint-8.md) | 1 | Pivot PKO parsing to the "Historia rachunku" **CSV** export: generalise `IStatementParser` / `IBankDetector` off `PdfDocument` → `StatementInput`, `PkoHistoriaCsvParser` (Windows-1250, signed amounts, multi-column description), remove the speculative PKO PDF parser, synthetic golden CSV + real-CSV manual harness | Closed (2026-05-31) |
+| [sprint-9](sprint-9/sprint-9.md) | 2 | Import flow + transaction list: domain entities (`Account` / `Transaction` / `ImportSession` / minimal `Category`) + first schema migration applied at startup with pre-migration backup, `ImportStatementUseCase` (parse → dedup → save), `IFilePicker`, Avalonia Import page (drag-and-drop + 5-step progress) and Transactions list (6-month default, search/account/category filters) | Planned |
 
 **Phase 0 closed end-to-end on 2026-05-20.** Cold-start setup → wizard → `MainWindow`; subsequent cold start → DPAPI cache bypass OR login window → `MainWindow`; 15-min idle → auto-lock → login. ~104 automated tests, CI green.
 
