@@ -77,6 +77,15 @@ public sealed class MigrationRunner
             .Where(m => !appliedBefore.Contains(m))
             .ToList();
 
+        if (newlyApplied.Count == 0)
+        {
+            // We had pending migrations but applied none ourselves — another process
+            // raced us to it between the check and MigrateAsync. The schema is current,
+            // so report UpToDate rather than indexing into an empty list.
+            _logger.LogWarning("Pending migrations were applied by another process before this run completed");
+            return MigrationResult.UpToDate();
+        }
+
         _db.SchemaInfo.Add(new SchemaInfoEntry
         {
             Version = newlyApplied[^1],

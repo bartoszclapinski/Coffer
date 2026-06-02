@@ -39,8 +39,9 @@ public sealed class PreMigrationBackup : IPreMigrationBackup
             return null;
         }
 
-        // Flush the WAL into the main file so the copied .db is self-contained even
-        // if the WAL/SHM side-files are not perfectly captured alongside it.
+        // Close pooled connections before copying. Closing the last open connection is
+        // what triggers SQLite's WAL checkpoint, so the main .db is as consolidated as
+        // possible; the -wal/-shm copies below cover anything still outstanding.
         SqliteConnection.ClearAllPools();
 
         var backupDir = Path.Combine(_vaultPaths.LocalAppDataFolder, _backupFolderName, _preMigrationFolderName);
@@ -49,6 +50,9 @@ public sealed class PreMigrationBackup : IPreMigrationBackup
         var stamp = DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
         var destination = Path.Combine(backupDir, $"coffer-{stamp}.db");
 
+        // The three files are copied separately (non-atomically). This is safe only
+        // because the snapshot runs at startup before any migration, with no concurrent
+        // writers — do not reuse this mid-session where the WAL can change underneath us.
         await CopyFileAsync(source, destination, ct).ConfigureAwait(false);
         await CopySideFileIfPresentAsync(source + "-wal", destination + "-wal", ct).ConfigureAwait(false);
         await CopySideFileIfPresentAsync(source + "-shm", destination + "-shm", ct).ConfigureAwait(false);
