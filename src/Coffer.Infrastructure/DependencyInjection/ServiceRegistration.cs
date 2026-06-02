@@ -154,6 +154,7 @@ public static class ServiceRegistration
         });
 
         services.AddTransient<MigrationRunner>();
+        services.AddSingleton<IPreMigrationBackup, PreMigrationBackup>();
 
         return services;
     }
