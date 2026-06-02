@@ -97,12 +97,33 @@ bind to.
 
 ### Verification + bookkeeping
 
-- [ ] 9.17 Manual DoD: launch desktop, import the gitignored real PKO CSV, pick an account, see
-  **39 transactions** in the list, filter by search; re-import the same file → no duplicates added.
-- [ ] 9.18 `dotnet build` + `dotnet test` + `dotnet format --verify-no-changes` green locally.
-- [ ] 9.19 `gh issue create` for implementation (labels `feat` + `sprint-9`) → `feature/sprint-9-import-flow`.
-- [ ] 9.20 Commit, push, `gh pr create` with `Closes #<impl-issue>`; CI green; squash-merge; branch deleted.
-- [ ] 9.21 `gh issue create` for closure → `chore/close-sprint-9` PR.
+- [ ] 9.17 Manual DoD (end of Phase D): launch desktop, import the gitignored real PKO CSV, pick an
+  account, see **39 transactions** in the list, filter by search; re-import the same file → no
+  duplicates added.
+- [ ] 9.18 Each delivery phase below: `dotnet build` + `dotnet test` + `dotnet format
+  --verify-no-changes` green locally before its PR.
+- [ ] 9.19 `gh issue create` for closure → `chore/close-sprint-9` PR (after all phases merged).
+
+## Delivery — phased PRs (not one monolithic commit)
+
+Sprint 9 is sizeable, so it ships as **four incremental implementation PRs**, each its own issue +
+`feature/` branch + squash-merge, each green and self-contained. Per-phase bookkeeping follows the
+standard flow: issue (labels `feat` + `sprint-9`) → branch → commits → push → `gh pr create` with
+`Closes #<phase-issue>` → CI green → `gh pr merge --squash --delete-branch`. Closure (9.19) runs only
+after Phase D merges.
+
+- **Phase 9-A — Schema foundation** (`feature/sprint-9a-schema`): steps 9.1–9.4 + 9.13.
+  Deliverable: entities, EF config + indexes, the `AddTransactionsSchema` migration applied at
+  startup with a pre-migration backup. No UI; persistence tests prove the schema.
+- **Phase 9-B — Import logic** (`feature/sprint-9b-import-usecase`): steps 9.5 (`IFilePicker`
+  *interface* only), 9.6, 9.7, 9.8 + 9.14, 9.15. Deliverable: headless `ImportStatementUseCase`
+  (+ progress) and `GetTransactionsQuery`, tested against the golden CSV and a fresh encrypted DB.
+- **Phase 9-C — Import UI** (`feature/sprint-9c-import-ui`): the Avalonia `IFilePicker`
+  implementation, steps 9.9, 9.10, the import half of 9.12 + the Import VM tests from 9.16.
+  Deliverable: a working Import screen wired to Phase 9-B.
+- **Phase 9-D — Transactions list UI** (`feature/sprint-9d-transactions-ui`): step 9.11, the
+  transactions half of 9.12, the Transactions VM tests from 9.16, and the manual DoD (9.17).
+  Deliverable: the list + filters; full Phase 2 DoD met.
 
 ## Definition of Done
 
@@ -148,21 +169,26 @@ bind to.
 - `src/Coffer.Infrastructure/Persistence/CofferDbContext.cs` (DbSets + model config)
 - `src/Coffer.Desktop/App.axaml.cs` / `MainWindow.*` (navigation shell + startup migration)
 - `ServiceRegistration.cs` in Application, Infrastructure, Desktop
-- `*.csproj` if `Avalonia.Controls.DataGrid` is added
+- `src/Coffer.Desktop/Coffer.Desktop.csproj` (`Avalonia.Controls.DataGrid` added — see decisions)
 - `docs/architecture/02-database-and-encryption.md` if the realised schema diverges from the doc
+
+## Decisions (resolved at planning, 2026-06-02)
+
+- **Delivery:** one Sprint 9, but shipped as four phased PRs (9-A…9-D above) — never one monolithic
+  commit.
+- **Import page design:** no mockup exists; build it in the design language of the existing
+  `desktop/transactions.html` + `dashboard.html` (no separate mockup step).
+- **Account bootstrapping:** always require an explicit account choice at import (no auto-seeded
+  default) — multi-bank is a real requirement and PKO CSV has no account number.
+- **Category in Phase 2:** ship the minimal `Category` entity and keep the category filter in the UI;
+  transactions stay uncategorised until Phase 4.
+- **Pre-migration backup:** minimal encrypted-DB file-copy snapshot now (satisfies hard rule #8); the
+  full backup/restore system is deferred to its own sprint (doc 08).
+- **DataGrid:** use `Avalonia.Controls.DataGrid` (built-in virtualization) rather than a hand-rolled
+  `ItemsControl`.
 
 ## Open questions
 
-- **Import page has no mockup** (only `desktop/transactions.html` + `dashboard.html` exist). Design
-  it to match that design language, or sketch a mockup first?
-- **Pre-migration backup scope:** land a minimal encrypted-DB file-copy snapshot now (just enough to
-  satisfy hard rule #8), deferring the full backup/restore system to its own sprint (doc 08)?
-- **Account bootstrapping:** PKO "Historia rachunku" CSV carries no account number, so the user must
-  pick/create the account at import. Seed a default "PKO BP" account on first run, or always require
-  an explicit choice?
-- **Category in Phase 2:** ship the minimal `Category` entity + filter UI but leave transactions
-  uncategorised until Phase 4, or hide the category filter until categorisation exists?
-- **DataGrid dependency:** confirm adding `Avalonia.Controls.DataGrid` (vs. a hand-rolled
-  virtualized `ItemsControl`).
+- None outstanding at plan time. New questions that surface during a phase are logged in `log.md`.
 - **Sprint size:** Phase 2 is sizeable for one sprint — acceptable to run it as one (per the
   not-time-boxed convention), or split list-vs-import into 9a/9b?
