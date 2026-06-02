@@ -1,3 +1,5 @@
+using Coffer.Core.Domain;
+using Coffer.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Coffer.Infrastructure.Persistence;
@@ -11,6 +13,14 @@ public sealed class CofferDbContext : DbContext
 
     public DbSet<SchemaInfoEntry> SchemaInfo => Set<SchemaInfoEntry>();
 
+    public DbSet<Account> Accounts => Set<Account>();
+
+    public DbSet<Transaction> Transactions => Set<Transaction>();
+
+    public DbSet<ImportSession> ImportSessions => Set<ImportSession>();
+
+    public DbSet<Category> Categories => Set<Category>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -23,6 +33,11 @@ public sealed class CofferDbContext : DbContext
             entity.Property(x => x.Version).IsRequired();
             entity.Property(x => x.AppVersion).IsRequired();
         });
+
+        modelBuilder.ApplyConfiguration(new AccountConfiguration());
+        modelBuilder.ApplyConfiguration(new CategoryConfiguration());
+        modelBuilder.ApplyConfiguration(new ImportSessionConfiguration());
+        modelBuilder.ApplyConfiguration(new TransactionConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

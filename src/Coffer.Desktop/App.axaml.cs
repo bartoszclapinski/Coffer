@@ -10,8 +10,11 @@ using Coffer.Application.ViewModels.Setup;
 using Coffer.Core.Security;
 using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
+using Coffer.Infrastructure.Persistence;
 using Coffer.Infrastructure.Security;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 
 namespace Coffer.Desktop;
@@ -61,8 +64,8 @@ public partial class App : Avalonia.Application
                 .GetResult();
             if (cachedLoginSucceeded)
             {
-                Log.Information("Cold start unlocked via cached master key; showing MainWindow");
-                return BuildMainWindow(desktop);
+                Log.Information("Cold start unlocked via cached master key");
+                return BuildPostUnlockWindow(desktop);
             }
 
             Log.Information("Cached master key unavailable; showing LoginWindow");
@@ -97,11 +100,131 @@ public partial class App : Avalonia.Application
 
     private void OnLoginCompleted(IClassicDesktopStyleApplicationLifetime desktop, Window loginWindow)
     {
-        Log.Information("Login completed; swapping to MainWindow");
-        var mainWindow = BuildMainWindow(desktop);
-        desktop.MainWindow = mainWindow;
-        mainWindow.Show();
+        Log.Information("Login completed; resolving post-unlock window");
+        var nextWindow = BuildPostUnlockWindow(desktop);
+        desktop.MainWindow = nextWindow;
+        nextWindow.Show();
         loginWindow.Close();
+    }
+
+    /// <summary>
+    /// After the vault is unlocked (cached login, password login, or fresh setup),
+    /// apply any pending schema migrations before showing the main UI. Per doc 02 the
+    /// user must confirm and a pre-migration backup is mandatory (hard rule #8); if
+    /// migrations are pending we route to the confirm window first, otherwise straight
+    /// to <see cref="MainWindow"/>.
+    /// </summary>
+    private Window BuildPostUnlockWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        if (HasPendingMigrations())
+        {
+            Log.Information("Pending database migrations detected; showing migration confirmation");
+            return BuildMigrationConfirmWindow(desktop);
+        }
+
+        return BuildMainWindow(desktop);
+    }
+
+    private static bool HasPendingMigrations()
+    {
+        var factory = Services.GetRequiredService<IDbContextFactory<CofferDbContext>>();
+        using var db = factory.CreateDbContext();
+        return db.Database.GetPendingMigrations().Any();
+    }
+
+    private Window BuildMigrationConfirmWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var message = new TextBlock
+        {
+            Text =
+                "Wymagana aktualizacja bazy danych.\n\n" +
+                "Przed aktualizacją zostanie automatycznie utworzona kopia zapasowa. " +
+                "Bez aktualizacji aplikacja nie może działać z istniejącymi danymi.\n\n" +
+                "Czy chcesz kontynuować?",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+        };
+
+        var status = new TextBlock
+        {
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            IsVisible = false,
+        };
+
+        var continueButton = new Button { Content = "Kontynuuj", IsDefault = true };
+        var cancelButton = new Button { Content = "Zamknij aplikację", IsCancel = true };
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Children = { cancelButton, continueButton },
+        };
+
+        var window = new Window
+        {
+            Title = "Coffer — aktualizacja bazy danych",
+            Width = 560,
+            Height = 320,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+            CanResize = false,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(24),
+                Spacing = 16,
+                Children = { message, status, buttons },
+            },
+        };
+
+        cancelButton.Click += (_, _) =>
+        {
+            Log.Information("User cancelled the database migration; shutting down");
+            desktop.Shutdown();
+        };
+
+        continueButton.Click += async (_, _) =>
+        {
+            continueButton.IsEnabled = false;
+            cancelButton.IsEnabled = false;
+            status.IsVisible = true;
+            status.Text = "Tworzenie kopii zapasowej i aktualizacja…";
+
+            try
+            {
+                await RunStartupMigrationAsync(CancellationToken.None);
+                var mainWindow = BuildMainWindow(desktop);
+                desktop.MainWindow = mainWindow;
+                mainWindow.Show();
+                window.Close();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Database migration failed at startup");
+                status.Text =
+                    "Aktualizacja bazy danych nie powiodła się. Kopia zapasowa pozostała nienaruszona. " +
+                    "Zamknij aplikację i spróbuj ponownie.";
+                cancelButton.IsEnabled = true;
+            }
+        };
+
+        return window;
+    }
+
+    private static async Task RunStartupMigrationAsync(CancellationToken ct)
+    {
+        var factory = Services.GetRequiredService<IDbContextFactory<CofferDbContext>>();
+        var backup = Services.GetRequiredService<IPreMigrationBackup>();
+        var logger = Services.GetRequiredService<ILogger<MigrationRunner>>();
+
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var runner = new MigrationRunner(db, logger, ct2 => backup.CreateSnapshotAsync(ct2));
+        var result = await runner.RunPendingMigrationsAsync(ct);
+
+        if (result.Status == MigrationStatus.Failed)
+        {
+            throw new InvalidOperationException(
+                $"Startup migration did not complete: {result.Status}");
+        }
     }
 
     private Window BuildMainWindow(IClassicDesktopStyleApplicationLifetime desktop)
@@ -179,11 +302,11 @@ public partial class App : Avalonia.Application
             return;
         }
 
-        Log.Information("Setup wizard completed successfully; swapping to MainWindow");
+        Log.Information("Setup wizard completed successfully; resolving post-unlock window");
 
-        var mainWindow = BuildMainWindow(desktop);
-        desktop.MainWindow = mainWindow;
-        mainWindow.Show();
+        var nextWindow = BuildPostUnlockWindow(desktop);
+        desktop.MainWindow = nextWindow;
+        nextWindow.Show();
         wizardWindow.Close();
     }
 
