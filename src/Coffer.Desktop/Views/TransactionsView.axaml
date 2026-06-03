@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Transactions;assembly=Coffer.Application"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
+             x:Class="Coffer.Desktop.Views.TransactionsView"
+             x:DataType="vm:TransactionsViewModel"
+             x:CompileBindings="False">
+    <Grid Margin="40,32" RowDefinitions="Auto,*">
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock Text="Transakcje"
+                       FontSize="26"
+                       FontWeight="Light"
+                       Foreground="#1D1D1F" />
+            <TextBlock Text="Lista transakcji z ostatnich miesięcy."
+                       Foreground="#8E8E93" />
+        </StackPanel>
+
+        <Panel Grid.Row="1" Margin="0,24,0,0">
+            <ProgressBar IsIndeterminate="True" Height="4"
+                         VerticalAlignment="Top"
+                         IsVisible="{Binding IsLoading}" />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="#D14"
+                       TextWrapping="Wrap"
+                       VerticalAlignment="Top"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <TextBlock Text="Brak transakcji. Zaimportuj wyciąg, aby je tu zobaczyć."
+                       Foreground="#8E8E93"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       IsVisible="{Binding IsEmpty}" />
+
+            <ItemsControl ItemsSource="{Binding Transactions}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#FFFFFF" CornerRadius="8" Padding="14,10" Margin="0,0,0,8"
+                                BorderBrush="#E5E5EA" BorderThickness="1">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Date}"
+                                           Foreground="#8E8E93"
+                                           VerticalAlignment="Center"
+                                           Width="96" />
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Text="{Binding Description}" Foreground="#1D1D1F" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding AccountName}" Foreground="#8E8E93" FontSize="12" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="2"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"
+                                           Foreground="#1D1D1F">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0:N2} {1}">
+                                            <Binding Path="Amount" />
+                                            <Binding Path="Currency" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Panel>
+    </Grid>
+</UserControl>

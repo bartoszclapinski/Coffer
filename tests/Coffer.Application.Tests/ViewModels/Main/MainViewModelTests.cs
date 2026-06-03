@@ -1,4 +1,7 @@
+using Coffer.Application.Tests.Fakes;
+using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Main;
+using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Security;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11,7 +14,7 @@ public class MainViewModelTests
     public async Task LogoutCommand_CallsLoginServiceLogoutAndRaisesLoggedOut()
     {
         var service = new RecordingLoginService();
-        var vm = new MainViewModel(service, NullLogger<MainViewModel>.Instance);
+        var vm = CreateViewModel(service);
 
         var raised = 0;
         vm.LoggedOut += (_, _) => raised++;
@@ -29,7 +32,7 @@ public class MainViewModelTests
         {
             ThrowOnLogout = new InvalidOperationException("test"),
         };
-        var vm = new MainViewModel(service, NullLogger<MainViewModel>.Instance);
+        var vm = CreateViewModel(service);
 
         var raised = 0;
         vm.LoggedOut += (_, _) => raised++;
@@ -43,9 +46,43 @@ public class MainViewModelTests
     [Fact]
     public void AppVersion_ReturnsNonEmptyString()
     {
-        var vm = new MainViewModel(new RecordingLoginService(), NullLogger<MainViewModel>.Instance);
+        var vm = CreateViewModel(new RecordingLoginService());
 
         vm.AppVersion.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public void StartsOnImportPage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.IsImportActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Import);
+    }
+
+    [Fact]
+    public void ShowTransactions_SwitchesActivePage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.ShowTransactionsCommand.Execute(null);
+
+        vm.IsTransactionsActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Transactions);
+    }
+
+    private static MainViewModel CreateViewModel(ILoginService loginService)
+    {
+        var import = new ImportViewModel(
+            new FakeFilePicker(),
+            new FakeImportStatementUseCase(),
+            new FakeAccountService(),
+            NullLogger<ImportViewModel>.Instance);
+        var transactions = new TransactionsViewModel(
+            new FakeGetTransactionsQuery(),
+            NullLogger<TransactionsViewModel>.Instance);
+
+        return new MainViewModel(import, transactions, loginService, NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class RecordingLoginService : ILoginService

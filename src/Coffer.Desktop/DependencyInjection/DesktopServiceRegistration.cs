@@ -1,6 +1,9 @@
+using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Setup;
+using Coffer.Application.ViewModels.Transactions;
+using Coffer.Core.Import;
 using Coffer.Core.Security;
 using Coffer.Desktop.Platform;
 using Coffer.Desktop.Views.Login;
@@ -19,6 +22,12 @@ public static class DesktopServiceRegistration
         // Singleton registration would have reused a torn-down window.
         services.AddTransient<MainWindow>();
         services.AddTransient<MainViewModel>();
+        services.AddTransient<ImportViewModel>();
+        services.AddTransient<TransactionsViewModel>();
+
+        // The OS file-open dialog sits behind IFilePicker so the import VM (in
+        // Coffer.Application) stays free of Avalonia storage types (hard rule #4).
+        services.AddSingleton<IFilePicker, AvaloniaFilePicker>();
 
         services.AddTransient<LoginWindow>();
         services.AddTransient<LoginViewModel>();

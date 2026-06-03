@@ -1,7 +1,9 @@
+using Coffer.Core.Accounts;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
 using Coffer.Core.Security;
 using Coffer.Core.Transactions;
+using Coffer.Infrastructure.Accounts;
 using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Logging;
 using Coffer.Infrastructure.Parsing;
@@ -40,6 +42,7 @@ public static class ServiceRegistration
     {
         services.AddTransient<IImportStatementUseCase, ImportStatementUseCase>();
         services.AddTransient<IGetTransactionsQuery, GetTransactionsQuery>();
+        services.AddTransient<IAccountService, AccountService>();
         return services;
     }
 
