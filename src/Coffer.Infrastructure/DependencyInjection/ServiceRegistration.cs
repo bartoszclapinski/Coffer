@@ -1,11 +1,15 @@
+using Coffer.Core.Import;
 using Coffer.Core.Parsing;
 using Coffer.Core.Security;
+using Coffer.Core.Transactions;
+using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Logging;
 using Coffer.Infrastructure.Parsing;
 using Coffer.Infrastructure.Parsing.Pko;
 using Coffer.Infrastructure.Persistence;
 using Coffer.Infrastructure.Persistence.Encryption;
 using Coffer.Infrastructure.Security;
+using Coffer.Infrastructure.Transactions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,7 +27,21 @@ public static class ServiceRegistration
             .AddCofferSetup()
             .AddCofferLogin()
             .AddCofferAutoLock()
-            .AddCofferParsing();
+            .AddCofferParsing()
+            .AddCofferImport();
+
+    /// <summary>
+    /// Registers the headless import pipeline and the transactions read query.
+    /// Both depend on <see cref="IDbContextFactory{TContext}"/> from
+    /// <see cref="AddCofferDatabase"/>, which the bootstrap registers once the DEK
+    /// is available.
+    /// </summary>
+    public static IServiceCollection AddCofferImport(this IServiceCollection services)
+    {
+        services.AddTransient<IImportStatementUseCase, ImportStatementUseCase>();
+        services.AddTransient<IGetTransactionsQuery, GetTransactionsQuery>();
+        return services;
+    }
 
     /// <summary>
     /// Registers the parsing primitives: the format-aware bank detector, every
