@@ -1,8 +1,49 @@
 using Coffer.Core.Accounts;
 using Coffer.Core.Import;
 using Coffer.Core.Transactions;
+using Microsoft.Extensions.Logging;
 
 namespace Coffer.Application.Tests.Fakes;
+
+/// <summary>
+/// Captures every log entry's rendered message plus the full string of any logged
+/// exception, so tests can assert that sensitive statement content never reaches the log.
+/// </summary>
+internal sealed class CapturingLogger<T> : ILogger<T>
+{
+    public List<string> Entries { get; } = [];
+
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+    public bool IsEnabled(LogLevel logLevel) => true;
+
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
+    {
+        var entry = formatter(state, exception);
+        if (exception is not null)
+        {
+            // A real sink (Serilog/console) writes the exception alongside the message,
+            // which includes Exception.Message — model that so a leak is observable.
+            entry += " | " + exception;
+        }
+
+        Entries.Add(entry);
+    }
+
+    private sealed class NullScope : IDisposable
+    {
+        public static readonly NullScope Instance = new();
+
+        public void Dispose()
+        {
+        }
+    }
+}
 
 /// <summary>Returns a pre-set <see cref="PickedFile"/> (or null) and counts calls.</summary>
 internal sealed class FakeFilePicker : IFilePicker

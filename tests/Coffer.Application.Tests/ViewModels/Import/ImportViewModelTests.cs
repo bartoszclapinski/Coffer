@@ -5,6 +5,7 @@ using Coffer.Core.Import;
 using Coffer.Core.Parsing;
 using Coffer.Core.Transactions;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Coffer.Application.Tests.ViewModels.Import;
@@ -21,12 +22,13 @@ public class ImportViewModelTests
         out FakeImportStatementUseCase useCase,
         out FakeAccountService accounts,
         PickedFile? picked = null,
+        ILogger<ImportViewModel>? logger = null,
         params AccountListItem[] seedAccounts)
     {
         picker = new FakeFilePicker(picked);
         useCase = new FakeImportStatementUseCase();
         accounts = new FakeAccountService(seedAccounts);
-        return new ImportViewModel(picker, useCase, accounts, NullLogger<ImportViewModel>.Instance);
+        return new ImportViewModel(picker, useCase, accounts, logger ?? NullLogger<ImportViewModel>.Instance);
     }
 
     [Fact]
@@ -127,6 +129,23 @@ public class ImportViewModelTests
     }
 
     [Fact]
+    public async Task Import_CreatingNewAccountWithBlankCurrency_DoesNotImport()
+    {
+        var vm = Create(out _, out var useCase, out var accounts, picked: NewCsv());
+        await vm.LoadAccountsCommand.ExecuteAsync(null);
+        await vm.BrowseCommand.ExecuteAsync(null);
+        vm.IsCreatingNewAccount = true;
+        vm.NewAccountName = "Nowe konto";
+        vm.NewAccountNumber = "PL61109010140000071219812874";
+        vm.NewAccountCurrency = "  ";
+
+        await vm.ImportCommand.ExecuteAsync(null);
+
+        accounts.CreateCalls.Should().Be(0, "Currency is non-null on every monetary entity (rule #9)");
+        useCase.Calls.Should().Be(0);
+    }
+
+    [Fact]
     public async Task Import_UnsupportedBank_ShowsPolishMessage()
     {
         var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
@@ -155,17 +174,24 @@ public class ImportViewModelTests
     }
 
     [Fact]
-    public async Task Import_GenericFailure_ShowsGenericMessageAndDoesNotLeakDetail()
+    public async Task Import_ParserFailure_DoesNotLeakRawCellToUiOrLog()
     {
-        var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
+        var logger = new CapturingLogger<ImportViewModel>();
+        var vm = Create(out _, out var useCase, out _, picked: NewCsv(), logger: logger, seedAccounts: _account);
         await vm.LoadAccountsCommand.ExecuteAsync(null);
         await vm.BrowseCommand.ExecuteAsync(null);
-        useCase.Throw = new InvalidOperationException("row 7: 1234,56 PLN sekret");
+
+        // Mirrors PolishAmountParser/PolishDateParser, which embed the raw statement cell
+        // in the exception message. Importing must never surface it to the UI or the log.
+        useCase.Throw = new FormatException("Cannot parse Polish amount: '1 234,56 PLN'.");
 
         await vm.ImportCommand.ExecuteAsync(null);
 
-        vm.ErrorMessage.Should().NotContain("sekret");
+        vm.ErrorMessage.Should().NotContain("1 234,56");
         vm.ErrorMessage.Should().NotBeEmpty();
         vm.HasSummary.Should().BeFalse();
+        logger.Entries.Should().NotBeEmpty("the failure should still be logged for diagnostics");
+        logger.Entries.Should().NotContain(e => e.Contains("1 234,56"),
+            "rules #6/#7 — raw statement content must never reach the log");
     }
 }

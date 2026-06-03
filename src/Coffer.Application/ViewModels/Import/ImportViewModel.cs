@@ -29,7 +29,7 @@ public sealed partial class ImportViewModel : ObservableObject
     private const string _noAccountMessage =
         "Wybierz konto lub utwórz nowe przed importem.";
     private const string _newAccountIncompleteMessage =
-        "Podaj nazwę i numer nowego konta.";
+        "Podaj nazwę, numer i walutę nowego konta.";
     private const string _genericFailureMessage =
         "Import nie powiódł się. Spróbuj ponownie.";
 
@@ -57,6 +57,7 @@ public sealed partial class ImportViewModel : ObservableObject
     private string _newAccountNumber = "";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ImportCommand))]
     private string _newAccountCurrency = "PLN";
 
     [ObservableProperty]
@@ -133,7 +134,9 @@ public sealed partial class ImportViewModel : ObservableObject
         !IsImporting
         && HasPickedFile
         && (IsCreatingNewAccount
-            ? !string.IsNullOrWhiteSpace(NewAccountName) && !string.IsNullOrWhiteSpace(NewAccountNumber)
+            ? !string.IsNullOrWhiteSpace(NewAccountName)
+                && !string.IsNullOrWhiteSpace(NewAccountNumber)
+                && !string.IsNullOrWhiteSpace(NewAccountCurrency)
             : SelectedAccount is not null);
 
     [RelayCommand]
@@ -204,7 +207,9 @@ public sealed partial class ImportViewModel : ObservableObject
             Guid accountId;
             if (IsCreatingNewAccount)
             {
-                if (string.IsNullOrWhiteSpace(NewAccountName) || string.IsNullOrWhiteSpace(NewAccountNumber))
+                if (string.IsNullOrWhiteSpace(NewAccountName)
+                    || string.IsNullOrWhiteSpace(NewAccountNumber)
+                    || string.IsNullOrWhiteSpace(NewAccountCurrency))
                 {
                     ErrorMessage = _newAccountIncompleteMessage;
                     return;
@@ -215,7 +220,7 @@ public sealed partial class ImportViewModel : ObservableObject
                         NewAccountName.Trim(),
                         NewAccountBankCode,
                         NewAccountNumber.Trim(),
-                        NewAccountCurrency,
+                        NewAccountCurrency.Trim().ToUpperInvariant(),
                         NewAccountType),
                     ct).ConfigureAwait(true);
 
@@ -265,9 +270,14 @@ public sealed partial class ImportViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            // Log without the message body so statement row content never reaches the log;
-            // the use case already logs structured detail at its own layer.
-            _logger.LogError(ex, "Statement import failed ({ExceptionType})", ex.GetType().Name);
+            // Never pass the exception object to the logger: parser failures embed the
+            // raw statement cell (e.g. FormatException "Cannot parse Polish amount: '1 234,56'")
+            // in Message, and logging the exception would leak it (rules #6/#7). Log only the
+            // type and stack trace — enough to locate the throw without the offending value.
+            _logger.LogError(
+                "Statement import failed ({ExceptionType})\n{StackTrace}",
+                ex.GetType().FullName,
+                ex.StackTrace);
             ErrorMessage = ex is FormatException or InvalidDataException
                 ? _parseFailureMessage
                 : _genericFailureMessage;
