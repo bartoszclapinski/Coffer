@@ -125,7 +125,7 @@ internal sealed class FakeAccountService : IAccountService
     }
 }
 
-/// <summary>Returns a fixed transaction list and account list.</summary>
+/// <summary>Returns a fixed transaction list and account list, recording each query.</summary>
 internal sealed class FakeGetTransactionsQuery : IGetTransactionsQuery
 {
     private readonly IReadOnlyList<TransactionListItem> _items;
@@ -139,9 +139,22 @@ internal sealed class FakeGetTransactionsQuery : IGetTransactionsQuery
         _accounts = accounts ?? [];
     }
 
-    public Task<IReadOnlyList<TransactionListItem>> ExecuteAsync(TransactionQueryFilter filter, CancellationToken ct) =>
-        Task.FromResult(_items);
+    public int ExecuteCalls { get; private set; }
 
-    public Task<IReadOnlyList<AccountListItem>> GetAccountsAsync(CancellationToken ct) =>
-        Task.FromResult(_accounts);
+    public int GetAccountsCalls { get; private set; }
+
+    public TransactionQueryFilter? LastFilter { get; private set; }
+
+    public Task<IReadOnlyList<TransactionListItem>> ExecuteAsync(TransactionQueryFilter filter, CancellationToken ct)
+    {
+        ExecuteCalls++;
+        LastFilter = filter;
+        return Task.FromResult(_items);
+    }
+
+    public Task<IReadOnlyList<AccountListItem>> GetAccountsAsync(CancellationToken ct)
+    {
+        GetAccountsCalls++;
+        return Task.FromResult(_accounts);
+    }
 }

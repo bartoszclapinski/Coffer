@@ -7,20 +7,32 @@ using Microsoft.Extensions.Logging;
 namespace Coffer.Application.ViewModels.Transactions;
 
 /// <summary>
-/// View-model behind the Transactions page. Sprint 9-C ships the load path and an
-/// empty-state surface so the shell can navigate to it; Sprint 9-D adds the filter
-/// bar and the DataGrid columns.
+/// View-model behind the Transactions page: a filtered, newest-first list of
+/// transactions. Filters (search text, account, date range) re-run the query as
+/// they change.
 /// </summary>
 public sealed partial class TransactionsViewModel : ObservableObject
 {
     private readonly IGetTransactionsQuery _query;
     private readonly ILogger<TransactionsViewModel> _logger;
 
+    private bool _accountsLoaded;
+    private bool _reloadRequested;
+
     [ObservableProperty]
     private bool _isLoading;
 
     [ObservableProperty]
     private string _errorMessage = "";
+
+    [ObservableProperty]
+    private string _searchText = "";
+
+    [ObservableProperty]
+    private AccountListItem? _selectedAccount;
+
+    [ObservableProperty]
+    private DateRangeOption _selectedRange;
 
     public TransactionsViewModel(IGetTransactionsQuery query, ILogger<TransactionsViewModel> logger)
     {
@@ -29,9 +41,17 @@ public sealed partial class TransactionsViewModel : ObservableObject
 
         _query = query;
         _logger = logger;
+
+        // Assign the backing field directly so the generated setter's OnSelectedRangeChanged
+        // hook does not queue a load before the page is navigated to.
+        _selectedRange = DateRangeOption.SixMonths;
     }
 
     public ObservableCollection<TransactionListItem> Transactions { get; } = [];
+
+    public ObservableCollection<AccountListItem> Accounts { get; } = [];
+
+    public IReadOnlyList<DateRangeOption> DateRanges => DateRangeOption.Options;
 
     public bool IsEmpty => !IsLoading && Transactions.Count == 0;
 
@@ -40,15 +60,24 @@ public sealed partial class TransactionsViewModel : ObservableObject
     {
         if (IsLoading)
         {
+            // A filter changed mid-load; remember to run once more when this finishes
+            // so the latest filter values are not dropped.
+            _reloadRequested = true;
             return;
         }
 
         IsLoading = true;
+        OnPropertyChanged(nameof(IsEmpty));
         ErrorMessage = "";
         try
         {
+            if (!_accountsLoaded)
+            {
+                await LoadAccountsAsync(ct).ConfigureAwait(true);
+            }
+
             var items = await _query
-                .ExecuteAsync(new TransactionQueryFilter(), ct)
+                .ExecuteAsync(BuildFilter(), ct)
                 .ConfigureAwait(true);
 
             Transactions.Clear();
@@ -66,6 +95,46 @@ public sealed partial class TransactionsViewModel : ObservableObject
         {
             IsLoading = false;
             OnPropertyChanged(nameof(IsEmpty));
+
+            if (_reloadRequested)
+            {
+                _reloadRequested = false;
+                LoadCommand.Execute(null);
+            }
         }
     }
+
+    private async Task LoadAccountsAsync(CancellationToken ct)
+    {
+        var accounts = await _query.GetAccountsAsync(ct).ConfigureAwait(true);
+
+        Accounts.Clear();
+        foreach (var account in accounts)
+        {
+            Accounts.Add(account);
+        }
+
+        _accountsLoaded = true;
+    }
+
+    private TransactionQueryFilter BuildFilter()
+    {
+        var search = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
+        DateOnly? from = SelectedRange.Months is { } months
+            ? DateOnly.FromDateTime(DateTime.UtcNow).AddMonths(-months)
+            : DateOnly.MinValue;
+
+        return new TransactionQueryFilter(
+            From: from,
+            Search: search,
+            AccountId: SelectedAccount?.Id);
+    }
+
+    partial void OnSearchTextChanged(string value) => QueueReload();
+
+    partial void OnSelectedAccountChanged(AccountListItem? value) => QueueReload();
+
+    partial void OnSelectedRangeChanged(DateRangeOption value) => QueueReload();
+
+    private void QueueReload() => LoadCommand.Execute(null);
 }

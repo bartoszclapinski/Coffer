@@ -52,3 +52,17 @@
   `MainViewModelTests` updated for the shell ctor. Full suite green (207 tests).
 - **Manual DoD note (9-C):** the Avalonia GUI cannot be visually verified in CI/headless — the import
   real-PKO-CSV end-to-end check (DoD 9.17) is performed by hand in 9-D once the transactions grid lands.
+- **Phase 9-D** (issue #70): the transactions list UI. Fleshes out `TransactionsViewModel` with a filter
+  bar — search text, account dropdown, and a date-range dropdown (`DateRangeOption`, default "Ostatnie
+  6 mies.", plus 3/12 months and "Cały okres") — where each filter change re-runs `IGetTransactionsQuery`
+  with a rebuilt `TransactionQueryFilter` (trimmed/blank-to-null search, account id, lower-bound date;
+  "Cały okres" → `DateOnly.MinValue`). A filter that changes mid-load sets a pending flag so the latest
+  values are re-queried once the in-flight load finishes (no dropped keystroke). `TransactionsView`
+  replaces the placeholder list with a virtualized `DataGrid` (Data / Opis / Sprzedawca / Konto /
+  Kategoria / Kwota), the amount column coloured via `AmountToBrushConverter` (income green, expense
+  primary text per the mockup), plus loading/error/empty surfaces. Added `Avalonia.Controls.DataGrid`
+  + its Fluent theme `StyleInclude`. 8 new VM tests (populate, 6-month default, empty, search/account/
+  range re-query, no-query-on-construction); full Application suite green (48 tests). Category dropdown
+  deferred — no category-list query exists yet.
+- **Manual DoD (9.17)** still pending the owner: run the app, import a real PKO CSV (→ 39 transactions),
+  filter by search, re-import the same file → no duplicates.
