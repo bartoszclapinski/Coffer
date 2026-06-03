@@ -1,6 +1,7 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using Coffer.Core.Import;
+using Microsoft.Extensions.Logging;
 
 namespace Coffer.Desktop.Platform;
 
@@ -17,12 +18,25 @@ public sealed class AvaloniaFilePicker : IFilePicker
         Patterns = ["*.pdf", "*.csv"],
     };
 
+    private readonly ILogger<AvaloniaFilePicker> _logger;
+
+    public AvaloniaFilePicker(ILogger<AvaloniaFilePicker> logger)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
+    }
+
     public async Task<PickedFile?> PickStatementFileAsync(CancellationToken ct)
     {
         var window = (Avalonia.Application.Current?.ApplicationLifetime
             as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (window?.StorageProvider is not { CanOpen: true } storage)
         {
+            // A null result here means "no pickable surface", not "user cancelled".
+            // Log it so that case is distinguishable from a normal cancellation, which
+            // returns null silently below.
+            _logger.LogWarning(
+                "Statement file picker unavailable — no main window or storage provider that can open.");
             return null;
         }
 
