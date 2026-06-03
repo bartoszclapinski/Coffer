@@ -34,3 +34,21 @@
   `IFilePicker`), **implementations in `Coffer.Infrastructure`**, **tests in
   `Coffer.Infrastructure.Tests`** (where the golden CSV + SQLCipher harness already live). The 9-C/9-D
   view models in `Coffer.Application` consume the Core abstractions, so the layering rule holds.
+
+## 2026-06-03
+
+- **Phase 9-C** (issue #68): the import UI. Adds `IAccountService` (Core) + `AccountService`
+  (Infrastructure) so a fresh, account-less vault can create a target account inline before importing;
+  `AvaloniaFilePicker` implements `IFilePicker` over `IStorageProvider` and copies the picked file into
+  a `MemoryStream` so its lifetime is independent of the OS handle (hard rule #4 — Avalonia storage
+  types stay in Desktop). `ImportViewModel` (Application) drives account pick/create → browse → import
+  with `IProgress<ImportProgress>` and a Polish per-stage label, a summary (added/skipped/already-imported/
+  warnings), and error translation that surfaces `UnsupportedBankException` and a generic parse-failure
+  message **without leaking statement row content** into the UI or logs. `MainViewModel` became the
+  sidebar shell (Import / Transakcje nav, `CurrentPage` swap, kept logout); `TransactionsViewModel` is a
+  load-path placeholder fleshed out in 9-D. Views: `MainWindow.axaml` sidebar shell (240px, accent
+  `#1D4ED8`) with `DataTemplate` VM→View mapping, `ImportView`, `TransactionsView`. 9 new Import VM tests
+  (load/browse/happy-path/running-state/inline-create/unsupported-bank/bad-extension/no-leak); existing
+  `MainViewModelTests` updated for the shell ctor. Full suite green (207 tests).
+- **Manual DoD note (9-C):** the Avalonia GUI cannot be visually verified in CI/headless — the import
+  real-PKO-CSV end-to-end check (DoD 9.17) is performed by hand in 9-D once the transactions grid lands.

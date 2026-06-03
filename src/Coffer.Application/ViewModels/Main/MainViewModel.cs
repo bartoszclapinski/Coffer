@@ -1,4 +1,6 @@
 using System.Reflection;
+using Coffer.Application.ViewModels.Import;
+using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -7,10 +9,10 @@ using Microsoft.Extensions.Logging;
 namespace Coffer.Application.ViewModels.Main;
 
 /// <summary>
-/// View-model behind the post-login <c>MainWindow</c>. Sprint 6 surface is
-/// intentionally narrow: app version, a busy flag during the logout call, and a
-/// command that drives <see cref="ILoginService.LogoutAsync"/> + raises
-/// <see cref="LoggedOut"/>. App.axaml.cs subscribes to swap windows.
+/// Shell view-model behind the post-login <c>MainWindow</c>. Hosts the sidebar
+/// navigation and swaps <see cref="CurrentPage"/> between the section view-models
+/// (Import, Transactions). Still owns the logout command and <see cref="LoggedOut"/>
+/// event that <c>App.axaml.cs</c> subscribes to in order to swap windows.
 /// </summary>
 public sealed partial class MainViewModel : ObservableObject
 {
@@ -20,19 +22,67 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBusy;
 
-    public MainViewModel(ILoginService loginService, ILogger<MainViewModel> logger)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsImportActive))]
+    [NotifyPropertyChangedFor(nameof(IsTransactionsActive))]
+    private ObservableObject? _currentPage;
+
+    public MainViewModel(
+        ImportViewModel importViewModel,
+        TransactionsViewModel transactionsViewModel,
+        ILoginService loginService,
+        ILogger<MainViewModel> logger)
     {
+        ArgumentNullException.ThrowIfNull(importViewModel);
+        ArgumentNullException.ThrowIfNull(transactionsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
         ArgumentNullException.ThrowIfNull(logger);
 
+        Import = importViewModel;
+        Transactions = transactionsViewModel;
         _loginService = loginService;
         _logger = logger;
         AppVersion = ResolveAppVersion();
+
+        CurrentPage = Import;
+        Import.LoadAccountsCommand.Execute(null);
     }
 
     public string AppVersion { get; }
 
+    public ImportViewModel Import { get; }
+
+    public TransactionsViewModel Transactions { get; }
+
+    public bool IsImportActive => ReferenceEquals(CurrentPage, Import);
+
+    public bool IsTransactionsActive => ReferenceEquals(CurrentPage, Transactions);
+
     public event EventHandler? LoggedOut;
+
+    [RelayCommand]
+    private void ShowImport()
+    {
+        if (IsImportActive)
+        {
+            return;
+        }
+
+        CurrentPage = Import;
+        Import.LoadAccountsCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private void ShowTransactions()
+    {
+        if (IsTransactionsActive)
+        {
+            return;
+        }
+
+        CurrentPage = Transactions;
+        Transactions.LoadCommand.Execute(null);
+    }
 
     [RelayCommand]
     private async Task LogoutAsync()

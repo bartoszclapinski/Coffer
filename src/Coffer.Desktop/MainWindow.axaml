@@ -3,34 +3,94 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Main;assembly=Coffer.Application"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:importVm="clr-namespace:Coffer.Application.ViewModels.Import;assembly=Coffer.Application"
+        xmlns:txVm="clr-namespace:Coffer.Application.ViewModels.Transactions;assembly=Coffer.Application"
+        xmlns:views="clr-namespace:Coffer.Desktop.Views"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
         x:Class="Coffer.Desktop.MainWindow"
         x:DataType="vm:MainViewModel"
         x:CompileBindings="False"
         Title="Coffer"
-        Width="800" Height="450"
+        Width="1000" Height="640"
         WindowStartupLocation="CenterScreen">
-    <Grid RowDefinitions="*,Auto" Margin="48">
-        <StackPanel Grid.Row="0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="12">
-            <TextBlock Text="Zalogowano"
-                       FontSize="36"
-                       FontWeight="Light"
-                       HorizontalAlignment="Center" />
-            <TextBlock Text="{Binding AppVersion, StringFormat='Wersja: {0}'}"
-                       Foreground="#888"
-                       HorizontalAlignment="Center" />
-        </StackPanel>
-        <StackPanel Grid.Row="1"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Spacing="12">
-            <Button Content="Wyloguj"
-                    MinWidth="120"
-                    IsEnabled="{Binding !IsBusy}"
-                    Command="{Binding LogoutCommand}" />
-        </StackPanel>
+
+    <Window.DataTemplates>
+        <DataTemplate DataType="importVm:ImportViewModel">
+            <views:ImportView />
+        </DataTemplate>
+        <DataTemplate DataType="txVm:TransactionsViewModel">
+            <views:TransactionsView />
+        </DataTemplate>
+    </Window.DataTemplates>
+
+    <Grid ColumnDefinitions="240,*">
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Background="#FFFFFF" BorderBrush="#E5E5EA" BorderThickness="0,0,1,0">
+            <Grid RowDefinitions="Auto,*,Auto" Margin="0">
+                <StackPanel Grid.Row="0" Margin="24,28,24,24" Spacing="2">
+                    <TextBlock Text="Coffer"
+                               FontSize="22"
+                               FontWeight="SemiBold"
+                               Foreground="#1D4ED8" />
+                    <TextBlock Text="Twój sejf finansowy"
+                               FontSize="12"
+                               Foreground="#8E8E93" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Margin="12,8,12,8" Spacing="4">
+                    <Button Classes="nav"
+                            Classes.active="{Binding IsImportActive}"
+                            Content="Import"
+                            Command="{Binding ShowImportCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left" />
+                    <Button Classes="nav"
+                            Classes.active="{Binding IsTransactionsActive}"
+                            Content="Transakcje"
+                            Command="{Binding ShowTransactionsCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left" />
+                </StackPanel>
+
+                <Border Grid.Row="2" Margin="12,8,12,16" Padding="12"
+                        Background="#F5F5F7" CornerRadius="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{Binding AppVersion, StringFormat='Wersja {0}'}"
+                                   FontSize="11"
+                                   Foreground="#8E8E93"
+                                   TextTrimming="CharacterEllipsis" />
+                        <Button Content="Wyloguj"
+                                HorizontalAlignment="Stretch"
+                                IsEnabled="{Binding !IsBusy}"
+                                Command="{Binding LogoutCommand}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <Border Grid.Column="1" Background="#F5F5F7">
+            <ContentControl Content="{Binding CurrentPage}" />
+        </Border>
     </Grid>
+
+    <Window.Styles>
+        <Style Selector="Button.nav">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#ECECF1" />
+        </Style>
+        <Style Selector="Button.nav.active">
+            <Setter Property="Background" Value="#1D4ED8" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+        <Style Selector="Button.nav.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1D4ED8" />
+        </Style>
+    </Window.Styles>
 </Window>
