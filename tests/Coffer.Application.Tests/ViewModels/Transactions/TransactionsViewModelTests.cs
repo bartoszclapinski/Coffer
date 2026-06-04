@@ -31,9 +31,24 @@ public class TransactionsViewModelTests
         await vm.LoadCommand.ExecuteAsync(null);
 
         vm.Transactions.Should().ContainSingle();
-        vm.Accounts.Should().ContainSingle();
+        vm.Accounts.Should().Contain(_account);
+        vm.Accounts.First().Should().Be(TransactionsViewModel.AllAccounts,
+            "the clear-filter sentinel leads the list");
         vm.IsEmpty.Should().BeFalse();
         query.GetAccountsCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Load_RefreshesAccountsOnEachNavigation()
+    {
+        var vm = Create(out var query, accounts: [_account]);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        query.GetAccountsCalls.Should().Be(2,
+            "navigating back must pick up accounts created inline on the Import page");
+        vm.Accounts.Should().HaveCount(2, "the sentinel is not duplicated on reload");
     }
 
     [Fact]
@@ -44,7 +59,7 @@ public class TransactionsViewModelTests
         await vm.LoadCommand.ExecuteAsync(null);
 
         vm.SelectedRange.Should().Be(DateRangeOption.SixMonths);
-        var expected = DateOnly.FromDateTime(DateTime.UtcNow).AddMonths(-6);
+        var expected = DateOnly.FromDateTime(DateTime.Now).AddMonths(-6);
         query.LastFilter!.From.Should().Be(expected);
     }
 
@@ -97,6 +112,19 @@ public class TransactionsViewModelTests
     }
 
     [Fact]
+    public async Task SentinelAccount_ClearsTheAccountFilter()
+    {
+        var vm = Create(out var query, accounts: [_account]);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedAccount = _account;
+
+        vm.SelectedAccount = TransactionsViewModel.AllAccounts;
+
+        query.LastFilter!.AccountId.Should().BeNull(
+            "selecting the sentinel means 'all accounts', not an account whose id is Guid.Empty");
+    }
+
+    [Fact]
     public async Task SelectedRange_AllTime_ReQueriesWithNoLowerBound()
     {
         var vm = Create(out var query);
@@ -105,6 +133,30 @@ public class TransactionsViewModelTests
         vm.SelectedRange = DateRangeOption.All;
 
         query.LastFilter!.From.Should().Be(DateOnly.MinValue);
+    }
+
+    [Fact]
+    public async Task FilterChangedMidLoad_CoalescesIntoSingleTrailingReload()
+    {
+        var vm = Create(out var query);
+        await vm.LoadCommand.ExecuteAsync(null);
+        var before = query.ExecuteCalls;
+
+        // Hold the next query open so a filter can change while the load is genuinely running.
+        query.Gate = new TaskCompletionSource();
+        var inFlight = vm.ReloadCommand.ExecuteAsync(null);
+        query.ExecuteCalls.Should().Be(before + 1, "the gated query has started but not completed");
+
+        vm.SearchText = "Lidl";
+        query.ExecuteCalls.Should().Be(before + 1,
+            "a filter changed mid-load is coalesced, not issued as a second concurrent query");
+
+        query.Gate.SetResult();
+        await inFlight;
+
+        query.ExecuteCalls.Should().Be(before + 2, "exactly one trailing reload runs after the gate releases");
+        query.LastFilter!.Search.Should().Be("Lidl", "the trailing reload uses the latest filter values");
+        vm.IsLoading.Should().BeFalse();
     }
 
     [Fact]

@@ -145,11 +145,21 @@ internal sealed class FakeGetTransactionsQuery : IGetTransactionsQuery
 
     public TransactionQueryFilter? LastFilter { get; private set; }
 
-    public Task<IReadOnlyList<TransactionListItem>> ExecuteAsync(TransactionQueryFilter filter, CancellationToken ct)
+    /// <summary>When set, <see cref="ExecuteAsync"/> blocks on it after recording the call,
+    /// so a test can change a filter while a load is genuinely in flight.</summary>
+    public TaskCompletionSource? Gate { get; set; }
+
+    public async Task<IReadOnlyList<TransactionListItem>> ExecuteAsync(TransactionQueryFilter filter, CancellationToken ct)
     {
         ExecuteCalls++;
         LastFilter = filter;
-        return Task.FromResult(_items);
+
+        if (Gate is not null)
+        {
+            await Gate.Task.ConfigureAwait(false);
+        }
+
+        return _items;
     }
 
     public Task<IReadOnlyList<AccountListItem>> GetAccountsAsync(CancellationToken ct)

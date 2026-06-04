@@ -13,10 +13,15 @@ namespace Coffer.Application.ViewModels.Transactions;
 /// </summary>
 public sealed partial class TransactionsViewModel : ObservableObject
 {
+    /// <summary>
+    /// Sentinel row letting the user clear the account filter (a placeholder only shows
+    /// while nothing is selected, so without this there is no way back to "all accounts").
+    /// </summary>
+    public static readonly AccountListItem AllAccounts = new(Guid.Empty, "Wszystkie konta", "");
+
     private readonly IGetTransactionsQuery _query;
     private readonly ILogger<TransactionsViewModel> _logger;
 
-    private bool _accountsLoaded;
     private bool _reloadRequested;
 
     [ObservableProperty]
@@ -55,52 +60,63 @@ public sealed partial class TransactionsViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && Transactions.Count == 0;
 
+    /// <summary>
+    /// Navigation entry point: refresh the account filter (so accounts created inline on the
+    /// Import page show up) and then load the rows.
+    /// </summary>
     [RelayCommand]
     private async Task LoadAsync(CancellationToken ct)
     {
+        await LoadAccountsAsync(ct).ConfigureAwait(true);
+        await ReloadAsync(ct).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Re-runs the transactions query for the current filters. Concurrent execution is
+    /// allowed so a filter changed mid-load re-enters here, trips the <see cref="IsLoading"/>
+    /// guard, and is coalesced into one trailing reload that reads the latest filter values.
+    /// </summary>
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task ReloadAsync(CancellationToken ct)
+    {
         if (IsLoading)
         {
-            // A filter changed mid-load; remember to run once more when this finishes
-            // so the latest filter values are not dropped.
             _reloadRequested = true;
             return;
         }
 
         IsLoading = true;
         OnPropertyChanged(nameof(IsEmpty));
-        ErrorMessage = "";
         try
         {
-            if (!_accountsLoaded)
+            do
             {
-                await LoadAccountsAsync(ct).ConfigureAwait(true);
-            }
+                _reloadRequested = false;
+                ErrorMessage = "";
+                try
+                {
+                    var items = await _query
+                        .ExecuteAsync(BuildFilter(), ct)
+                        .ConfigureAwait(true);
 
-            var items = await _query
-                .ExecuteAsync(BuildFilter(), ct)
-                .ConfigureAwait(true);
-
-            Transactions.Clear();
-            foreach (var item in items)
-            {
-                Transactions.Add(item);
+                    Transactions.Clear();
+                    foreach (var item in items)
+                    {
+                        Transactions.Add(item);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to load transactions");
+                    ErrorMessage = "Nie udało się wczytać transakcji. Spróbuj ponownie.";
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to load transactions");
-            ErrorMessage = "Nie udało się wczytać transakcji. Spróbuj ponownie.";
+            while (_reloadRequested);
         }
         finally
         {
             IsLoading = false;
             OnPropertyChanged(nameof(IsEmpty));
-
-            if (_reloadRequested)
-            {
-                _reloadRequested = false;
-                LoadCommand.Execute(null);
-            }
         }
     }
 
@@ -109,25 +125,25 @@ public sealed partial class TransactionsViewModel : ObservableObject
         var accounts = await _query.GetAccountsAsync(ct).ConfigureAwait(true);
 
         Accounts.Clear();
+        Accounts.Add(AllAccounts);
         foreach (var account in accounts)
         {
             Accounts.Add(account);
         }
-
-        _accountsLoaded = true;
     }
 
     private TransactionQueryFilter BuildFilter()
     {
         var search = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
+        var accountId = SelectedAccount is { Id: var id } && id != Guid.Empty ? id : (Guid?)null;
+
+        // A null From would be read as the query's six-month default, so "Cały okres"
+        // must pass an explicit floor rather than null.
         DateOnly? from = SelectedRange.Months is { } months
-            ? DateOnly.FromDateTime(DateTime.UtcNow).AddMonths(-months)
+            ? DateOnly.FromDateTime(DateTime.Now).AddMonths(-months)
             : DateOnly.MinValue;
 
-        return new TransactionQueryFilter(
-            From: from,
-            Search: search,
-            AccountId: SelectedAccount?.Id);
+        return new TransactionQueryFilter(From: from, Search: search, AccountId: accountId);
     }
 
     partial void OnSearchTextChanged(string value) => QueueReload();
@@ -136,5 +152,5 @@ public sealed partial class TransactionsViewModel : ObservableObject
 
     partial void OnSelectedRangeChanged(DateRangeOption value) => QueueReload();
 
-    private void QueueReload() => LoadCommand.Execute(null);
+    private void QueueReload() => ReloadCommand.Execute(null);
 }

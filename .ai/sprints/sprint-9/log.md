@@ -66,3 +66,16 @@
   deferred — no category-list query exists yet.
 - **Manual DoD (9.17)** still pending the owner: run the app, import a real PKO CSV (→ 39 transactions),
   filter by search, re-import the same file → no duplicates.
+- **9-D code-review fixes** (PR #71, COMMENTED, no blockers): (1) the coalescing reload was untested
+  because the fake completes synchronously — added a `Gate` (`TaskCompletionSource`) to
+  `FakeGetTransactionsQuery` and a mid-load test asserting exactly one trailing reload with the latest
+  filter. To make that path robust under the command, `ReloadAsync` is now
+  `[RelayCommand(AllowConcurrentExecutions = true)]` with a `do/while` loop on `_reloadRequested`
+  (re-entrant `Execute` trips the `IsLoading` guard instead of being swallowed by the default
+  no-concurrent CanExecute). (2) The account filter loaded once per VM lifetime, so an account created
+  inline on Import never appeared until restart — split navigation (`LoadCommand`: refresh accounts +
+  rows) from filter re-query (`ReloadCommand`: rows only), dropping the `_accountsLoaded` gate so each
+  navigation refreshes accounts. Minor fixes: added a "Wszystkie konta" sentinel so the account filter
+  can be cleared; `BuildFilter` uses `DateTime.Now` (user-facing window, not UTC); `App.axaml` final
+  newline. Kept `DateOnly.MinValue` for "Cały okres" (reviewer's null suggestion would hit the query's
+  six-month default). Application suite 48→51 green.
