@@ -125,7 +125,7 @@ internal sealed class FakeAccountService : IAccountService
     }
 }
 
-/// <summary>Returns a fixed transaction list and account list.</summary>
+/// <summary>Returns a fixed transaction list and account list, recording each query.</summary>
 internal sealed class FakeGetTransactionsQuery : IGetTransactionsQuery
 {
     private readonly IReadOnlyList<TransactionListItem> _items;
@@ -139,9 +139,32 @@ internal sealed class FakeGetTransactionsQuery : IGetTransactionsQuery
         _accounts = accounts ?? [];
     }
 
-    public Task<IReadOnlyList<TransactionListItem>> ExecuteAsync(TransactionQueryFilter filter, CancellationToken ct) =>
-        Task.FromResult(_items);
+    public int ExecuteCalls { get; private set; }
 
-    public Task<IReadOnlyList<AccountListItem>> GetAccountsAsync(CancellationToken ct) =>
-        Task.FromResult(_accounts);
+    public int GetAccountsCalls { get; private set; }
+
+    public TransactionQueryFilter? LastFilter { get; private set; }
+
+    /// <summary>When set, <see cref="ExecuteAsync"/> blocks on it after recording the call,
+    /// so a test can change a filter while a load is genuinely in flight.</summary>
+    public TaskCompletionSource? Gate { get; set; }
+
+    public async Task<IReadOnlyList<TransactionListItem>> ExecuteAsync(TransactionQueryFilter filter, CancellationToken ct)
+    {
+        ExecuteCalls++;
+        LastFilter = filter;
+
+        if (Gate is not null)
+        {
+            await Gate.Task.ConfigureAwait(false);
+        }
+
+        return _items;
+    }
+
+    public Task<IReadOnlyList<AccountListItem>> GetAccountsAsync(CancellationToken ct)
+    {
+        GetAccountsCalls++;
+        return Task.FromResult(_accounts);
+    }
 }

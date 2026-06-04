@@ -3,11 +3,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Transactions;assembly=Coffer.Application"
+             xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
              mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
              x:Class="Coffer.Desktop.Views.TransactionsView"
              x:DataType="vm:TransactionsViewModel"
              x:CompileBindings="False">
-    <Grid Margin="40,32" RowDefinitions="Auto,*">
+    <Grid Margin="40,32" RowDefinitions="Auto,Auto,*">
         <StackPanel Grid.Row="0" Spacing="4">
             <TextBlock Text="Transakcje"
                        FontSize="26"
@@ -17,7 +18,32 @@
                        Foreground="#8E8E93" />
         </StackPanel>
 
-        <Panel Grid.Row="1" Margin="0,24,0,0">
+        <!-- Filter bar -->
+        <Grid Grid.Row="1" Margin="0,20,0,0" ColumnDefinitions="*,12,200,12,180">
+            <TextBox Grid.Column="0"
+                     Text="{Binding SearchText, Mode=TwoWay}"
+                     Watermark="Szukaj po opisie lub sprzedawcy…" />
+            <ComboBox Grid.Column="2"
+                      HorizontalAlignment="Stretch"
+                      PlaceholderText="Wszystkie konta"
+                      ItemsSource="{Binding Accounts}"
+                      SelectedItem="{Binding SelectedAccount, Mode=TwoWay}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding Name}" />
+                            <TextBlock Text="{Binding BankCode}" Foreground="#8E8E93" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <ComboBox Grid.Column="4"
+                      HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding DateRanges}"
+                      SelectedItem="{Binding SelectedRange, Mode=TwoWay}" />
+        </Grid>
+
+        <Panel Grid.Row="2" Margin="0,20,0,0">
             <ProgressBar IsIndeterminate="True" Height="4"
                          VerticalAlignment="Top"
                          IsVisible="{Binding IsLoading}" />
@@ -28,31 +54,48 @@
                        VerticalAlignment="Top"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-            <TextBlock Text="Brak transakcji. Zaimportuj wyciąg, aby je tu zobaczyć."
+            <TextBlock Text="Brak transakcji. Zmień filtry lub zaimportuj wyciąg, aby je tu zobaczyć."
                        Foreground="#8E8E93"
+                       TextWrapping="Wrap"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        IsVisible="{Binding IsEmpty}" />
 
-            <ItemsControl ItemsSource="{Binding Transactions}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Background="#FFFFFF" CornerRadius="8" Padding="14,10" Margin="0,0,0,8"
-                                BorderBrush="#E5E5EA" BorderThickness="1">
-                            <Grid ColumnDefinitions="Auto,*,Auto">
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding Date}"
-                                           Foreground="#8E8E93"
-                                           VerticalAlignment="Center"
-                                           Width="96" />
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock Text="{Binding Description}" Foreground="#1D1D1F" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="{Binding AccountName}" Foreground="#8E8E93" FontSize="12" />
-                                </StackPanel>
-                                <TextBlock Grid.Column="2"
+            <DataGrid ItemsSource="{Binding Transactions}"
+                      IsVisible="{Binding !IsEmpty}"
+                      IsReadOnly="True"
+                      CanUserResizeColumns="True"
+                      CanUserReorderColumns="False"
+                      GridLinesVisibility="Horizontal"
+                      HeadersVisibility="Column"
+                      Background="#FFFFFF"
+                      BorderBrush="#E5E5EA"
+                      BorderThickness="1"
+                      CornerRadius="8">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Data"
+                                        Binding="{Binding Date, StringFormat=\{0:yyyy-MM-dd\}}"
+                                        Width="110" />
+                    <DataGridTextColumn Header="Opis"
+                                        Binding="{Binding Description}"
+                                        Width="2*" />
+                    <DataGridTextColumn Header="Sprzedawca"
+                                        Binding="{Binding Merchant}"
+                                        Width="*" />
+                    <DataGridTextColumn Header="Konto"
+                                        Binding="{Binding AccountName}"
+                                        Width="*" />
+                    <DataGridTextColumn Header="Kategoria"
+                                        Binding="{Binding CategoryName}"
+                                        Width="*" />
+                    <DataGridTemplateColumn Header="Kwota" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock HorizontalAlignment="Right"
+                                           Margin="0,0,12,0"
                                            VerticalAlignment="Center"
                                            FontWeight="SemiBold"
-                                           Foreground="#1D1D1F">
+                                           Foreground="{Binding Amount, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
                                     <TextBlock.Text>
                                         <MultiBinding StringFormat="{}{0:N2} {1}">
                                             <Binding Path="Amount" />
@@ -60,11 +103,11 @@
                                         </MultiBinding>
                                     </TextBlock.Text>
                                 </TextBlock>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
         </Panel>
     </Grid>
 </UserControl>
