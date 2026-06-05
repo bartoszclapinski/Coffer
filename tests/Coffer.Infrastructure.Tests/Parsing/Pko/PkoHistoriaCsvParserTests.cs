@@ -77,7 +77,7 @@ public class PkoHistoriaCsvParserTests
         var result = await ParseAsync(CsvStatementInputFactory.FromGoldenFile());
 
         result.AccountNumber.Should().BeEmpty();
-        result.Warnings.Should().Contain(w => w.Contains("Account number"));
+        result.Warnings.Should().Contain(PkoHistoriaCsvParser.AccountNumberAbsentWarning);
     }
 
     [Fact]

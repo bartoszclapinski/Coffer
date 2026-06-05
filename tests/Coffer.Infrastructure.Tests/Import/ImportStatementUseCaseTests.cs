@@ -124,7 +124,7 @@ public class ImportStatementUseCaseTests : IDisposable
     }
 
     [Fact]
-    public async Task Execute_SurfacesParserWarnings()
+    public async Task Execute_DropsAccountConfirmationWarning()
     {
         var accountId = await SeedAccountAsync();
         var useCase = CreateUseCase();
@@ -132,8 +132,9 @@ public class ImportStatementUseCaseTests : IDisposable
         var input = CsvStatementInputFactory.FromGoldenFile();
         var summary = await useCase.ExecuteAsync(new ImportRequest(input, accountId), null, CancellationToken.None);
 
-        // The PKO CSV omits the account number; the parser surfaces that as a warning.
-        summary.Warnings.Should().Contain(w => w.Contains("Account number"));
+        // The parser warns the PKO CSV omits the account number, but this flow always
+        // confirms the target account, so the warning must not reach the user-facing summary.
+        summary.Warnings.Should().NotContain(PkoHistoriaCsvParser.AccountNumberAbsentWarning);
     }
 
     private ImportStatementUseCase CreateUseCase()
