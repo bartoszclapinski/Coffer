@@ -11,7 +11,8 @@ namespace Coffer.Infrastructure.Tests.Persistence;
 public class MigrationRunnerTests : IDisposable
 {
     private const string _expectedInitialMigration = "20260516142523_InitialCreate";
-    private const string _expectedLatestMigration = "20260602091757_AddTransactionsSchema";
+    private const string _expectedTransactionsMigration = "20260602091757_AddTransactionsSchema";
+    private const string _expectedLatestMigration = "20260605120600_AddCategorizationSchema";
 
     private readonly string _tempDir;
     private readonly string _dbPath;
@@ -128,7 +129,8 @@ public class MigrationRunnerTests : IDisposable
         var result = await runner.RunPendingMigrationsAsync(CancellationToken.None);
 
         result.Status.Should().Be(MigrationStatus.Migrated);
-        result.AppliedMigrations.Should().Equal(_expectedInitialMigration, _expectedLatestMigration);
+        result.AppliedMigrations.Should().Equal(
+            _expectedInitialMigration, _expectedTransactionsMigration, _expectedLatestMigration);
     }
 
     [Fact]

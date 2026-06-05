@@ -3,6 +3,7 @@ using System;
 using Coffer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Coffer.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(CofferDbContext))]
-    partial class CofferDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260605120600_AddCategorizationSchema")]
+    partial class AddCategorizationSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.16");

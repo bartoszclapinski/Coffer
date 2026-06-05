@@ -10,7 +10,7 @@ namespace Coffer.Infrastructure.Tests.Persistence;
 /// <c>Pooling=False</c> pattern as the schema tests so each created context opens
 /// its own connection and temp files can be deleted after the test.
 /// </summary>
-internal sealed class SqliteTestDbContextFactory : IDbContextFactory<CofferDbContext>
+public sealed class SqliteTestDbContextFactory : IDbContextFactory<CofferDbContext>
 {
     private readonly DbContextOptions<CofferDbContext> _options;
 

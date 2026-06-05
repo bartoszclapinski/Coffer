@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Setup;
+using Coffer.Core.Categorization;
 using Coffer.Core.Security;
 using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
@@ -229,6 +230,8 @@ public partial class App : Avalonia.Application
 
     private Window BuildMainWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
+        SeedDefaultCategories();
+
         var window = Services.GetRequiredService<MainWindow>();
         var vm = Services.GetRequiredService<MainViewModel>();
         window.DataContext = vm;
@@ -236,6 +239,23 @@ public partial class App : Avalonia.Application
 
         StartAutoLockMonitor(desktop);
         return window;
+    }
+
+    private static void SeedDefaultCategories()
+    {
+        // Idempotent: a no-op once seeded (two COUNT checks). Runs on the bootstrap
+        // thread before MainWindow is shown — the insert is tiny and only happens once.
+        try
+        {
+            var seed = Services.GetRequiredService<ICategorySeed>();
+            seed.SeedAsync(CancellationToken.None).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            // Seeding is best-effort: a failure here must not block the user from the app.
+            // They can still import; categories simply will not be pre-populated.
+            Log.Warning(ex, "Default category seed failed; continuing without it");
+        }
     }
 
     private void StartAutoLockMonitor(IClassicDesktopStyleApplicationLifetime desktop)

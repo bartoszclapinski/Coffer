@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Coffer.Core.Domain;
 using Coffer.Core.Import;
+using Coffer.Infrastructure.Categorization;
 using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Parsing;
 using Coffer.Infrastructure.Parsing.Pko;
@@ -124,6 +125,25 @@ public class ImportStatementUseCaseTests : IDisposable
     }
 
     [Fact]
+    public async Task Execute_CategorisesRowsViaSeededRule()
+    {
+        var accountId = await SeedAccountAsync();
+        var categoryId = await SeedCategoryWithRuleAsync(pattern: ".");
+        var useCase = CreateUseCase();
+
+        var input = CsvStatementInputFactory.FromGoldenFile();
+        var summary = await useCase.ExecuteAsync(new ImportRequest(input, accountId), null, CancellationToken.None);
+
+        summary.Added.Should().Be(8);
+        summary.Categorized.Should().Be(8, "a catch-all rule categorises every added row at import time");
+
+        await using var db = _factory.CreateDbContext();
+        (await db.Transactions.AllAsync(t => t.CategoryId == categoryId)).Should().BeTrue();
+        (await db.CategoryCache.CountAsync())
+            .Should().BeGreaterThan(0, "rule hits are written back to the cache during import");
+    }
+
+    [Fact]
     public async Task Execute_DropsAccountConfirmationWarning()
     {
         var accountId = await SeedAccountAsync();
@@ -140,11 +160,33 @@ public class ImportStatementUseCaseTests : IDisposable
     private ImportStatementUseCase CreateUseCase()
     {
         var registry = new StatementParserRegistry([new PkoHistoriaCsvParser()]);
+        var categorizer = new RuleCacheCategorizer(
+            _factory, new RuleEngine(NullLogger<RuleEngine>.Instance));
         return new ImportStatementUseCase(
             _factory,
             new FingerprintBankDetector(),
             registry,
+            categorizer,
             NullLogger<ImportStatementUseCase>.Instance);
+    }
+
+    private async Task<Guid> SeedCategoryWithRuleAsync(string pattern)
+    {
+        await using var db = _factory.CreateDbContext();
+        await db.Database.MigrateAsync();
+
+        var category = new Category { Id = Guid.NewGuid(), Name = "Inne", Color = "#636366" };
+        db.Categories.Add(category);
+        db.Rules.Add(new Rule
+        {
+            Id = Guid.NewGuid(),
+            Pattern = pattern,
+            Priority = 100,
+            CategoryId = category.Id,
+            IsEnabled = true,
+        });
+        await db.SaveChangesAsync();
+        return category.Id;
     }
 
     private async Task<Guid> SeedAccountAsync()

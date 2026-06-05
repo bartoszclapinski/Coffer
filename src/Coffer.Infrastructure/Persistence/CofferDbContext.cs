@@ -21,6 +21,10 @@ public sealed class CofferDbContext : DbContext
 
     public DbSet<Category> Categories => Set<Category>();
 
+    public DbSet<Rule> Rules => Set<Rule>();
+
+    public DbSet<CategoryCache> CategoryCache => Set<CategoryCache>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -38,6 +42,8 @@ public sealed class CofferDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CategoryConfiguration());
         modelBuilder.ApplyConfiguration(new ImportSessionConfiguration());
         modelBuilder.ApplyConfiguration(new TransactionConfiguration());
+        modelBuilder.ApplyConfiguration(new RuleConfiguration());
+        modelBuilder.ApplyConfiguration(new CategoryCacheConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

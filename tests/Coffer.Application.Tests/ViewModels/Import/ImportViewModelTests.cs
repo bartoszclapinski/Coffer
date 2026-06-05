@@ -72,7 +72,7 @@ public class ImportViewModelTests
         var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
         await vm.LoadAccountsCommand.ExecuteAsync(null);
         await vm.BrowseCommand.ExecuteAsync(null);
-        useCase.Result = new ImportSummary(Guid.NewGuid(), 8, 2, false, ["Account number missing"]);
+        useCase.Result = new ImportSummary(Guid.NewGuid(), 8, 2, 5, false, ["Account number missing"]);
 
         await vm.ImportCommand.ExecuteAsync(null);
 
