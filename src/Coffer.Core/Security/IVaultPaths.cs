@@ -20,4 +20,7 @@ public interface IVaultPaths
 
     /// <summary>The DPAPI master-key cache (7-day TTL on Windows).</summary>
     string MasterKeyCacheFile { get; }
+
+    /// <summary>The folder holding DPAPI-encrypted named secrets (e.g. AI API keys).</summary>
+    string SecretsFolder { get; }
 }

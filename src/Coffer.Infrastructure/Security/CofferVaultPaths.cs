@@ -23,4 +23,7 @@ public sealed class CofferVaultPaths : IVaultPaths
 
     public string MasterKeyCacheFile =>
         Path.Combine(LocalAppDataFolder, "master-key.dpapi.cache");
+
+    public string SecretsFolder =>
+        Path.Combine(LocalAppDataFolder, "secrets");
 }

@@ -32,6 +32,9 @@ public sealed class TestVaultPaths : IVaultPaths, IDisposable
     public string MasterKeyCacheFile =>
         Path.Combine(LocalAppDataFolder, "master-key.dpapi.cache");
 
+    public string SecretsFolder =>
+        Path.Combine(LocalAppDataFolder, "secrets");
+
     public void Dispose()
     {
         try

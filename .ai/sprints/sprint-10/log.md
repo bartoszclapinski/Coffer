@@ -46,3 +46,41 @@
   unknown→null), CategoryService (set+learn, recategorise count), DefaultCategorySeed (idempotency, leaves
   user categories alone), categorisation schema/indexes over real SQLCipher, import-categorises-golden-CSV,
   Transactions VM (filter + manual recategorise + recategorise-existing). Full suite green (250), format clean.
+
+### Phase 10-B — AI plumbing (provider + anonymiser + secret store + cost ledger + budget gate + Settings)
+
+- Shipped the AI infrastructure with **no real API calls in CI** and **not yet wired into categorisation**
+  (that is 10-C), issue #84. Packages: `Microsoft.Extensions.AI` 9.10.2 + `Anthropic.SDK` 5.10.0 (pinned to
+  the 9.x line to avoid pulling 10.x DI abstractions over the project's 9.* pins).
+- Secret storage decision: **new `ISecretStore`** rather than extending `IKeyVault`. `IKeyVault` holds the
+  single TTL'd master-key cache; API keys are durable named secrets with no expiry. Windows impl is DPAPI
+  (`CurrentUser`), one file per secret named by SHA-256 of the secret name (name never written to disk);
+  `InMemorySecretStore` is the non-Windows/test fallback (mirrors the `IKeyVault` branch).
+- Core abstractions (`Coffer.Core/Ai/`): `IAiProvider` (`CompleteAsync` / `CompleteJsonAsync<T>` /
+  `StreamAsync`), `AiRequest`, `AiResult<T>` + `AiUsage`, `IPromptAnonymizer`, `IAiPricing` + `AiCost`,
+  `IAiUsageLedger` + `AiSpendByPurpose`, `IAiBudgetGate` + `AiPriority`, `IAiSettings`, `AiDefaults` /
+  `AiPurpose`. **Divergence from the doc-04 sketch:** `IAiProvider` returns `AiResult<T>` (value + token
+  usage) instead of a bare value, so every call can be priced and ledgered.
+- Infrastructure (`Coffer.Infrastructure/AI/`): `PromptAnonymizer` (IBAN → NIP → ACCOUNT redaction order,
+  merchant names deliberately preserved — hard rule #7), `AiPricing` (static per-model USD/Mtok, fixed
+  USD→PLN, unknown model falls back to the dearer Sonnet rate so it never under-reports), `AiUsageLedger`
+  (one `AiUsageEntry` per call, month-to-date in UTC), `AiBudgetGate` (`Critical` bypasses the cap and warns;
+  `Normal` blocked over cap), `AppSettingsStore` (`IAiSettings` over an `AppSetting` KV table, defaults from
+  `AiDefaults`), `ClaudeProvider` (over `Microsoft.Extensions.AI` `IChatClient` = `AnthropicClient.Messages`;
+  API key resolved **per-call** from `ISecretStore` so a key entered in Settings works without a restart and
+  is never held in a field; `StreamAsync` stubbed until Phase 7).
+- Schema: `AiUsageEntry` + `AppSetting` entities, `AddAiUsageLedger` migration (AiUsageEntries +
+  AppSettings tables, indexes on `At` / `Purpose`). **Cost columns overridden to `decimal(18,6)`** — the
+  global `(18,2)` convention would round a single sub-grosz categorisation call to 0.00 and make the ledger
+  under-report.
+- UI: Settings page (`SettingsViewModel` in Application, `SettingsView` in Desktop) — provider pick,
+  categorisation model, masked API-key entry (write-only; never read back — hard rule #6), monthly PLN cap,
+  month-to-date spend. New "Ustawienia" sidebar entry in `MainWindow`. **GUI not headlessly verifiable.**
+- DI: `AddCofferAi()` registers the secret store (Windows/in-memory branch) + provider + anonymiser +
+  pricing + ledger + budget gate + settings; `SettingsViewModel` in Desktop DI.
+- Tests (27 new): PromptAnonymizer (IBAN/NIP/account redaction, merchant preserved, null/empty),
+  AiPricing (known + fallback + sub-grosz), AiUsageLedger (accumulation + by-purpose over real SQLCipher),
+  AiBudgetGate (under/over cap × Normal/Critical), AppSettingsStore (defaults + round-trip + upsert),
+  InMemorySecretStore (round-trip/overwrite/delete/missing), SettingsViewModel (load/save/key save+clear/
+  CanExecute). `MigrationRunnerTests` updated for the new latest migration. Full suite green (277),
+  format clean. **No vendor API hit in CI; categorisation still deterministic until 10-C wires the gate in.**
