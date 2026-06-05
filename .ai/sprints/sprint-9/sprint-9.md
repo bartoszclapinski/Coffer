@@ -1,7 +1,7 @@
 # Sprint 9 — Import flow + transaction list
 
 **Phase:** 2 (Import flow + transaction list)
-**Status:** Planned
+**Status:** Closed (2026-06-05)
 **Depends on:** sprint-8 (`PkoHistoriaCsvParser`, `IBankDetector` / `StatementParserRegistry`, `StatementInput`), sprint-4 (`CofferDbContext` + SQLCipher + `MigrationRunner`), sprint-7 (`TransactionHash`, `DescriptionNormalizer`)
 
 ## Goal
@@ -24,7 +24,7 @@ bind to.
 
 ### Domain + persistence
 
-- [ ] 9.1 Add domain entities to `Coffer.Core/Domain`: `Account` (Id, Name, BankCode, AccountNumber,
+- [x] 9.1 Add domain entities to `Coffer.Core/Domain`: `Account` (Id, Name, BankCode, AccountNumber,
   Currency, `AccountType`, IsArchived, CreatedAt), `Transaction` (per `02-database-and-encryption.md`
   — money `decimal`, `Date`/`BookingDate` `DateOnly`, `CreatedAt` UTC `DateTime`, nullable
   `CategoryId`, required `ImportSessionId`, `Hash`, `NormalizedDescription`), `ImportSession`
@@ -33,13 +33,13 @@ bind to.
   **Deferred to their own phases:** `Receipt`/`ReceiptItem`/`TransactionSplit` (Phase 5),
   `Tag` (Phase 9 advisor / later), `Rule` (Phase 4) — and the corresponding nav properties on
   `Transaction` are omitted now to keep the schema lean.
-- [ ] 9.2 EF configuration in `Coffer.Infrastructure/Persistence`: add `DbSet`s (Accounts,
+- [x] 9.2 EF configuration in `Coffer.Infrastructure/Persistence`: add `DbSet`s (Accounts,
   Transactions, ImportSessions, Categories); global `decimal(18,2)` convention; indexes per doc 02
   (`Date`, `AccountId`, `(Date, AccountId)`, `Hash` **unique**, `NormalizedDescription`, `CategoryId`);
   verify `DateOnly` round-trips through the SQLCipher provider (EF Core 9 native support).
-- [ ] 9.3 `dotnet ef migrations add AddTransactionsSchema` → commit under `Persistence/Migrations/`.
+- [x] 9.3 `dotnet ef migrations add AddTransactionsSchema` → commit under `Persistence/Migrations/`.
   Migration creates Accounts, Categories, ImportSessions, Transactions with the indexes above.
-- [ ] 9.4 Wire migration-at-startup in the desktop bootstrap: after the DEK is available, run
+- [x] 9.4 Wire migration-at-startup in the desktop bootstrap: after the DEK is available, run
   `MigrationRunner.RunPendingMigrationsAsync` behind the doc-02 user-facing flow — confirmation
   dialog ("Database update required. A backup will be created automatically. Continue?") → mandatory
   pre-migration snapshot via the existing `_preMigrationBackup` callback → migrate → cancel closes
@@ -48,10 +48,10 @@ bind to.
 
 ### Application
 
-- [ ] 9.5 `IFilePicker` abstraction (open-file, returns a `StatementInput`-friendly stream + file
+- [x] 9.5 `IFilePicker` abstraction (open-file, returns a `StatementInput`-friendly stream + file
   name) + Avalonia `StorageProvider` implementation in Desktop, registered behind the interface
   (hard rule #4). No platform file-dialog types leak past Infrastructure/Desktop.
-- [ ] 9.6 `ImportStatementUseCase` (Application): given a `StatementInput` + chosen/created `Account`,
+- [x] 9.6 `ImportStatementUseCase` (Application): given a `StatementInput` + chosen/created `Account`,
   run `IBankDetector.Detect` → `StatementParserRegistry.Resolve` → `IStatementParser.ParseAsync`;
   map each `ParsedTransaction` → `Transaction` (`Hash` via `TransactionHash`, `NormalizedDescription`
   via `DescriptionNormalizer`); skip rows whose `Hash` already exists (dedup); compute the file hash
@@ -59,50 +59,52 @@ bind to.
   `ImportSession` + new transactions in one transaction via `IDbContextFactory`; return a summary
   (added / skipped / warnings). Surfaces the PKO "account number absent — confirm at import" warning
   by requiring the caller to supply the account.
-- [ ] 9.7 Report progress through `IProgress<ImportProgress>` with the five pipeline stages
+- [x] 9.7 Report progress through `IProgress<ImportProgress>` with the five pipeline stages
   (file read → bank detected → parsed → dedup → saved).
-- [ ] 9.8 `GetTransactionsQuery` (Application): default last-6-months window, optional filters (text
+- [x] 9.8 `GetTransactionsQuery` (Application): default last-6-months window, optional filters (text
   over Description/Merchant, `AccountId`, `CategoryId`), `AsNoTracking`, server-side `OrderByDescending(Date)`;
   plus a small query returning the account list for the filter dropdown.
 
 ### Desktop UI
 
-- [ ] 9.9 Turn `MainWindow` into a shell with navigation between **Import** and **Transactions**
+- [x] 9.9 Turn `MainWindow` into a shell with navigation between **Import** and **Transactions**
   (nav rail or tabs), matching the design language of `docs/mockups/desktop/transactions.html`
   and `dashboard.html`. Keep the existing auto-lock activity hooks and Logout.
-- [ ] 9.10 Import page (View + ViewModel): drag-and-drop drop zone + "Browse…" via `IFilePicker`;
+- [x] 9.10 Import page (View + ViewModel): drag-and-drop drop zone + "Browse…" via `IFilePicker`;
   account selection (pick existing or create a new account inline); five-step progress UI bound to
   `IProgress<ImportProgress>`; result summary (added / skipped, parser warnings). Errors
   (`UnsupportedBankException`, `UnsupportedCsvLayoutException`) shown without leaking row content.
-- [ ] 9.11 Transactions list page (View + ViewModel): virtualized `DataGrid` (Date, Description,
+- [x] 9.11 Transactions list page (View + ViewModel): virtualized `DataGrid` (Date, Description,
   Merchant, Amount with sign colour, Account, Category) with a filter bar (search box, account
   dropdown, category dropdown, date range defaulting to 6 months) and an empty state. Match
   `docs/mockups/desktop/transactions.html`.
-- [ ] 9.12 DI registration: use cases + queries in `Coffer.Application/DependencyInjection`;
+- [x] 9.12 DI registration: use cases + queries in `Coffer.Application/DependencyInjection`;
   `IFilePicker`, new windows/pages, and view models in `Coffer.Desktop`.
 
 ### Tests
 
-- [ ] 9.13 Persistence tests (`Coffer.Infrastructure.Tests`, real SQLCipher per existing pattern):
+- [x] 9.13 Persistence tests (`Coffer.Infrastructure.Tests`, real SQLCipher per existing pattern):
   migration applies on a fresh DB; expected indexes exist; the `Hash` unique index rejects a
   duplicate; `decimal(18,2)` precision; `DateOnly` round-trip.
-- [ ] 9.14 `ImportStatementUseCase` tests (`Coffer.Application.Tests`): import the committed golden
+- [x] 9.14 `ImportStatementUseCase` tests (`Coffer.Application.Tests`): import the committed golden
   PKO CSV into a fresh encrypted DB → correct count saved under one `ImportSession`; **re-import the
   same file → 0 added, all skipped** (dedup); account creation/selection path; the five progress
   stages are emitted in order; mixed-currency / empty warnings surfaced.
-- [ ] 9.15 `GetTransactionsQuery` tests: 6-month default window; each filter narrows results
+- [x] 9.15 `GetTransactionsQuery` tests: 6-month default window; each filter narrows results
   correctly; ordering is newest-first.
-- [ ] 9.16 ViewModel tests: Import VM state transitions (idle → running → done / error); Transactions
+- [x] 9.16 ViewModel tests: Import VM state transitions (idle → running → done / error); Transactions
   VM filter changes re-query.
 
 ### Verification + bookkeeping
 
-- [ ] 9.17 Manual DoD (end of Phase D): launch desktop, import the gitignored real PKO CSV, pick an
+- [x] 9.17 Manual DoD (end of Phase D): launch desktop, import the gitignored real PKO CSV, pick an
   account, see **39 transactions** in the list, filter by search; re-import the same file → no
-  duplicates added.
-- [ ] 9.18 Each delivery phase below: `dotnet build` + `dotnet test` + `dotnet format
+  duplicates added. *(Owner-run hands-on smoke test; closure authorised by the owner. The code DoD 1–7
+  is met and the automated suite is green — if the smoke test surfaces anything, it is logged and fixed
+  as a follow-up.)*
+- [x] 9.18 Each delivery phase below: `dotnet build` + `dotnet test` + `dotnet format
   --verify-no-changes` green locally before its PR.
-- [ ] 9.19 `gh issue create` for closure → `chore/close-sprint-9` PR (after all phases merged).
+- [x] 9.19 `gh issue create` for closure → `chore/close-sprint-9` PR (after all phases merged).
 
 ## Delivery — phased PRs (not one monolithic commit)
 
