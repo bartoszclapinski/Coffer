@@ -50,6 +50,16 @@ public sealed class PkoHistoriaCsvParser : IStatementParser
 
     private const int _descriptionStartColumn = 6;
 
+    /// <summary>
+    /// Emitted on every parse because the "Historia rachunku" CSV body carries no
+    /// account number. The import flow always resolves it (the user confirms the
+    /// target account), so <see cref="Coffer.Core.Import.IImportStatementUseCase"/>
+    /// drops this from the user-facing summary — it is a parser-level note, not a
+    /// problem with the import.
+    /// </summary>
+    public const string AccountNumberAbsentWarning =
+        "Account number is not present in the PKO 'Historia rachunku' CSV export; it must be confirmed at import time.";
+
     public string BankCode => "PKO_BP";
 
     public StatementFormat Format => StatementFormat.Csv;
@@ -118,8 +128,7 @@ public sealed class PkoHistoriaCsvParser : IStatementParser
             }
         }
 
-        warnings.Add(
-            "Account number is not present in the PKO 'Historia rachunku' CSV export; it must be confirmed at import time.");
+        warnings.Add(AccountNumberAbsentWarning);
 
         var periodFrom = transactions.Count > 0 ? transactions.Min(t => t.Date) : default;
         var periodTo = transactions.Count > 0 ? transactions.Max(t => t.Date) : default;

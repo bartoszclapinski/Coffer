@@ -145,7 +145,14 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
             "Imported {Added} new transaction(s), skipped {Skipped} duplicate(s) from {File} into account {Account}",
             toAdd.Count, skipped, session.FileName, account.Id);
 
-        return new ImportSummary(session.Id, toAdd.Count, skipped, alreadyImported, parsed.Warnings);
+        // The PKO CSV omits the account number, so the parser warns it must be confirmed
+        // at import time. This flow always confirms it (the user picks the target account),
+        // so the warning is moot here — drop it rather than alarm the user on every import.
+        var userWarnings = parsed.Warnings
+            .Where(w => !string.Equals(w, Parsing.Pko.PkoHistoriaCsvParser.AccountNumberAbsentWarning, StringComparison.Ordinal))
+            .ToList();
+
+        return new ImportSummary(session.Id, toAdd.Count, skipped, alreadyImported, userWarnings);
     }
 
     private static string ComputeFileHash(Stream content)
