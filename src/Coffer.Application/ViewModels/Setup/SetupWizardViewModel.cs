@@ -107,9 +107,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         try
         {
+            // ConfigureAwait(true): SetupCompleted drives window construction in App, which
+            // must run on the UI thread. Argon2 derivation runs via Task.Run, so without this
+            // the continuation (and the event) would stay on a thread-pool thread and Avalonia
+            // would reject the off-thread window build. Mirrors LoginViewModel.
             await _setupService
                 .CompleteSetupAsync(Password.Password, Mnemonic, CancellationToken.None)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
             OnSetupCompleted(success: true, error: null);
         }
         catch (Exception ex)

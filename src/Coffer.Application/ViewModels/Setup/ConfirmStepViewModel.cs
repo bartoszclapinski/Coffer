@@ -29,7 +29,7 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
         ErrorMessage = "";
         try
         {
-            await _completeAction().ConfigureAwait(false);
+            await _completeAction().ConfigureAwait(true);
         }
         catch (VaultAlreadyExistsException ex)
         {

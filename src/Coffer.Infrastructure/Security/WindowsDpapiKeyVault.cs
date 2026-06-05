@@ -33,7 +33,10 @@ public sealed class WindowsDpapiKeyVault : IKeyVault
             return null;
         }
 
-        var protectedBytes = await File.ReadAllBytesAsync(_cacheFilePath, ct);
+        // ConfigureAwait(false): the cold-start path blocks the UI thread on this call
+        // (App.ResolveStartupWindow → GetResult). Capturing the UI SynchronizationContext
+        // here would deadlock — the continuation could never resume on the blocked thread.
+        var protectedBytes = await File.ReadAllBytesAsync(_cacheFilePath, ct).ConfigureAwait(false);
 
         byte[] plainBytes;
         try
@@ -89,7 +92,7 @@ public sealed class WindowsDpapiKeyVault : IKeyVault
                 plainBytes,
                 optionalEntropy: null,
                 DataProtectionScope.CurrentUser);
-            await File.WriteAllBytesAsync(_cacheFilePath, protectedBytes, ct);
+            await File.WriteAllBytesAsync(_cacheFilePath, protectedBytes, ct).ConfigureAwait(false);
         }
         finally
         {
