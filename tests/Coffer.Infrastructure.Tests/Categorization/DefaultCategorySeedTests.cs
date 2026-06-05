@@ -49,6 +49,33 @@ public class DefaultCategorySeedTests : CategorizationDbTest
     }
 
     [Fact]
+    public async Task Seed_MortgageRule_DoesNotMatchCreditCardRepayment()
+    {
+        await using (var db = await MigratedContextAsync())
+        {
+            // Migrate only.
+        }
+
+        await Seed().SeedAsync(CancellationToken.None);
+
+        await using var verify = Factory.CreateDbContext();
+        var rules = await verify.Rules.ToListAsync();
+        var mortgageId = await verify.Categories
+            .Where(c => c.Name == "Kredyt hipoteczny")
+            .Select(c => c.Id)
+            .SingleAsync();
+
+        var engine = new RuleEngine(NullLogger<RuleEngine>.Instance);
+
+        engine.Match("SPŁATA KARTY KREDYTOWEJ", rules).Should().NotBe(mortgageId,
+            "a credit-card repayment must not be filed under the mortgage category");
+        engine.Match("KREDYT GOTÓWKOWY RATA", rules).Should().NotBe(mortgageId,
+            "a cash loan instalment is not a mortgage payment");
+        engine.Match("RATA KREDYTU HIPOTECZNEGO", rules).Should().Be(mortgageId,
+            "an actual mortgage instalment still resolves to the mortgage category");
+    }
+
+    [Fact]
     public async Task Seed_DoesNotTouchExistingUserCategories()
     {
         await using (var db = await MigratedContextAsync())

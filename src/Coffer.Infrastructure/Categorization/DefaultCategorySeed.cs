@@ -43,7 +43,7 @@ public sealed class DefaultCategorySeed : ICategorySeed
         ("Restauracje", 40, @"MCDONALD|\bKFC\b|PIZZA|RESTAURACJA|BURGER|GLOVO|PYSZNE|UBER\s?EATS"),
         ("Zdrowie", 50, @"APTEKA|PRZYCHODNIA|MEDICOVER|LUX\s?MED"),
         ("Transport", 60, @"\bUBER\b|\bBOLT\b|\bMPK\b|\bPKP\b|JAKDOJADE|KOLEJE"),
-        ("Kredyt hipoteczny", 70, @"HIPOTE|\bRATA\b|KREDYT"),
+        ("Kredyt hipoteczny", 70, @"HIPOTE"),
         ("Wpływy", 80, @"WYNAGRODZENIE|PENSJA|WPŁYW|WPLYW"),
     ];
 
