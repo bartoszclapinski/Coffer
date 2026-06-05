@@ -79,3 +79,17 @@
   can be cleared; `BuildFilter` uses `DateTime.Now` (user-facing window, not UTC); `App.axaml` final
   newline. Kept `DateOnly.MinValue` for "Cały okres" (reviewer's null suggestion would hit the query's
   six-month default). Application suite 48→51 green.
+
+## 2026-06-05
+
+- **Sprint closed.** All four phased PRs are merged to `main` (9-A #65, 9-B #67, 9-C #69, 9-D #71);
+  every plan step 9.1–9.18 is complete and the DoD code criteria (1–7) are met with the full suite
+  green and CI green. Phase 2's import-flow + transaction-list backbone is in place: the first
+  schema-creating migration (`AddTransactionsSchema`) applies at startup behind a confirmation dialog
+  with a mandatory pre-migration backup; `ImportStatementUseCase` reads → detects → parses → dedups →
+  saves under one `ImportSession`; `IFilePicker` abstracts the OS picker; and the Avalonia Import and
+  Transactions pages drive the flow end-to-end inside the sidebar shell. The owner-run hands-on smoke
+  test (9.17 — import a real PKO CSV → 39 transactions, filter, re-import → no duplicates) is the one
+  remaining manual check; closure is authorised by the owner on the strength of the green automated
+  suite, and anything the smoke test surfaces is logged and fixed as a Phase-2 follow-up. Next:
+  Phase 3 (sync via Google Drive).
