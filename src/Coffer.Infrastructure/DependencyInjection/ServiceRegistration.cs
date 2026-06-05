@@ -1,9 +1,11 @@
 using Coffer.Core.Accounts;
+using Coffer.Core.Categorization;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
 using Coffer.Core.Security;
 using Coffer.Core.Transactions;
 using Coffer.Infrastructure.Accounts;
+using Coffer.Infrastructure.Categorization;
 using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Logging;
 using Coffer.Infrastructure.Parsing;
@@ -30,6 +32,7 @@ public static class ServiceRegistration
             .AddCofferLogin()
             .AddCofferAutoLock()
             .AddCofferParsing()
+            .AddCofferCategorization()
             .AddCofferImport();
 
     /// <summary>
@@ -43,6 +46,22 @@ public static class ServiceRegistration
         services.AddTransient<IImportStatementUseCase, ImportStatementUseCase>();
         services.AddTransient<IGetTransactionsQuery, GetTransactionsQuery>();
         services.AddTransient<IAccountService, AccountService>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the deterministic categorisation core (Phase 10-A): the pure rule
+    /// engine, the learned-cache store, the cache→rules categoriser wired into import,
+    /// the UI-facing category service, and the idempotent default seed. Phase 10-C swaps
+    /// <see cref="ICategorizer"/> for a hybrid that adds an AI batch.
+    /// </summary>
+    public static IServiceCollection AddCofferCategorization(this IServiceCollection services)
+    {
+        services.AddSingleton<ICategoryRuleEngine, RuleEngine>();
+        services.AddTransient<ICategoryCacheStore, CategoryCacheStore>();
+        services.AddTransient<ICategorizer, RuleCacheCategorizer>();
+        services.AddTransient<ICategoryService, CategoryService>();
+        services.AddTransient<ICategorySeed, DefaultCategorySeed>();
         return services;
     }
 

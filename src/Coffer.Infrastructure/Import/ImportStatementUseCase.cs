@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Coffer.Core.Categorization;
 using Coffer.Core.Domain;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
@@ -22,22 +23,26 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
     private readonly IBankDetector _detector;
     private readonly StatementParserRegistry _registry;
+    private readonly ICategorizer _categorizer;
     private readonly ILogger<ImportStatementUseCase> _logger;
 
     public ImportStatementUseCase(
         IDbContextFactory<CofferDbContext> contextFactory,
         IBankDetector detector,
         StatementParserRegistry registry,
+        ICategorizer categorizer,
         ILogger<ImportStatementUseCase> logger)
     {
         ArgumentNullException.ThrowIfNull(contextFactory);
         ArgumentNullException.ThrowIfNull(detector);
         ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(categorizer);
         ArgumentNullException.ThrowIfNull(logger);
 
         _contextFactory = contextFactory;
         _detector = detector;
         _registry = registry;
+        _categorizer = categorizer;
         _logger = logger;
     }
 
@@ -112,6 +117,27 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
         var toAdd = candidates.Where(t => !existing.Contains(t.Hash)).ToList();
         var skipped = parsed.Transactions.Count - toAdd.Count;
 
+        // Deterministic categorisation (cache → rules) runs as part of the dedup/save
+        // span — fast and free, no separate progress stage. The AI batch (Phase 10-C)
+        // will get its own stage when it lands.
+        var categorized = 0;
+        if (toAdd.Count > 0)
+        {
+            var categories = await _categorizer
+                .CategorizeAsync(toAdd.Select(t => t.NormalizedDescription).ToList(), ct)
+                .ConfigureAwait(false);
+
+            foreach (var t in toAdd)
+            {
+                if (categories.TryGetValue(t.NormalizedDescription, out var categoryId)
+                    && categoryId is { } id)
+                {
+                    t.CategoryId = id;
+                    categorized++;
+                }
+            }
+        }
+
         progress?.Report(new ImportProgress(ImportStage.Saving));
 
         var session = new ImportSession
@@ -152,7 +178,7 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
             .Where(w => !string.Equals(w, Parsing.Pko.PkoHistoriaCsvParser.AccountNumberAbsentWarning, StringComparison.Ordinal))
             .ToList();
 
-        return new ImportSummary(session.Id, toAdd.Count, skipped, alreadyImported, userWarnings);
+        return new ImportSummary(session.Id, toAdd.Count, skipped, categorized, alreadyImported, userWarnings);
     }
 
     private static string ComputeFileHash(Stream content)

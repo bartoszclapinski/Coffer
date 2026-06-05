@@ -21,3 +21,28 @@
 - Open questions parked for implementation: secret-storage shape (extend `IKeyVault` vs new
   `ISecretStore`), `Category.ParentId` hierarchy (defer unless needed), and the first-import AI cost
   pre-flight UX. See `sprint-10.md`.
+
+### Phase 10-A — deterministic core (rules + learned cache + manual re-categorisation)
+
+- Shipped the deterministic categoriser (cache → rules, **no AI / keys / network**), issue #82.
+- Domain: `Rule`, `CategoryCache`, `CacheSource` (Rule < Ai < Manual precedence) + `AddCategorizationSchema`
+  migration (Rules, CategoryCache tables; unique index on `CategoryCache.NormalizedDescription`,
+  index on `Rules.Priority`).
+- Core abstractions: `ICategoryRuleEngine` (pure matcher), `ICategoryCacheStore`, `ICategorizer`,
+  `ICategoryService` (UI-facing), `ICategorySeed`, `CategoryListItem`. Implementations in Infrastructure
+  over `IDbContextFactory`; respects Core-can't-see-`CofferDbContext`.
+- Rule matching: enabled rules by ascending `Priority`, first match wins, case-insensitive, 100 ms regex
+  timeout, malformed patterns skipped + logged (never throw into an import).
+- Learning loop: a rule hit is written back as a `Rule` cache entry (free next time); a manual correction
+  writes a `Manual` entry that outranks any later rule/AI write.
+- Wired into `ImportStatementUseCase` (folded into the existing 5-stage flow, no new stage) — added rows
+  are categorised at import; `ImportSummary` gained a `Categorized` count. Plus a "Kategoryzuj istniejące"
+  path over already-imported uncategorised rows.
+- Transactions page: inline per-row category picker (colour chip + combo), category filter dropdown,
+  recategorise-existing button. Default Polish category set (14) + starter rule pack (8) seeded
+  idempotently at startup (never overwrites the owner's edits).
+- Tests: RuleEngine (priority/first-match/invalid-regex/disabled), CategoryCacheStore (hit/miss/hit-count/
+  Manual-overrides-Rule/Rule-doesn't-override-Manual), RuleCacheCategorizer (cache>rule, rule write-back,
+  unknown→null), CategoryService (set+learn, recategorise count), DefaultCategorySeed (idempotency, leaves
+  user categories alone), categorisation schema/indexes over real SQLCipher, import-categorises-golden-CSV,
+  Transactions VM (filter + manual recategorise + recategorise-existing). Full suite green (250), format clean.

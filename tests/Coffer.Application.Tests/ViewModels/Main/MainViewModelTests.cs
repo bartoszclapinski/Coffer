@@ -80,6 +80,7 @@ public class MainViewModelTests
             NullLogger<ImportViewModel>.Instance);
         var transactions = new TransactionsViewModel(
             new FakeGetTransactionsQuery(),
+            new FakeCategoryService(),
             NullLogger<TransactionsViewModel>.Instance);
 
         return new MainViewModel(import, transactions, loginService, NullLogger<MainViewModel>.Instance);

@@ -68,7 +68,7 @@ internal sealed class FakeFilePicker : IFilePicker
 internal sealed class FakeImportStatementUseCase : IImportStatementUseCase
 {
     public ImportSummary Result { get; set; } =
-        new(Guid.NewGuid(), 8, 0, false, []);
+        new(Guid.NewGuid(), 8, 0, 0, false, []);
 
     public Exception? Throw { get; set; }
 

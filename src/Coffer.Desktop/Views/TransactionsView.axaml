@@ -9,17 +9,23 @@
              x:DataType="vm:TransactionsViewModel"
              x:CompileBindings="False">
     <Grid Margin="40,32" RowDefinitions="Auto,Auto,*">
-        <StackPanel Grid.Row="0" Spacing="4">
-            <TextBlock Text="Transakcje"
-                       FontSize="26"
-                       FontWeight="Light"
-                       Foreground="#1D1D1F" />
-            <TextBlock Text="Lista transakcji z ostatnich miesięcy."
-                       Foreground="#8E8E93" />
-        </StackPanel>
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Transakcje"
+                           FontSize="26"
+                           FontWeight="Light"
+                           Foreground="#1D1D1F" />
+                <TextBlock Text="Lista transakcji z ostatnich miesięcy."
+                           Foreground="#8E8E93" />
+            </StackPanel>
+            <Button Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Content="Kategoryzuj istniejące"
+                    Command="{Binding RecategorizeExistingCommand}" />
+        </Grid>
 
         <!-- Filter bar -->
-        <Grid Grid.Row="1" Margin="0,20,0,0" ColumnDefinitions="*,12,200,12,180">
+        <Grid Grid.Row="1" Margin="0,20,0,0" ColumnDefinitions="*,12,170,12,170,12,150">
             <TextBox Grid.Column="0"
                      Text="{Binding SearchText, Mode=TwoWay}"
                      Watermark="Szukaj po opisie lub sprzedawcy…" />
@@ -38,6 +44,21 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
             <ComboBox Grid.Column="4"
+                      HorizontalAlignment="Stretch"
+                      PlaceholderText="Wszystkie kategorie"
+                      ItemsSource="{Binding CategoryFilters}"
+                      SelectedItem="{Binding SelectedCategoryFilter, Mode=TwoWay}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="10" Height="10" VerticalAlignment="Center"
+                                     Fill="{Binding Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                            <TextBlock Text="{Binding Name}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <ComboBox Grid.Column="6"
                       HorizontalAlignment="Stretch"
                       ItemsSource="{Binding DateRanges}"
                       SelectedItem="{Binding SelectedRange, Mode=TwoWay}" />
@@ -85,9 +106,33 @@
                     <DataGridTextColumn Header="Konto"
                                         Binding="{Binding AccountName}"
                                         Width="*" />
-                    <DataGridTextColumn Header="Kategoria"
-                                        Binding="{Binding CategoryName}"
-                                        Width="*" />
+                    <DataGridTemplateColumn Header="Kategoria" Width="1.6*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="6,0">
+                                    <Ellipse Grid.Column="0" Width="10" Height="10" Margin="0,0,8,0"
+                                             VerticalAlignment="Center"
+                                             IsVisible="{Binding SelectedCategory, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                             Fill="{Binding SelectedCategory.Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                    <ComboBox Grid.Column="1"
+                                              HorizontalAlignment="Stretch"
+                                              PlaceholderText="Bez kategorii"
+                                              ItemsSource="{Binding Categories}"
+                                              SelectedItem="{Binding SelectedCategory, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Ellipse Width="10" Height="10" VerticalAlignment="Center"
+                                                             Fill="{Binding Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="Kwota" Width="140">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
