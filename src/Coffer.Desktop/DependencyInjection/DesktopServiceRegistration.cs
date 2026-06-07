@@ -1,3 +1,4 @@
+using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
@@ -23,6 +24,7 @@ public static class DesktopServiceRegistration
         // Singleton registration would have reused a torn-down window.
         services.AddTransient<MainWindow>();
         services.AddTransient<MainViewModel>();
+        services.AddTransient<DashboardViewModel>();
         services.AddTransient<ImportViewModel>();
         services.AddTransient<TransactionsViewModel>();
         services.AddTransient<SettingsViewModel>();

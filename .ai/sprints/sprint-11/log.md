@@ -21,3 +21,24 @@
 - Open questions parked for implementation: multi-currency scope (lean PLN-only v1), account scope
   (lean combined v1), chart drill-down (lean out of scope), default landing page (lean Dashboard).
   See `sprint-11.md`.
+
+## 2026-06-07 — implementation (single PR)
+
+- Core read model in `Coffer.Core/Dashboard/`: `DashboardFilter` (Currency="PLN", AccountId?, AsOf?),
+  `MonthlySummary`, `CategorySlice`, `TrendPoint`, `DashboardSnapshot`, `IDashboardQuery`. No UI/chart
+  refs (hard rule #3).
+- `DashboardQuery` in `Coffer.Infrastructure/Dashboard/`: one short-lived context, `AsNoTracking`,
+  server-side `SUM`/`GROUP BY` for current-month KPIs, top-6 categories (+ "Pozostałe" remainder,
+  null→"Bez kategorii"), 30-day daily trend and 12-month trend (gap-filled in memory), 8 most-recent
+  transactions. Scoped to one display currency (PLN) + optional account. Spend = magnitude of debits.
+- Resolved the riskiest unknown first: `GROUP BY t.Date` and `GROUP BY new { Year, Month }` translate
+  on SQLite — proved with 7 `DashboardQueryTests` (SQLCipher harness) before any UI.
+- `DashboardViewModel` (`Coffer.Application`): builds LiveCharts series **in the VM** — `LineSeries`
+  (30-day spend), `ColumnSeries` (12-month), `PieSeries` doughnut per category. KPI props, recent-tx +
+  top-category collections, `IsEmpty` empty-state, error state. 4 VM tests.
+- `DashboardView.axaml` (`Coffer.Desktop`): KPI cards, two `CartesianChart`s + one `PieChart`, recent
+  list. Wired into the shell: `MainViewModel` gains Dashboard as the **default landing page** + nav
+  command; `MainWindow.axaml` "Pulpit" sidebar entry + DataTemplate; DI registration. Existing
+  `MainViewModelTests` updated (now starts on Dashboard).
+- Full solution build 0 warnings; 298 tests green; `dotnet format` clean (only the pre-existing
+  autocrlf CRLF/ENDOFLINE working-tree artifact, which CI's fresh LF checkout normalises).

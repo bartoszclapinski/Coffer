@@ -1,4 +1,5 @@
 using Coffer.Application.Tests.Fakes;
+using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Settings;
@@ -53,9 +54,20 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public void StartsOnImportPage()
+    public void StartsOnDashboardPage()
     {
         var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.IsDashboardActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Dashboard);
+    }
+
+    [Fact]
+    public void ShowImport_SwitchesActivePage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.ShowImportCommand.Execute(null);
 
         vm.IsImportActive.Should().BeTrue();
         vm.CurrentPage.Should().BeSameAs(vm.Import);
@@ -74,6 +86,9 @@ public class MainViewModelTests
 
     private static MainViewModel CreateViewModel(ILoginService loginService)
     {
+        var dashboard = new DashboardViewModel(
+            new FakeDashboardQuery(),
+            NullLogger<DashboardViewModel>.Instance);
         var import = new ImportViewModel(
             new FakeFilePicker(),
             new FakeImportStatementUseCase(),
@@ -89,7 +104,8 @@ public class MainViewModelTests
             new FakeAiUsageLedger(),
             NullLogger<SettingsViewModel>.Instance);
 
-        return new MainViewModel(import, transactions, settings, loginService, NullLogger<MainViewModel>.Instance);
+        return new MainViewModel(
+            dashboard, import, transactions, settings, loginService, NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class RecordingLoginService : ILoginService

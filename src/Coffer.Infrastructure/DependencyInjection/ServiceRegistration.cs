@@ -1,6 +1,7 @@
 using Coffer.Core.Accounts;
 using Coffer.Core.Ai;
 using Coffer.Core.Categorization;
+using Coffer.Core.Dashboard;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
 using Coffer.Core.Security;
@@ -8,6 +9,7 @@ using Coffer.Core.Transactions;
 using Coffer.Infrastructure.Accounts;
 using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Categorization;
+using Coffer.Infrastructure.Dashboard;
 using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Logging;
 using Coffer.Infrastructure.Parsing;
@@ -79,6 +81,7 @@ public static class ServiceRegistration
     {
         services.AddTransient<IImportStatementUseCase, ImportStatementUseCase>();
         services.AddTransient<IGetTransactionsQuery, GetTransactionsQuery>();
+        services.AddTransient<IDashboardQuery, DashboardQuery>();
         services.AddTransient<IAccountService, AccountService>();
         return services;
     }
