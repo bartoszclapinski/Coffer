@@ -84,16 +84,17 @@ public static class ServiceRegistration
     }
 
     /// <summary>
-    /// Registers the deterministic categorisation core (Phase 10-A): the pure rule
-    /// engine, the learned-cache store, the cache→rules categoriser wired into import,
-    /// the UI-facing category service, and the idempotent default seed. Phase 10-C swaps
-    /// <see cref="ICategorizer"/> for a hybrid that adds an AI batch.
+    /// Registers the categorisation pipeline: the pure rule engine, the learned-cache
+    /// store, the UI-facing category service, and the idempotent default seed. The active
+    /// <see cref="ICategorizer"/> is the Phase 10-C <see cref="HybridCategorizer"/>
+    /// (cache → rules → AI batch behind the budget gate); the deterministic
+    /// <see cref="RuleCacheCategorizer"/> remains the free fallback path inside it.
     /// </summary>
     public static IServiceCollection AddCofferCategorization(this IServiceCollection services)
     {
         services.AddSingleton<ICategoryRuleEngine, RuleEngine>();
         services.AddTransient<ICategoryCacheStore, CategoryCacheStore>();
-        services.AddTransient<ICategorizer, RuleCacheCategorizer>();
+        services.AddTransient<ICategorizer, HybridCategorizer>();
         services.AddTransient<ICategoryService, CategoryService>();
         services.AddTransient<ICategorySeed, DefaultCategorySeed>();
         return services;
