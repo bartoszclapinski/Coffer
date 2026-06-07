@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Main;assembly=Coffer.Application"
+        xmlns:dashboardVm="clr-namespace:Coffer.Application.ViewModels.Dashboard;assembly=Coffer.Application"
         xmlns:importVm="clr-namespace:Coffer.Application.ViewModels.Import;assembly=Coffer.Application"
         xmlns:txVm="clr-namespace:Coffer.Application.ViewModels.Transactions;assembly=Coffer.Application"
         xmlns:settingsVm="clr-namespace:Coffer.Application.ViewModels.Settings;assembly=Coffer.Application"
@@ -16,6 +17,9 @@
         WindowStartupLocation="CenterScreen">
 
     <Window.DataTemplates>
+        <DataTemplate DataType="dashboardVm:DashboardViewModel">
+            <views:DashboardView />
+        </DataTemplate>
         <DataTemplate DataType="importVm:ImportViewModel">
             <views:ImportView />
         </DataTemplate>
@@ -42,6 +46,12 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Margin="12,8,12,8" Spacing="4">
+                    <Button Classes="nav"
+                            Classes.active="{Binding IsDashboardActive}"
+                            Content="Pulpit"
+                            Command="{Binding ShowDashboardCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left" />
                     <Button Classes="nav"
                             Classes.active="{Binding IsImportActive}"
                             Content="Import"

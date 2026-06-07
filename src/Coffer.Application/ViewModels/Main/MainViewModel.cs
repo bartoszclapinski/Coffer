@@ -1,4 +1,5 @@
 using System.Reflection;
+using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Transactions;
@@ -12,8 +13,9 @@ namespace Coffer.Application.ViewModels.Main;
 /// <summary>
 /// Shell view-model behind the post-login <c>MainWindow</c>. Hosts the sidebar
 /// navigation and swaps <see cref="CurrentPage"/> between the section view-models
-/// (Import, Transactions). Still owns the logout command and <see cref="LoggedOut"/>
-/// event that <c>App.axaml.cs</c> subscribes to in order to swap windows.
+/// (Dashboard, Import, Transactions, Settings). Still owns the logout command and
+/// <see cref="LoggedOut"/> event that <c>App.axaml.cs</c> subscribes to in order to
+/// swap windows.
 /// </summary>
 public sealed partial class MainViewModel : ObservableObject
 {
@@ -24,24 +26,28 @@ public sealed partial class MainViewModel : ObservableObject
     private bool _isBusy;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDashboardActive))]
     [NotifyPropertyChangedFor(nameof(IsImportActive))]
     [NotifyPropertyChangedFor(nameof(IsTransactionsActive))]
     [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     private ObservableObject? _currentPage;
 
     public MainViewModel(
+        DashboardViewModel dashboardViewModel,
         ImportViewModel importViewModel,
         TransactionsViewModel transactionsViewModel,
         SettingsViewModel settingsViewModel,
         ILoginService loginService,
         ILogger<MainViewModel> logger)
     {
+        ArgumentNullException.ThrowIfNull(dashboardViewModel);
         ArgumentNullException.ThrowIfNull(importViewModel);
         ArgumentNullException.ThrowIfNull(transactionsViewModel);
         ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
         ArgumentNullException.ThrowIfNull(logger);
 
+        Dashboard = dashboardViewModel;
         Import = importViewModel;
         Transactions = transactionsViewModel;
         Settings = settingsViewModel;
@@ -49,17 +55,21 @@ public sealed partial class MainViewModel : ObservableObject
         _logger = logger;
         AppVersion = ResolveAppVersion();
 
-        CurrentPage = Import;
-        Import.LoadAccountsCommand.Execute(null);
+        CurrentPage = Dashboard;
+        Dashboard.LoadCommand.Execute(null);
     }
 
     public string AppVersion { get; }
+
+    public DashboardViewModel Dashboard { get; }
 
     public ImportViewModel Import { get; }
 
     public TransactionsViewModel Transactions { get; }
 
     public SettingsViewModel Settings { get; }
+
+    public bool IsDashboardActive => ReferenceEquals(CurrentPage, Dashboard);
 
     public bool IsImportActive => ReferenceEquals(CurrentPage, Import);
 
@@ -68,6 +78,18 @@ public sealed partial class MainViewModel : ObservableObject
     public bool IsSettingsActive => ReferenceEquals(CurrentPage, Settings);
 
     public event EventHandler? LoggedOut;
+
+    [RelayCommand]
+    private void ShowDashboard()
+    {
+        if (IsDashboardActive)
+        {
+            return;
+        }
+
+        CurrentPage = Dashboard;
+        Dashboard.LoadCommand.Execute(null);
+    }
 
     [RelayCommand]
     private void ShowImport()

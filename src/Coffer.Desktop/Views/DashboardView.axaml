@@ -1,0 +1,190 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Dashboard;assembly=Coffer.Application"
+             xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
+             x:Class="Coffer.Desktop.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel"
+             x:CompileBindings="False">
+    <UserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="20,16" />
+        </Style>
+        <Style Selector="TextBlock.kpiLabel">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#8E8E93" />
+        </Style>
+        <Style Selector="TextBlock.kpiValue">
+            <Setter Property="FontSize" Value="26" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+        </Style>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <Grid Margin="40,32" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Spacing="4">
+                <TextBlock Text="Pulpit"
+                           FontSize="26"
+                           FontWeight="Light"
+                           Foreground="#1D1D1F" />
+                <TextBlock Text="{Binding CurrentMonthLabel, StringFormat='Przegląd finansów — {0}'}"
+                           Foreground="#8E8E93" />
+            </StackPanel>
+
+            <ProgressBar Grid.Row="0" IsIndeterminate="True" Height="4"
+                         VerticalAlignment="Bottom"
+                         IsVisible="{Binding IsLoading}" />
+
+            <TextBlock Grid.Row="1"
+                       Margin="0,20,0,0"
+                       Text="{Binding ErrorMessage}"
+                       Foreground="#D14"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <TextBlock Grid.Row="1"
+                       Margin="0,40,0,0"
+                       Text="Brak danych. Zaimportuj wyciąg, aby zobaczyć tu podsumowanie."
+                       Foreground="#8E8E93"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center"
+                       IsVisible="{Binding IsEmpty}" />
+
+            <!-- KPI cards -->
+            <Grid Grid.Row="2" Margin="0,24,0,0"
+                  ColumnDefinitions="*,16,*,16,*"
+                  IsVisible="{Binding HasData}">
+                <Border Grid.Column="0" Classes="card">
+                    <StackPanel>
+                        <TextBlock Classes="kpiLabel" Text="Wydatki" />
+                        <TextBlock Classes="kpiValue">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}{0:N2} {1}">
+                                    <Binding Path="Spend" />
+                                    <Binding Path="Currency" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="card">
+                    <StackPanel>
+                        <TextBlock Classes="kpiLabel" Text="Przychody" />
+                        <TextBlock Classes="kpiValue">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}{0:N2} {1}">
+                                    <Binding Path="Income" />
+                                    <Binding Path="Currency" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="4" Classes="card">
+                    <StackPanel>
+                        <TextBlock Classes="kpiLabel" Text="Saldo" />
+                        <TextBlock Classes="kpiValue"
+                                   Foreground="{Binding Net, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}{0:N2} {1}">
+                                    <Binding Path="Net" />
+                                    <Binding Path="Currency" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Trends + categories -->
+            <Grid Grid.Row="3" Margin="0,16,0,0"
+                  ColumnDefinitions="2*,16,*"
+                  RowDefinitions="Auto,16,Auto"
+                  IsVisible="{Binding HasData}">
+                <Border Grid.Row="0" Grid.Column="0" Classes="card">
+                    <StackPanel>
+                        <TextBlock Classes="sectionTitle" Text="Wydatki — ostatnie 30 dni" />
+                        <lvc:CartesianChart Height="220"
+                                            Series="{Binding DailySpendSeries}"
+                                            XAxes="{Binding DailyXAxes}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="0" Grid.Column="2" Classes="card">
+                    <StackPanel>
+                        <TextBlock Classes="sectionTitle" Text="Kategorie (ten miesiąc)" />
+                        <lvc:PieChart Height="220"
+                                      Series="{Binding CategorySeries}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Classes="card">
+                    <StackPanel>
+                        <TextBlock Classes="sectionTitle" Text="Wydatki — ostatnie 12 miesięcy" />
+                        <lvc:CartesianChart Height="200"
+                                            Series="{Binding MonthlySpendSeries}"
+                                            XAxes="{Binding MonthlyXAxes}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Recent transactions -->
+            <Border Grid.Row="4" Margin="0,16,0,0" Classes="card"
+                    IsVisible="{Binding HasData}">
+                <StackPanel>
+                    <TextBlock Classes="sectionTitle" Text="Ostatnie transakcje" />
+                    <ItemsControl ItemsSource="{Binding RecentTransactions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,6">
+                                    <Ellipse Grid.Column="0" Width="10" Height="10" Margin="0,0,12,0"
+                                             VerticalAlignment="Center"
+                                             IsVisible="{Binding CategoryColor, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                             Fill="{Binding CategoryColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="{Binding Description}"
+                                                   Foreground="#1D1D1F"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Foreground="#8E8E93" FontSize="12">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0:yyyy-MM-dd} · {1}">
+                                                    <Binding Path="Date" />
+                                                    <Binding Path="CategoryName" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Foreground="{Binding Amount, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:N2} {1}">
+                                                <Binding Path="Amount" />
+                                                <Binding Path="Currency" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>
