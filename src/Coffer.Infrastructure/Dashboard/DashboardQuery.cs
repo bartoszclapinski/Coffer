@@ -40,10 +40,6 @@ public sealed class DashboardQuery : IDashboardQuery
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
 
-        var today = filter.AsOf ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var monthStart = new DateOnly(today.Year, today.Month, 1);
-        var nextMonthStart = monthStart.AddMonths(1);
-
         var scope = db.Transactions.AsNoTracking().Where(t => t.Currency == filter.Currency);
         if (filter.AccountId is { } accountId)
         {
@@ -51,6 +47,16 @@ public sealed class DashboardQuery : IDashboardQuery
         }
 
         var hasData = await scope.AnyAsync(ct).ConfigureAwait(false);
+
+        // With no explicit as-of, anchor on the latest transaction in scope rather than the
+        // wall clock: an idle current month would otherwise leave the KPIs and doughnut empty
+        // even when recent data exists. Falls back to today only for an empty scope.
+        var today = filter.AsOf
+            ?? (hasData
+                ? await scope.MaxAsync(t => t.Date, ct).ConfigureAwait(false)
+                : DateOnly.FromDateTime(DateTime.UtcNow));
+        var monthStart = new DateOnly(today.Year, today.Month, 1);
+        var nextMonthStart = monthStart.AddMonths(1);
 
         var summary = await GetCurrentMonthSummaryAsync(scope, monthStart, nextMonthStart, filter.Currency, ct)
             .ConfigureAwait(false);

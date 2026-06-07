@@ -170,6 +170,22 @@ public class DashboardQueryTests : IDisposable
         snapshot.RecentTransactions[0].Date.Should().Be(_asOf);
     }
 
+    [Fact]
+    public async Task GetSnapshot_NoAsOf_AnchorsOnLatestTransactionMonth()
+    {
+        await SeedAsync();
+        await AddAsync(_groceries, new DateOnly(2026, 1, 20), -150m);
+        await AddAsync(_fuel, new DateOnly(2026, 1, 25), -50m);
+
+        var filter = new DashboardFilter(Currency: "PLN", AccountId: null, AsOf: null);
+        var snapshot = await NewQuery().GetSnapshotAsync(filter, CancellationToken.None);
+
+        snapshot.CurrentMonth.Month.Should().Be(new DateOnly(2026, 1, 1),
+            "with no as-of the dashboard anchors on the latest month that has data, not the wall clock");
+        snapshot.CurrentMonth.Spend.Should().Be(200m);
+        snapshot.MonthlySpend[^1].Date.Should().Be(new DateOnly(2026, 1, 1));
+    }
+
     private DashboardQuery NewQuery() => new(_factory);
 
     private static DashboardFilter Filter() => new(Currency: "PLN", AccountId: null, AsOf: _asOf);
