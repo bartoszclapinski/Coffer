@@ -25,6 +25,10 @@ public sealed class CofferDbContext : DbContext
 
     public DbSet<CategoryCache> CategoryCache => Set<CategoryCache>();
 
+    public DbSet<AiUsageEntry> AiUsageEntries => Set<AiUsageEntry>();
+
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -44,6 +48,8 @@ public sealed class CofferDbContext : DbContext
         modelBuilder.ApplyConfiguration(new TransactionConfiguration());
         modelBuilder.ApplyConfiguration(new RuleConfiguration());
         modelBuilder.ApplyConfiguration(new CategoryCacheConfiguration());
+        modelBuilder.ApplyConfiguration(new AiUsageEntryConfiguration());
+        modelBuilder.ApplyConfiguration(new AppSettingConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

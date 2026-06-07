@@ -1,6 +1,7 @@
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
+using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Setup;
 using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Import;
@@ -24,6 +25,7 @@ public static class DesktopServiceRegistration
         services.AddTransient<MainViewModel>();
         services.AddTransient<ImportViewModel>();
         services.AddTransient<TransactionsViewModel>();
+        services.AddTransient<SettingsViewModel>();
 
         // The OS file-open dialog sits behind IFilePicker so the import VM (in
         // Coffer.Application) stays free of Avalonia storage types (hard rule #4).

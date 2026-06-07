@@ -5,6 +5,7 @@
         xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Main;assembly=Coffer.Application"
         xmlns:importVm="clr-namespace:Coffer.Application.ViewModels.Import;assembly=Coffer.Application"
         xmlns:txVm="clr-namespace:Coffer.Application.ViewModels.Transactions;assembly=Coffer.Application"
+        xmlns:settingsVm="clr-namespace:Coffer.Application.ViewModels.Settings;assembly=Coffer.Application"
         xmlns:views="clr-namespace:Coffer.Desktop.Views"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
         x:Class="Coffer.Desktop.MainWindow"
@@ -20,6 +21,9 @@
         </DataTemplate>
         <DataTemplate DataType="txVm:TransactionsViewModel">
             <views:TransactionsView />
+        </DataTemplate>
+        <DataTemplate DataType="settingsVm:SettingsViewModel">
+            <views:SettingsView />
         </DataTemplate>
     </Window.DataTemplates>
 
@@ -48,6 +52,12 @@
                             Classes.active="{Binding IsTransactionsActive}"
                             Content="Transakcje"
                             Command="{Binding ShowTransactionsCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left" />
+                    <Button Classes="nav"
+                            Classes.active="{Binding IsSettingsActive}"
+                            Content="Ustawienia"
+                            Command="{Binding ShowSettingsCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                 </StackPanel>

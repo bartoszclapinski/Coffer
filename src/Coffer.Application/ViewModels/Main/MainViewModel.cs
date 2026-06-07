@@ -1,5 +1,6 @@
 using System.Reflection;
 using Coffer.Application.ViewModels.Import;
+using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -25,21 +26,25 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsImportActive))]
     [NotifyPropertyChangedFor(nameof(IsTransactionsActive))]
+    [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     private ObservableObject? _currentPage;
 
     public MainViewModel(
         ImportViewModel importViewModel,
         TransactionsViewModel transactionsViewModel,
+        SettingsViewModel settingsViewModel,
         ILoginService loginService,
         ILogger<MainViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(importViewModel);
         ArgumentNullException.ThrowIfNull(transactionsViewModel);
+        ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
         ArgumentNullException.ThrowIfNull(logger);
 
         Import = importViewModel;
         Transactions = transactionsViewModel;
+        Settings = settingsViewModel;
         _loginService = loginService;
         _logger = logger;
         AppVersion = ResolveAppVersion();
@@ -54,9 +59,13 @@ public sealed partial class MainViewModel : ObservableObject
 
     public TransactionsViewModel Transactions { get; }
 
+    public SettingsViewModel Settings { get; }
+
     public bool IsImportActive => ReferenceEquals(CurrentPage, Import);
 
     public bool IsTransactionsActive => ReferenceEquals(CurrentPage, Transactions);
+
+    public bool IsSettingsActive => ReferenceEquals(CurrentPage, Settings);
 
     public event EventHandler? LoggedOut;
 
@@ -82,6 +91,18 @@ public sealed partial class MainViewModel : ObservableObject
 
         CurrentPage = Transactions;
         Transactions.LoadCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private void ShowSettings()
+    {
+        if (IsSettingsActive)
+        {
+            return;
+        }
+
+        CurrentPage = Settings;
+        Settings.LoadCommand.Execute(null);
     }
 
     [RelayCommand]

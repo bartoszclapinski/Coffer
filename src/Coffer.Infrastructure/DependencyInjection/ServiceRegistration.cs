@@ -1,10 +1,12 @@
 using Coffer.Core.Accounts;
+using Coffer.Core.Ai;
 using Coffer.Core.Categorization;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
 using Coffer.Core.Security;
 using Coffer.Core.Transactions;
 using Coffer.Infrastructure.Accounts;
+using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Categorization;
 using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Logging;
@@ -33,7 +35,39 @@ public static class ServiceRegistration
             .AddCofferAutoLock()
             .AddCofferParsing()
             .AddCofferCategorization()
+            .AddCofferAi()
             .AddCofferImport();
+
+    /// <summary>
+    /// Registers the Phase 10-B AI plumbing: the secret store for API keys, the
+    /// provider-neutral <see cref="IAiProvider"/> (Claude today), the prompt anonymiser
+    /// (hard rule #7), token pricing, the cost ledger and budget gate (doc 04), and the
+    /// KV-backed AI settings. Nothing here calls a vendor API at registration time — the
+    /// key is resolved per-call. Phase 10-C wires these into the hybrid categoriser.
+    /// </summary>
+    public static IServiceCollection AddCofferAi(this IServiceCollection services)
+    {
+        services.AddSingleton<ISecretStore>(sp =>
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return new WindowsDpapiSecretStore(sp.GetRequiredService<IVaultPaths>());
+            }
+
+            var logger = sp.GetRequiredService<ILogger<InMemorySecretStore>>();
+            logger.LogInformation(
+                "InMemorySecretStore selected — non-Windows host, AI API keys will not persist across process restarts.");
+            return new InMemorySecretStore();
+        });
+
+        services.AddTransient<IAiProvider, ClaudeProvider>();
+        services.AddSingleton<IPromptAnonymizer, PromptAnonymizer>();
+        services.AddSingleton<IAiPricing, AiPricing>();
+        services.AddTransient<IAiUsageLedger, AiUsageLedger>();
+        services.AddTransient<IAiBudgetGate, AiBudgetGate>();
+        services.AddTransient<IAiSettings, AppSettingsStore>();
+        return services;
+    }
 
     /// <summary>
     /// Registers the headless import pipeline and the transactions read query.

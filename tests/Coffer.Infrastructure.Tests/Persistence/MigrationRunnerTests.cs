@@ -12,7 +12,8 @@ public class MigrationRunnerTests : IDisposable
 {
     private const string _expectedInitialMigration = "20260516142523_InitialCreate";
     private const string _expectedTransactionsMigration = "20260602091757_AddTransactionsSchema";
-    private const string _expectedLatestMigration = "20260605120600_AddCategorizationSchema";
+    private const string _expectedCategorizationMigration = "20260605120600_AddCategorizationSchema";
+    private const string _expectedLatestMigration = "20260605205525_AddAiUsageLedger";
 
     private readonly string _tempDir;
     private readonly string _dbPath;
@@ -130,7 +131,10 @@ public class MigrationRunnerTests : IDisposable
 
         result.Status.Should().Be(MigrationStatus.Migrated);
         result.AppliedMigrations.Should().Equal(
-            _expectedInitialMigration, _expectedTransactionsMigration, _expectedLatestMigration);
+            _expectedInitialMigration,
+            _expectedTransactionsMigration,
+            _expectedCategorizationMigration,
+            _expectedLatestMigration);
     }
 
     [Fact]

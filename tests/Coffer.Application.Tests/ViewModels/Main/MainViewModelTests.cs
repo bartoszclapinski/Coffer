@@ -1,6 +1,7 @@
 using Coffer.Application.Tests.Fakes;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Main;
+using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Security;
 using FluentAssertions;
@@ -82,8 +83,13 @@ public class MainViewModelTests
             new FakeGetTransactionsQuery(),
             new FakeCategoryService(),
             NullLogger<TransactionsViewModel>.Instance);
+        var settings = new SettingsViewModel(
+            new FakeAiSettings(),
+            new FakeSecretStore(),
+            new FakeAiUsageLedger(),
+            NullLogger<SettingsViewModel>.Instance);
 
-        return new MainViewModel(import, transactions, loginService, NullLogger<MainViewModel>.Instance);
+        return new MainViewModel(import, transactions, settings, loginService, NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class RecordingLoginService : ILoginService
