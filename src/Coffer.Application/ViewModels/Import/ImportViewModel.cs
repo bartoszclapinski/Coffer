@@ -126,6 +126,7 @@ public sealed partial class ImportViewModel : ObservableObject
         ImportStage.DetectingBank => "Rozpoznawanie banku…",
         ImportStage.Parsing => "Przetwarzanie wyciągu…",
         ImportStage.Deduplicating => "Sprawdzanie duplikatów…",
+        ImportStage.Categorizing => "Kategoryzowanie transakcji…",
         ImportStage.Saving => "Zapisywanie transakcji…",
         _ => "",
     };

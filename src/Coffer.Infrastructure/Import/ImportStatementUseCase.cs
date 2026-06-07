@@ -117,12 +117,13 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
         var toAdd = candidates.Where(t => !existing.Contains(t.Hash)).ToList();
         var skipped = parsed.Transactions.Count - toAdd.Count;
 
-        // Deterministic categorisation (cache → rules) runs as part of the dedup/save
-        // span — fast and free, no separate progress stage. The AI batch (Phase 10-C)
-        // will get its own stage when it lands.
+        // Categorisation (cache → rules → AI batch) runs over the new rows before they're
+        // saved. Cache/rule hits are instant; an AI batch (Phase 10-C) may take longer, so
+        // it gets its own progress stage. Reported only when there's something to categorise.
         var categorized = 0;
         if (toAdd.Count > 0)
         {
+            progress?.Report(new ImportProgress(ImportStage.Categorizing));
             var categories = await _categorizer
                 .CategorizeAsync(toAdd.Select(t => t.NormalizedDescription).ToList(), ct)
                 .ConfigureAwait(false);

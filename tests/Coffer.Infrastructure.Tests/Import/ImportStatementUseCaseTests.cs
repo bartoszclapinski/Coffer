@@ -107,7 +107,7 @@ public class ImportStatementUseCaseTests : IDisposable
     }
 
     [Fact]
-    public async Task Execute_ReportsFiveStagesInOrder()
+    public async Task Execute_ReportsStagesInOrder()
     {
         var accountId = await SeedAccountAsync();
         var useCase = CreateUseCase();
@@ -121,6 +121,7 @@ public class ImportStatementUseCaseTests : IDisposable
             ImportStage.DetectingBank,
             ImportStage.Parsing,
             ImportStage.Deduplicating,
+            ImportStage.Categorizing,
             ImportStage.Saving);
     }
 

@@ -84,3 +84,32 @@
   InMemorySecretStore (round-trip/overwrite/delete/missing), SettingsViewModel (load/save/key save+clear/
   CanExecute). `MigrationRunnerTests` updated for the new latest migration. Full suite green (277),
   format clean. **No vendor API hit in CI; categorisation still deterministic until 10-C wires the gate in.**
+
+### Phase 10-C — hybrid AI categorisation (cache → rules → AI batch)
+
+- Shipped the `HybridCategorizer` and wired it into import behind the budget gate, issue #86. **No real
+  API calls in CI** (fake `IAiProvider`). **Scope split:** this PR is the hybrid *core*; `OpenAiProvider`
+  (10.21), the cache pre-warm job (10.19), and the full retry/backoff + local queue + `Retry-After` (10.20)
+  are deferred to a 10-D follow-up — this PR keeps only the safe non-blocking subset of failure handling.
+- `HybridCategorizer` (Infra, `ICategorizer`): **cache → rules → AI batch**. Cache/rule resolution reuses
+  the exact `RuleCacheCategorizer` logic (hit-count bump, rule write-back as `CacheSource.Rule`). Unknowns
+  are anonymised (hard rule #7), batched (`_batchSize = 30`, within doc-04's 20–50), and sent via
+  `CompleteJsonAsync<int[]>` with the doc-04 index-array prompt; valid results are mapped by index and
+  cached as `CacheSource.Ai`. **The DB connection is not held open across the network calls** — three
+  spans: (A) one short context for cache/rules + loading the category list, (B) the AI batches over the
+  network, (C) a second short context to persist the AI cache rows.
+- **Budget gate:** each batch estimates input/output tokens (chars/4 heuristic) → `IAiPricing.Estimate`
+  → `IAiBudgetGate.CanProceedAsync(..., AiPriority.Critical)`. Critical never hard-blocks (import the
+  owner asked for), but a denial stops the AI loop and leaves the rest uncategorised. Each successful
+  call writes the ledger (`AiPurpose.Categorization`).
+- **Never breaks an import (divergence from doc-04's "return an error to the caller"):** a denied budget,
+  missing key, network error, or malformed output **after one retry** leaves the affected descriptions
+  `null` and logs (warn per attempt, error on give-up). The import completes; the owner can recategorise
+  later. Categories are ordered by name to give the prompt a stable index→`CategoryId` map.
+- Import flow: new `ImportStage.Categorizing` (between `Deduplicating` and `Saving`), reported only when
+  there are new rows — VM label "Kategoryzowanie transakcji…". DI swaps `ICategorizer`
+  `RuleCacheCategorizer` → `HybridCategorizer`.
+- Tests (9 new): cache-hit/rule-hit skip AI, unknown → AI → cached as `Ai` + ledger written, anonymisation
+  before send, batching (35 → 30+5 = 2 calls), malformed-then-valid retries once, malformed-twice leaves
+  null + uncached, provider-throws doesn't break import, budget-denied skips AI. `ImportStatementUseCase`
+  stage-sequence test updated for the new stage. Full suite green (286), build 0 warnings, format clean.
