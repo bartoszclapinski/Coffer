@@ -1,6 +1,7 @@
 using Coffer.Core.Accounts;
 using Coffer.Core.Ai;
 using Coffer.Core.Categorization;
+using Coffer.Core.Chat;
 using Coffer.Core.Dashboard;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
@@ -9,6 +10,7 @@ using Coffer.Core.Transactions;
 using Coffer.Infrastructure.Accounts;
 using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Categorization;
+using Coffer.Infrastructure.Chat;
 using Coffer.Infrastructure.Dashboard;
 using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Logging;
@@ -38,6 +40,7 @@ public static class ServiceRegistration
             .AddCofferParsing()
             .AddCofferCategorization()
             .AddCofferAi()
+            .AddCofferChat()
             .AddCofferImport();
 
     /// <summary>
@@ -68,6 +71,22 @@ public static class ServiceRegistration
         services.AddTransient<IAiUsageLedger, AiUsageLedger>();
         services.AddTransient<IAiBudgetGate, AiBudgetGate>();
         services.AddTransient<IAiSettings, AppSettingsStore>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the Phase 7 chat-with-data plumbing: the four read-only financial tools
+    /// (<see cref="IChatTool"/>) and the <see cref="IChatService"/> orchestrator that runs the
+    /// tool-call loop over <see cref="IAiProvider"/> behind the budget gate and cost ledger. Tools
+    /// are read-only — chat can never mutate state. The UI (12-B) consumes <see cref="IChatService"/>.
+    /// </summary>
+    public static IServiceCollection AddCofferChat(this IServiceCollection services)
+    {
+        services.AddTransient<IChatTool, GetTotalSpentTool>();
+        services.AddTransient<IChatTool, GetTransactionsTool>();
+        services.AddTransient<IChatTool, GetSpendingByCategoryTool>();
+        services.AddTransient<IChatTool, GetMonthlyTrendTool>();
+        services.AddTransient<IChatService, ChatService>();
         return services;
     }
 

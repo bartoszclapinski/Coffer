@@ -9,6 +9,13 @@ public static class AiDefaults
     /// <summary>Cheap batch categorisation model (doc 04 / CLAUDE.md cost discipline).</summary>
     public const string CategorizationModel = "claude-haiku-4-5";
 
+    /// <summary>
+    /// Reasoning-tier model for chat (doc 04 / CLAUDE.md cost discipline): chat needs reasoning,
+    /// not the cheap categorisation model. User-selectable chat-model settings arrive with the
+    /// Settings UI in 12-B; until then chat uses this default.
+    /// </summary>
+    public const string ChatModel = "claude-sonnet-4-6";
+
     /// <summary>Default monthly budget cap in PLN (doc 04).</summary>
     public const decimal MonthlyCapPln = 20m;
 
