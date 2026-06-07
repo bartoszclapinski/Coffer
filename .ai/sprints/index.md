@@ -1,6 +1,6 @@
 # Sprint index
 
-Status as of: 2026-06-05
+Status as of: 2026-06-07
 
 | Sprint | Phase | Goal | Status |
 |---|---|---|---|
@@ -14,7 +14,8 @@ Status as of: 2026-06-05
 | [sprint-7](sprint-7/sprint-7.md) | 1 | Parsing foundations: `IStatementParser` / `IBankDetector` / `StatementParserRegistry`, Polish-format helpers, `FingerprintBankDetector` (PKO + 6 inert), `PkoBpStatementParser` standard checking, `TransactionHash`, FsCheck property-based tests + synthetic QuestPDF fixtures | Closed (2026-05-31) |
 | [sprint-8](sprint-8/sprint-8.md) | 1 | Pivot PKO parsing to the "Historia rachunku" **CSV** export: generalise `IStatementParser` / `IBankDetector` off `PdfDocument` → `StatementInput`, `PkoHistoriaCsvParser` (Windows-1250, signed amounts, multi-column description), remove the speculative PKO PDF parser, synthetic golden CSV + real-CSV manual harness | Closed (2026-05-31) |
 | [sprint-9](sprint-9/sprint-9.md) | 2 | Import flow + transaction list: domain entities (`Account` / `Transaction` / `ImportSession` / minimal `Category`) + first schema migration applied at startup with pre-migration backup, `ImportStatementUseCase` (parse → dedup → save), `IFilePicker`, Avalonia Import page (drag-and-drop + 5-step progress) and Transactions list (6-month default, search/account/category filters) | Closed (2026-06-05) |
-| [sprint-10](sprint-10/sprint-10.md) | 4 | Auto-categorisation: `Rule` / `CategoryCache` / `AiUsageEntry` schema + migrations, deterministic `RuleEngine` + learned cache wired into import, manual re-categorisation in the grid, default Polish category/rule seed, `IAiProvider` (Claude + OpenAI) + `PromptAnonymizer` + cost ledger + `AiBudgetGate` + Settings, `HybridCategorizer` (cache → rules → AI batch). Three phased PRs (10-A deterministic → 10-B AI plumbing → 10-C hybrid) | Planned |
+| [sprint-10](sprint-10/sprint-10.md) | 4 | Auto-categorisation: `Rule` / `CategoryCache` / `AiUsageEntry` schema + migrations, deterministic `RuleEngine` + learned cache wired into import, manual re-categorisation in the grid, default Polish category/rule seed, `IAiProvider` (Claude + OpenAI) + `PromptAnonymizer` + cost ledger + `AiBudgetGate` + Settings, `HybridCategorizer` (cache → rules → AI batch). Three phased PRs (10-A deterministic → 10-B AI plumbing → 10-C hybrid) | Closed (2026-06-07) |
+| [sprint-11](sprint-11/sprint-11.md) | 6 | Dashboard and charts: `IDashboardQuery` + server-side (`GROUP BY`) aggregations, `DashboardViewModel`, Avalonia Dashboard page (current-month spend/income/net KPI cards, 30-day spend trend, 12-month bar, top-categories doughnut, recent transactions) via LiveCharts2; Dashboard becomes the post-login landing page. Single PR | Planned |
 
 **Phase 0 closed end-to-end on 2026-05-20.** Cold-start setup → wizard → `MainWindow`; subsequent cold start → DPAPI cache bypass OR login window → `MainWindow`; 15-min idle → auto-lock → login. ~104 automated tests, CI green.
 
