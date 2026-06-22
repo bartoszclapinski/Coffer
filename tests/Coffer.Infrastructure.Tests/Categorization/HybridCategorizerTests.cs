@@ -225,6 +225,9 @@ public class HybridCategorizerTests : CategorizationDbTest
         public Task<AiResult<string>> CompleteAsync(AiRequest request, CancellationToken ct) =>
             throw new NotSupportedException();
 
+        public Task<AiResult<AiToolTurn>> CompleteWithToolsAsync(AiToolRequest request, CancellationToken ct) =>
+            throw new NotSupportedException();
+
         public IAsyncEnumerable<string> StreamAsync(AiRequest request, CancellationToken ct) =>
             throw new NotSupportedException();
     }

@@ -30,3 +30,26 @@
   keep the tool surface provider-neutral), conversation memory (lean in-session v1), max tool-loop
   iterations (lean ~5 + budget gate), category-name matching (lean exact case-insensitive). See
   `sprint-12.md`.
+
+## 2026-06-07 — 12-A implemented
+
+Tool-calling plumbing, the four read-only tools, and the `ChatService` orchestrator landed (no UI).
+Full suite green: 321 tests (8 Core + 66 Application + 247 Infrastructure), including 13 new
+`ChatToolsTests` over a real SQLCipher DB and 9 new `ChatServiceTests` with a scripted fake provider
+(zero real API calls).
+
+Two deliberate divergences from the plan:
+
+- **Conversation-shaped `AiToolRequest` instead of `AiRequest.Tools` (plan 12.1.a).** The plan
+  sketched adding `IReadOnlyList<AiTool>? Tools` to the existing single-prompt `AiRequest`. But the
+  tool loop is inherently multi-turn — it re-sends a growing conversation (user → assistant tool
+  calls → tool outputs → …) each iteration. A single-prompt request can't carry that state, so I
+  added a dedicated `AiToolRequest` (Messages + Tools) + `IAiProvider.CompleteWithToolsAsync`
+  returning `AiToolTurn` (final text *or* tool calls). Categorisation keeps using the unchanged
+  `AiRequest`/`CompleteJsonAsync` path. Cleaner and matches M.E.AI's message model.
+- **`AiDefaults.ChatModel` constant instead of `IAiSettings.GetChatModelAsync` (plan 12.3.g).** The
+  plan had the chat model come from `IAiSettings`. Adding a getter there would ripple into 3 test
+  stubs + `SettingsViewModel` for no 12-A benefit, since the Settings UI doesn't exist until 12-B.
+  Used a `claude-sonnet-4-6` constant for now (satisfies the "reasoning tier, not categorisation
+  tier" intent). User-configurable chat-model selection is deferred to 12-B where the Settings UI
+  lives.
