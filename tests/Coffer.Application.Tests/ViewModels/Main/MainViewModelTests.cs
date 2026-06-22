@@ -1,9 +1,11 @@
 using Coffer.Application.Tests.Fakes;
+using Coffer.Application.ViewModels.Chat;
 using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Transactions;
+using Coffer.Core.Chat;
 using Coffer.Core.Security;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -84,6 +86,17 @@ public class MainViewModelTests
         vm.CurrentPage.Should().BeSameAs(vm.Transactions);
     }
 
+    [Fact]
+    public void ShowChat_SwitchesActivePage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.ShowChatCommand.Execute(null);
+
+        vm.IsChatActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Chat);
+    }
+
     private static MainViewModel CreateViewModel(ILoginService loginService)
     {
         var dashboard = new DashboardViewModel(
@@ -98,6 +111,9 @@ public class MainViewModelTests
             new FakeGetTransactionsQuery(),
             new FakeCategoryService(),
             NullLogger<TransactionsViewModel>.Instance);
+        var chat = new ChatViewModel(
+            new StubChatService(),
+            NullLogger<ChatViewModel>.Instance);
         var settings = new SettingsViewModel(
             new FakeAiSettings(),
             new FakeSecretStore(),
@@ -105,7 +121,13 @@ public class MainViewModelTests
             NullLogger<SettingsViewModel>.Instance);
 
         return new MainViewModel(
-            dashboard, import, transactions, settings, loginService, NullLogger<MainViewModel>.Instance);
+            dashboard, import, transactions, chat, settings, loginService, NullLogger<MainViewModel>.Instance);
+    }
+
+    private sealed class StubChatService : IChatService
+    {
+        public Task<ChatTurn> AskAsync(string question, IReadOnlyList<ChatMessage> history, CancellationToken ct) =>
+            Task.FromResult(new ChatTurn("", []));
     }
 
     private sealed class RecordingLoginService : ILoginService

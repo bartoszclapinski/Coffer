@@ -53,3 +53,29 @@ Two deliberate divergences from the plan:
   Used a `claude-sonnet-4-6` constant for now (satisfies the "reasoning tier, not categorisation
   tier" intent). User-configurable chat-model selection is deferred to 12-B where the Settings UI
   lives.
+
+## 2026-06-22 — 12-B implemented
+
+Chat UI + shell wiring landed on top of the 12-A plumbing. The "Asystent" sidebar entry now opens a
+Polish-language chat page that streams whole messages (token streaming stays deferred) from
+`ChatService`, renders user/assistant bubbles, shows a collapsible per-message tool-trace, and
+handles the empty, busy, missing-API-key, over-budget, and error states.
+
+- **`ChatMessageViewModel`** (Application): wraps one turn — `Author`/`Text`, the formatted
+  `ToolTraceLines`, `IsUser`/`IsAssistant`/`HasToolTraces`, and a `ToggleToolTrace` command driving
+  `IsToolTraceExpanded` so each assistant message can reveal which tools it called.
+- **`ChatViewModel`** (Application): `Messages` collection, `InputText` + `SendCommand`
+  (`CanExecute` = not busy and input non-blank), `IsBusy`, `IsEmpty`, four Polish `SuggestedPrompts`
+  with a `UseSuggestionCommand`, and the `MissingApiKey`/`BudgetExceeded`/`ErrorMessage` flags lifted
+  straight off the `ChatTurn`. The user message is appended (and kept) before the call so a failed
+  turn never loses the question.
+- **`ChatView.axaml`** (Desktop): empty-state suggested-prompt chips, message bubbles matching the
+  dashboard/transactions design language (no chat mockup existed — only a placeholder card), status
+  banners, and an input box with Enter→Send. Wired into the shell via `MainViewModel.ShowChat`, a
+  `MainWindow` `DataTemplate` + sidebar button, and a `DesktopServiceRegistration` transient.
+- Tests: 8 new `ChatViewModelTests` (fake `IChatService`) + a `ShowChat_SwitchesActivePage` case and
+  `StubChatService` added to `MainViewModelTests`. Application suite 75/75 green, full solution build
+  0 warnings / 0 errors.
+
+**Manual DoD outstanding:** a live model call (the assistant answering with real numbers in the
+running desktop UI) is not headlessly verifiable and has not been exercised here.

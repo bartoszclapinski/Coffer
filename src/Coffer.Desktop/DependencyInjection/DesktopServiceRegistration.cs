@@ -1,3 +1,4 @@
+using Coffer.Application.ViewModels.Chat;
 using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Login;
@@ -27,6 +28,7 @@ public static class DesktopServiceRegistration
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<ImportViewModel>();
         services.AddTransient<TransactionsViewModel>();
+        services.AddTransient<ChatViewModel>();
         services.AddTransient<SettingsViewModel>();
 
         // The OS file-open dialog sits behind IFilePicker so the import VM (in

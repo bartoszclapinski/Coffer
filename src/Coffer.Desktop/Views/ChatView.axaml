@@ -1,0 +1,175 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Chat;assembly=Coffer.Application"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
+             x:Class="Coffer.Desktop.Views.ChatView"
+             x:DataType="vm:ChatViewModel"
+             x:CompileBindings="False">
+    <UserControl.Styles>
+        <Style Selector="Border.userBubble">
+            <Setter Property="Background" Value="#1D4ED8" />
+            <Setter Property="CornerRadius" Value="12,12,2,12" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="MaxWidth" Value="460" />
+        </Style>
+        <Style Selector="Border.assistantBubble">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12,12,12,2" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="MaxWidth" Value="460" />
+        </Style>
+        <Style Selector="Button.suggestion">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="Button.trace">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#1D4ED8" />
+            <Setter Property="Padding" Value="0,2" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Margin="40,32" RowDefinitions="Auto,*,Auto,Auto">
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock Text="Asystent"
+                       FontSize="26"
+                       FontWeight="Light"
+                       Foreground="#1D1D1F" />
+            <TextBlock Text="Zadaj pytanie o swoje finanse — odpowiedzi pochodzą z Twoich danych."
+                       Foreground="#8E8E93" />
+        </StackPanel>
+
+        <!-- Transcript -->
+        <ScrollViewer Grid.Row="1" Margin="0,20,0,0">
+            <Grid>
+                <!-- Empty state: suggested prompts -->
+                <StackPanel IsVisible="{Binding IsEmpty}" Spacing="14" Margin="0,24,0,0"
+                            HorizontalAlignment="Center" VerticalAlignment="Top" MaxWidth="520">
+                    <TextBlock Text="Od czego zaczniemy?"
+                               FontSize="16"
+                               Foreground="#1D1D1F"
+                               HorizontalAlignment="Center" />
+                    <ItemsControl ItemsSource="{Binding SuggestedPrompts}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel HorizontalAlignment="Center" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="suggestion"
+                                        Margin="4"
+                                        Content="{Binding}"
+                                        Command="{Binding $parent[ItemsControl].((vm:ChatViewModel)DataContext).UseSuggestionCommand}"
+                                        CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Messages -->
+                <ItemsControl ItemsSource="{Binding Messages}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,6">
+                                <!-- User -->
+                                <Border Classes="userBubble"
+                                        HorizontalAlignment="Right"
+                                        IsVisible="{Binding IsUser}">
+                                    <TextBlock Text="{Binding Text}"
+                                               TextWrapping="Wrap"
+                                               Foreground="#FFFFFF" />
+                                </Border>
+
+                                <!-- Assistant -->
+                                <StackPanel HorizontalAlignment="Left"
+                                            Spacing="6"
+                                            IsVisible="{Binding IsAssistant}">
+                                    <Border Classes="assistantBubble">
+                                        <TextBlock Text="{Binding Text}"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="#1D1D1F" />
+                                    </Border>
+                                    <StackPanel Spacing="4" IsVisible="{Binding HasToolTraces}">
+                                        <Button Classes="trace"
+                                                Content="Pokaż użyte narzędzia"
+                                                Command="{Binding ToggleToolTraceCommand}" />
+                                        <Border Background="#F5F5F7"
+                                                CornerRadius="8"
+                                                Padding="12,8"
+                                                IsVisible="{Binding IsToolTraceExpanded}">
+                                            <ItemsControl ItemsSource="{Binding ToolTraceLines}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}"
+                                                                   FontFamily="Consolas, monospace"
+                                                                   FontSize="12"
+                                                                   Foreground="#48484A"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="0,2" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Status banners -->
+        <StackPanel Grid.Row="2" Spacing="8" Margin="0,12,0,0">
+            <ProgressBar IsIndeterminate="True" Height="4"
+                         IsVisible="{Binding IsBusy}" />
+            <Border Background="#FFF4E5" CornerRadius="8" Padding="14,10"
+                    IsVisible="{Binding MissingApiKey}">
+                <TextBlock Text="Brak skonfigurowanego klucza API. Dodaj klucz w Ustawieniach, aby korzystać z asystenta."
+                           Foreground="#8A5A00"
+                           TextWrapping="Wrap" />
+            </Border>
+            <Border Background="#FFF4E5" CornerRadius="8" Padding="14,10"
+                    IsVisible="{Binding BudgetExceeded}">
+                <TextBlock Text="Miesięczny budżet AI został wyczerpany. Zwiększ limit w Ustawieniach, aby kontynuować."
+                           Foreground="#8A5A00"
+                           TextWrapping="Wrap" />
+            </Border>
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="#D14"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+
+        <!-- Input -->
+        <Grid Grid.Row="3" Margin="0,12,0,0" ColumnDefinitions="*,12,Auto">
+            <TextBox Grid.Column="0"
+                     Text="{Binding InputText}"
+                     Watermark="Napisz wiadomość…"
+                     AcceptsReturn="False"
+                     IsEnabled="{Binding !IsBusy}">
+                <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding SendCommand}" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="2"
+                    Content="Wyślij"
+                    Padding="20,10"
+                    Background="#1D4ED8"
+                    Foreground="#FFFFFF"
+                    Command="{Binding SendCommand}" />
+        </Grid>
+    </Grid>
+</UserControl>
