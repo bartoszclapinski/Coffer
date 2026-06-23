@@ -1,0 +1,101 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Alerts;assembly=Coffer.Application"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
+             x:Class="Coffer.Desktop.Views.AlertsView"
+             x:DataType="vm:AlertsViewModel"
+             x:CompileBindings="False">
+    <UserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="20,16" />
+        </Style>
+        <Style Selector="TextBlock.alertTitle">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+        </Style>
+        <Style Selector="TextBlock.alertDesc">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#48484A" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="TextBlock.alertMeta">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8E8E93" />
+            <Setter Property="Margin" Value="0,8,0,0" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <Grid Margin="40,32" RowDefinitions="Auto,Auto,Auto">
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Spacing="4">
+                <TextBlock Text="Alerty"
+                           FontSize="26"
+                           FontWeight="Light"
+                           Foreground="#1D1D1F" />
+                <TextBlock Text="Nietypowe transakcje i wzorce wydatków"
+                           Foreground="#8E8E93" />
+            </StackPanel>
+
+            <ProgressBar Grid.Row="0" IsIndeterminate="True" Height="4"
+                         VerticalAlignment="Bottom"
+                         IsVisible="{Binding IsLoading}" />
+
+            <TextBlock Grid.Row="1"
+                       Margin="0,20,0,0"
+                       Text="{Binding ErrorMessage}"
+                       Foreground="#D14"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <TextBlock Grid.Row="1"
+                       Margin="0,40,0,0"
+                       Text="Brak alertów. Wszystko wygląda normalnie."
+                       Foreground="#8E8E93"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center"
+                       IsVisible="{Binding IsEmpty}" />
+
+            <ItemsControl Grid.Row="2" Margin="0,24,0,0"
+                          ItemsSource="{Binding Alerts}"
+                          IsVisible="{Binding HasAlerts}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AlertRowViewModel">
+                        <Border Classes="card" Margin="0,0,0,12">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Classes="alertTitle" Text="{Binding Title}" />
+                                    <TextBlock Classes="alertDesc" Text="{Binding Description}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <TextBlock Classes="alertMeta" Text="{Binding PeriodText}" />
+                                        <TextBlock Classes="alertMeta"
+                                                   Text="{Binding AmountText}"
+                                                   FontWeight="SemiBold"
+                                                   IsVisible="{Binding HasAmount}" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                                            VerticalAlignment="Center" Margin="16,0,0,0">
+                                    <Button Content="Potwierdź"
+                                            Command="{Binding AcknowledgeCommand}"
+                                            IsEnabled="{Binding !IsBusy}" />
+                                    <Button Content="Odrzuć"
+                                            Command="{Binding DismissCommand}"
+                                            IsEnabled="{Binding !IsBusy}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

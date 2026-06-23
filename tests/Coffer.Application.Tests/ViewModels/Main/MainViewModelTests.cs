@@ -1,10 +1,12 @@
 using Coffer.Application.Tests.Fakes;
+using Coffer.Application.ViewModels.Alerts;
 using Coffer.Application.ViewModels.Chat;
 using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Transactions;
+using Coffer.Core.Anomalies;
 using Coffer.Core.Chat;
 using Coffer.Core.Security;
 using FluentAssertions;
@@ -97,6 +99,17 @@ public class MainViewModelTests
         vm.CurrentPage.Should().BeSameAs(vm.Chat);
     }
 
+    [Fact]
+    public void ShowAlerts_SwitchesActivePage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.ShowAlertsCommand.Execute(null);
+
+        vm.IsAlertsActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Alerts);
+    }
+
     private static MainViewModel CreateViewModel(ILoginService loginService)
     {
         var dashboard = new DashboardViewModel(
@@ -114,6 +127,11 @@ public class MainViewModelTests
         var chat = new ChatViewModel(
             new StubChatService(),
             NullLogger<ChatViewModel>.Instance);
+        var alerts = new AlertsViewModel(
+            new FakeDetectAnomaliesUseCase(),
+            new FakeAlertsQuery(),
+            new FakeAlertService(),
+            NullLogger<AlertsViewModel>.Instance);
         var settings = new SettingsViewModel(
             new FakeAiSettings(),
             new FakeSecretStore(),
@@ -121,7 +139,7 @@ public class MainViewModelTests
             NullLogger<SettingsViewModel>.Instance);
 
         return new MainViewModel(
-            dashboard, import, transactions, chat, settings, loginService, NullLogger<MainViewModel>.Instance);
+            dashboard, import, transactions, chat, alerts, settings, loginService, NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class StubChatService : IChatService

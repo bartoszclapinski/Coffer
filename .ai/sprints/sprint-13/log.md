@@ -29,3 +29,33 @@
   - **AI commentary covers the top 10** candidates per run; the rest keep templated text.
   - **z-score detectors require ≥ 8 baseline transactions** in a category before firing.
   - **`DuplicatePayment` window = same or adjacent day** (transactions are `DateOnly`).
+
+## 2026-06-23 — 13-A implemented
+
+- **Domain** (`Coffer.Core/Anomalies`): `AnomalyType`, `AlertStatus`, the detector contracts
+  (`TransactionSnapshot`, `AnomalyDetectionContext`, `AnomalyCandidate`, `IAnomalyDetector`),
+  the use-case/query/service ports (`IDetectAnomaliesUseCase`, `IAlertsQuery`, `IAlertService`,
+  `AlertListItem`), and the persisted `Alert` entity. Money stays `decimal`; transaction-date
+  window is `DateOnly`; system timestamps are UTC `DateTime` (hard rules #1/#2).
+- **Persistence**: `AlertConfiguration` (enums as strings, unique `Signature`, composite
+  `(Status, DetectedAt)` index), `DbSet<Alert>`, migration `AddAnomalyAlerts`.
+- **Detectors** (`Infrastructure/Anomalies/Detectors`, pure + synchronous): HighAmountInCategory
+  (z>3, ≥8 baseline), NewMerchant, CategorySpike (>2σ monthly, ≥3 months), DuplicatePayment
+  (same/adjacent day), MissingRecurrence (≥3 baseline months, absent from recent). Shared
+  `AnomalyThresholds`/`AnomalyStatistics` (sample stddev)/`AnomalyFormatting` (Polish templates).
+- **Detection service**: `AnomalyDetectionService` anchors the recent window on the latest
+  transaction date (last 30 days), baseline = prior 6 months, PLN-scoped; deduplicates candidates
+  by `Signature` against existing alerts of **any** status (dismissed never resurrected),
+  inserts only new ones. `AlertsQuery`/`AlertService` back the list and ack/dismiss. New
+  `AddCofferAnomalies()` registers the five detectors + the three services.
+- **UI**: `AlertsViewModel`/`AlertRowViewModel` + `AlertsView`, wired into the shell (Alerty nav
+  button between Asystent and Ustawienia, DataTemplate, DI). Per-card Potwierdź/Odrzuć.
+- **Deviation from plan step ~13.6**: detection is triggered on **Alerty page load + manual
+  rescan**, *not* coupled into `ImportStatementUseCase`'s constructor. Rationale: the use case has
+  many test call-sites and the scan is idempotent (signature dedup), so page-load is the simpler,
+  equally-correct trigger. User-visible DoD is unchanged: import → open Alerty → alerts appear.
+- **Detectors are `public`** (not `internal`): the repo has no `InternalsVisibleTo`, and other
+  directly-tested implementation classes (parsers, services) are public — kept consistent.
+- **Tests**: per-detector unit tests + an integration test over a real SQLCipher DB
+  (persist / idempotent rescan / dismissed-never-resurrected) + `AlertsViewModel` tests;
+  `MainViewModelTests` updated for the new shell page. Full suite green (350), format clean.
