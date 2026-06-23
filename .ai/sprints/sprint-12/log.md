@@ -79,3 +79,19 @@ handles the empty, busy, missing-API-key, over-budget, and error states.
 
 **Manual DoD outstanding:** a live model call (the assistant answering with real numbers in the
 running desktop UI) is not headlessly verifiable and has not been exercised here.
+
+## 2026-06-22 — sprint closed
+
+Both PRs merged (12-A #97, 12-B #99). Sprint 12 / **Phase 7 (Chat with data) is complete**: the
+"Asystent" page answers Polish finance questions via the four read-only tools through the
+`ChatService` tool-call loop, meters each turn into the ledger behind the budget gate, anonymises
+tool output, and shows a per-message tool-trace. Marked Closed in `.ai/sprints/index.md`.
+
+Carried forward (deferred by design, not regressions):
+
+- **Token streaming** — v1 renders whole messages; streaming is a later polish pass.
+- **User-configurable chat model** — `AiDefaults.ChatModel` constant for now; wiring an
+  `IAiSettings` getter into the Settings UI is the natural follow-up.
+- **Anomaly / goals / receipt tools** — slot into the registry at Phases 8 / 9 / 5 without touching
+  the orchestrator.
+- **Manual DoD** — the live in-UI model answer still wants a human pass before relying on it.
