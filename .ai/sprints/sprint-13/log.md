@@ -84,3 +84,17 @@
   `FindAnomaliesToolTests` over a real SQLCipher DB (range overlap, out-of-range/dismissed exclusion,
   date validation, **DI discoverability** via `AddCofferChat`); `AnomalyDetectionServiceTests` gains
   an LLM-text-persisted case + pass-through fallback fake. Full suite green (364), format clean.
+
+## 2026-06-23 — Sprint 13 closed
+
+- Both PRs merged with CI green: **13-A** (#105 — domain `Alert`, five detectors, detection
+  service, Alerty page) and **13-B** (#107 — `AnomalyCommentator`, `FindAnomalies` chat tool).
+  364 tests passing. **Phase 8 done.**
+- Closes Phase 8 of the roadmap. The desktop app now spans setup/login → import → categorise →
+  review → dashboard → chat → alerts.
+- Two documented deviations from the plan, both kept as-is: detection triggers on Alerty page
+  load + manual rescan (not coupled into `ImportStatementUseCase`), and the `FindAnomalies` tool
+  takes `{from, to}` only (no `category` filter — `Alert` has no category dimension).
+- Owner verifies the manual click-through DoD (import → Alerty accept/dismiss persistence;
+  "pokaż anomalie z tego miesiąca" → `FindAnomalies` in the tool-trace with LLM Polish text)
+  separately.
