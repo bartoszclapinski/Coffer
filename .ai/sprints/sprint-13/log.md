@@ -59,3 +59,28 @@
 - **Tests**: per-detector unit tests + an integration test over a real SQLCipher DB
   (persist / idempotent rescan / dismissed-never-resurrected) + `AlertsViewModel` tests;
   `MainViewModelTests` updated for the new shell page. Full suite green (350), format clean.
+
+## 2026-06-23 — 13-B implemented
+
+- **Commentary**: `IAnomalyCommentator` (`Coffer.Core/Anomalies`) + `AnomalyCommentator`
+  (`Infrastructure/AI`). One **batched** provider call per run for the top-N candidates, gated via
+  `IAiBudgetGate` at `AiPriority.Normal`, metered **once** as `AiPurpose.AnomalyComment`, prompt
+  anonymised (hard rule #7), reasoning-tier model (`AiDefaults.ChatModel`). Parses a `{index, title,
+  description}` JSON array and merges by index; any failure (over budget, offline, malformed/partial
+  JSON, empty input) returns the candidates **unchanged** so the 13-A templated text always survives.
+- **Wiring**: `AnomalyDetectionService` now takes `IAnomalyCommentator`; after dedup it sends the
+  **top 10 fresh** candidates (by score) to the commentator and persists each alert with the
+  returned text, keeping templated text for the rest. Registered `IAnomalyCommentator` in
+  `AddCofferAi`.
+- **Chat tool**: `FindAnomaliesTool : ChatTool` (`Infrastructure/Chat`) returns active alerts whose
+  `[PeriodFrom, PeriodTo]` overlaps a `{from, to}` range, newest first, dismissed excluded;
+  registered in `AddCofferChat` (realises the Sprint-12 deferral).
+- **Deviation from plan step 13.13**: the tool params are `{from, to}` only — **no `category`
+  filter**. `Alert` carries no category dimension (only `Type`, amount, period, free-text), so a
+  category filter would have nothing reliable to bind to; dropping it keeps the tool honest. `Type`
+  is returned per row, so the assistant can still talk about kinds of anomalies.
+- **Tests**: `AnomalyCommentatorTests` (rewrite + meter-once-as-`anomaly-comment`, anonymised
+  prompt, budget-denied fallback, provider-throws fallback, partial-response fallback, empty input);
+  `FindAnomaliesToolTests` over a real SQLCipher DB (range overlap, out-of-range/dismissed exclusion,
+  date validation, **DI discoverability** via `AddCofferChat`); `AnomalyDetectionServiceTests` gains
+  an LLM-text-persisted case + pass-through fallback fake. Full suite green (364), format clean.

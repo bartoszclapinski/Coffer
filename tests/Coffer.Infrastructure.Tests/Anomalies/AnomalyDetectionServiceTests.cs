@@ -109,7 +109,24 @@ public class AnomalyDetectionServiceTests : IDisposable
         only.Status.Should().Be(AlertStatus.Dismissed);
     }
 
-    private AnomalyDetectionService NewService()
+    [Fact]
+    public async Task Run_PersistsLlmCommentaryForTopCandidates()
+    {
+        await SeedNewMerchantScenarioAsync();
+        var commentator = new RewritingCommentator();
+
+        var added = await NewService(commentator).RunAsync(CancellationToken.None);
+
+        added.Should().Be(1);
+        commentator.ReceivedCounts.Should().ContainSingle().Which.Should().Be(1);
+
+        await using var db = _factory.CreateDbContext();
+        var alert = await db.Alerts.SingleAsync();
+        alert.Title.Should().Be("LLM title");
+        alert.Description.Should().Be("LLM description");
+    }
+
+    private AnomalyDetectionService NewService(IAnomalyCommentator? commentator = null)
     {
         IAnomalyDetector[] detectors =
         [
@@ -119,7 +136,35 @@ public class AnomalyDetectionServiceTests : IDisposable
             new DuplicatePaymentDetector(),
             new MissingRecurrenceDetector(),
         ];
-        return new AnomalyDetectionService(_factory, detectors, NullLogger<AnomalyDetectionService>.Instance);
+        return new AnomalyDetectionService(
+            _factory,
+            detectors,
+            commentator ?? new PassthroughCommentator(),
+            NullLogger<AnomalyDetectionService>.Instance);
+    }
+
+    /// <summary>Keeps the templated text — models the over-budget / offline fallback path.</summary>
+    private sealed class PassthroughCommentator : IAnomalyCommentator
+    {
+        public Task<IReadOnlyList<AnomalyCandidate>> CommentAsync(
+            IReadOnlyList<AnomalyCandidate> candidates, CancellationToken ct) =>
+            Task.FromResult(candidates);
+    }
+
+    /// <summary>Rewrites every candidate's text — models a successful LLM pass.</summary>
+    private sealed class RewritingCommentator : IAnomalyCommentator
+    {
+        public List<int> ReceivedCounts { get; } = [];
+
+        public Task<IReadOnlyList<AnomalyCandidate>> CommentAsync(
+            IReadOnlyList<AnomalyCandidate> candidates, CancellationToken ct)
+        {
+            ReceivedCounts.Add(candidates.Count);
+            IReadOnlyList<AnomalyCandidate> rewritten = candidates
+                .Select(c => c with { Title = "LLM title", Description = "LLM description" })
+                .ToList();
+            return Task.FromResult(rewritten);
+        }
     }
 
     private async Task SeedNewMerchantScenarioAsync()

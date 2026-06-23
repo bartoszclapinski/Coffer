@@ -11,27 +11,33 @@ namespace Coffer.Infrastructure.Anomalies;
 /// as <see cref="Alert"/> rows. Idempotent: candidates are deduplicated against existing alerts of
 /// any status by <see cref="AnomalyCandidate.Signature"/>, so a dismissed anomaly is never
 /// re-raised and a re-scan inserts each logical anomaly at most once. Detection is statistical and
-/// free — no AI runs here (that is 13-B).
+/// free; the optional 13-B <see cref="IAnomalyCommentator"/> rewrites the top findings' text with
+/// the LLM, falling back to the deterministic templated text on any failure.
 /// </summary>
 public sealed class AnomalyDetectionService : IDetectAnomaliesUseCase
 {
     private const int _recentWindowDays = 30;
     private const int _baselineMonths = 6;
+    private const int _commentaryTopN = 10;
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
     private readonly IReadOnlyList<IAnomalyDetector> _detectors;
+    private readonly IAnomalyCommentator _commentator;
     private readonly ILogger<AnomalyDetectionService> _logger;
 
     public AnomalyDetectionService(
         IDbContextFactory<CofferDbContext> contextFactory,
         IEnumerable<IAnomalyDetector> detectors,
+        IAnomalyCommentator commentator,
         ILogger<AnomalyDetectionService> logger)
     {
         ArgumentNullException.ThrowIfNull(contextFactory);
         ArgumentNullException.ThrowIfNull(detectors);
+        ArgumentNullException.ThrowIfNull(commentator);
         ArgumentNullException.ThrowIfNull(logger);
         _contextFactory = contextFactory;
         _detectors = detectors.ToList();
+        _commentator = commentator;
         _logger = logger;
     }
 
@@ -92,33 +98,40 @@ public sealed class AnomalyDetectionService : IDetectAnomaliesUseCase
             .ConfigureAwait(false);
         var existingSet = existing.ToHashSet(StringComparer.Ordinal);
 
-        var now = DateTime.UtcNow;
-        var added = 0;
-        foreach (var candidate in candidates.Where(c => !existingSet.Contains(c.Signature)))
+        var fresh = candidates.Where(c => !existingSet.Contains(c.Signature)).ToList();
+        if (fresh.Count == 0)
         {
+            return 0;
+        }
+
+        // The highest-ranked findings get LLM-written text; the rest keep their templated text.
+        var topN = fresh.OrderByDescending(c => c.Score).Take(_commentaryTopN).ToList();
+        var commented = await _commentator.CommentAsync(topN, ct).ConfigureAwait(false);
+        var textBySignature = commented.ToDictionary(c => c.Signature, StringComparer.Ordinal);
+
+        var now = DateTime.UtcNow;
+        foreach (var candidate in fresh)
+        {
+            var text = textBySignature.GetValueOrDefault(candidate.Signature, candidate);
             db.Alerts.Add(new Alert
             {
                 Id = Guid.NewGuid(),
                 DetectedAt = now,
                 Type = candidate.Type,
                 Signature = candidate.Signature,
-                Title = candidate.Title,
-                Description = candidate.Description,
+                Title = text.Title,
+                Description = text.Description,
                 Status = AlertStatus.New,
                 RelatedAmount = candidate.RelatedAmount,
                 RelatedTransactionId = candidate.RelatedTransactionId,
                 PeriodFrom = candidate.PeriodFrom,
                 PeriodTo = candidate.PeriodTo,
             });
-            added++;
         }
 
-        if (added > 0)
-        {
-            await db.SaveChangesAsync(ct).ConfigureAwait(false);
-            _logger.LogInformation("Anomaly scan raised {Count} new alert(s).", added);
-        }
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        _logger.LogInformation("Anomaly scan raised {Count} new alert(s).", fresh.Count);
 
-        return added;
+        return fresh.Count;
     }
 }

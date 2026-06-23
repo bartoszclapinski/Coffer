@@ -37,10 +37,10 @@ Detectors compute their own per-category stats in-memory from a baseline window 
 
 ### 13-B — AI commentary + chat integration
 
-- [ ] 13.11 `IAnomalyCommentator` + `AnomalyCommentator` (`Infrastructure/AI/`): for the top 10 candidates, build an **anonymised** prompt (hard rule #7), call the provider (`AiDefaults` reasoning model), gate via `IAiBudgetGate` (`AiPriority.Normal`), meter via `IAiUsageLedger.RecordAsync(usage, AiPurpose.AnomalyComment)`, parse `{title, description}` JSON. On any failure keep the 13-A templated text (graceful fallback).
-- [ ] 13.12 Wire the commentator into `AnomalyDetectionService` so persisted top-N alerts carry LLM text; below-cap / over-budget / offline paths fall back to templates.
-- [ ] 13.13 `FindAnomaliesTool : ChatTool` (`Infrastructure/Chat/`) — params `{from, to, category?}`, returns alert rows in range; register `AddTransient<IChatTool, FindAnomaliesTool>()` in `AddCofferChat`. Realises the `FindAnomalies` tool deferred in Sprint 12.
-- [ ] 13.14 Tests: `AnomalyCommentator` with a scripted fake provider (asserts anonymised prompt, ledger metered as `anomaly-comment`, budget gate blocks over cap, fallback on bad JSON); `FindAnomaliesTool` over a real SQLCipher DB; a `ChatService` case proving the new tool is discoverable.
+- [x] 13.11 `IAnomalyCommentator` + `AnomalyCommentator` (`Infrastructure/AI/`): for the top 10 candidates, build an **anonymised** prompt (hard rule #7), call the provider (`AiDefaults` reasoning model), gate via `IAiBudgetGate` (`AiPriority.Normal`), meter via `IAiUsageLedger.RecordAsync(usage, AiPurpose.AnomalyComment)`, parse `{title, description}` JSON. On any failure keep the 13-A templated text (graceful fallback).
+- [x] 13.12 Wire the commentator into `AnomalyDetectionService` so persisted top-N alerts carry LLM text; below-cap / over-budget / offline paths fall back to templates.
+- [x] 13.13 `FindAnomaliesTool : ChatTool` (`Infrastructure/Chat/`) — params `{from, to}` (no `category`: `Alert` has no category dimension), returns alert rows in range; register `AddTransient<IChatTool, FindAnomaliesTool>()` in `AddCofferChat`. Realises the `FindAnomalies` tool deferred in Sprint 12.
+- [x] 13.14 Tests: `AnomalyCommentator` with a scripted fake provider (asserts anonymised prompt, ledger metered as `anomaly-comment`, budget gate blocks over cap, fallback on bad JSON); `FindAnomaliesTool` over a real SQLCipher DB; a DI-registration case proving the new tool is discoverable by `ChatService`.
 
 ## Definition of Done
 
