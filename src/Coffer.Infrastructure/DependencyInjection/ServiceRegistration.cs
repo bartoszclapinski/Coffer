@@ -95,6 +95,7 @@ public static class ServiceRegistration
         services.AddTransient<IAiUsageLedger, AiUsageLedger>();
         services.AddTransient<IAiBudgetGate, AiBudgetGate>();
         services.AddTransient<IAiSettings, AppSettingsStore>();
+        services.AddTransient<IAnomalyCommentator, AnomalyCommentator>();
         return services;
     }
 
@@ -110,6 +111,7 @@ public static class ServiceRegistration
         services.AddTransient<IChatTool, GetTransactionsTool>();
         services.AddTransient<IChatTool, GetSpendingByCategoryTool>();
         services.AddTransient<IChatTool, GetMonthlyTrendTool>();
+        services.AddTransient<IChatTool, FindAnomaliesTool>();
         services.AddTransient<IChatService, ChatService>();
         return services;
     }
