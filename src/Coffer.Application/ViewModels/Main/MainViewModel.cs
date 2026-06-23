@@ -1,4 +1,5 @@
 using System.Reflection;
+using Coffer.Application.ViewModels.Alerts;
 using Coffer.Application.ViewModels.Chat;
 using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Import;
@@ -31,6 +32,7 @@ public sealed partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsImportActive))]
     [NotifyPropertyChangedFor(nameof(IsTransactionsActive))]
     [NotifyPropertyChangedFor(nameof(IsChatActive))]
+    [NotifyPropertyChangedFor(nameof(IsAlertsActive))]
     [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     private ObservableObject? _currentPage;
 
@@ -39,6 +41,7 @@ public sealed partial class MainViewModel : ObservableObject
         ImportViewModel importViewModel,
         TransactionsViewModel transactionsViewModel,
         ChatViewModel chatViewModel,
+        AlertsViewModel alertsViewModel,
         SettingsViewModel settingsViewModel,
         ILoginService loginService,
         ILogger<MainViewModel> logger)
@@ -47,6 +50,7 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(importViewModel);
         ArgumentNullException.ThrowIfNull(transactionsViewModel);
         ArgumentNullException.ThrowIfNull(chatViewModel);
+        ArgumentNullException.ThrowIfNull(alertsViewModel);
         ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
         ArgumentNullException.ThrowIfNull(logger);
@@ -55,6 +59,7 @@ public sealed partial class MainViewModel : ObservableObject
         Import = importViewModel;
         Transactions = transactionsViewModel;
         Chat = chatViewModel;
+        Alerts = alertsViewModel;
         Settings = settingsViewModel;
         _loginService = loginService;
         _logger = logger;
@@ -74,6 +79,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     public ChatViewModel Chat { get; }
 
+    public AlertsViewModel Alerts { get; }
+
     public SettingsViewModel Settings { get; }
 
     public bool IsDashboardActive => ReferenceEquals(CurrentPage, Dashboard);
@@ -83,6 +90,8 @@ public sealed partial class MainViewModel : ObservableObject
     public bool IsTransactionsActive => ReferenceEquals(CurrentPage, Transactions);
 
     public bool IsChatActive => ReferenceEquals(CurrentPage, Chat);
+
+    public bool IsAlertsActive => ReferenceEquals(CurrentPage, Alerts);
 
     public bool IsSettingsActive => ReferenceEquals(CurrentPage, Settings);
 
@@ -133,6 +142,18 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         CurrentPage = Chat;
+    }
+
+    [RelayCommand]
+    private void ShowAlerts()
+    {
+        if (IsAlertsActive)
+        {
+            return;
+        }
+
+        CurrentPage = Alerts;
+        Alerts.LoadCommand.Execute(null);
     }
 
     [RelayCommand]

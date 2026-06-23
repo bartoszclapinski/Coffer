@@ -1,5 +1,6 @@
 using Coffer.Core.Accounts;
 using Coffer.Core.Ai;
+using Coffer.Core.Anomalies;
 using Coffer.Core.Categorization;
 using Coffer.Core.Chat;
 using Coffer.Core.Dashboard;
@@ -9,6 +10,8 @@ using Coffer.Core.Security;
 using Coffer.Core.Transactions;
 using Coffer.Infrastructure.Accounts;
 using Coffer.Infrastructure.AI;
+using Coffer.Infrastructure.Anomalies;
+using Coffer.Infrastructure.Anomalies.Detectors;
 using Coffer.Infrastructure.Categorization;
 using Coffer.Infrastructure.Chat;
 using Coffer.Infrastructure.Dashboard;
@@ -41,7 +44,28 @@ public static class ServiceRegistration
             .AddCofferCategorization()
             .AddCofferAi()
             .AddCofferChat()
-            .AddCofferImport();
+            .AddCofferImport()
+            .AddCofferAnomalies();
+
+    /// <summary>
+    /// Registers the Phase 8 anomaly engine: the five statistical <see cref="IAnomalyDetector"/>s
+    /// (doc 04, "statistics first"), the <see cref="IDetectAnomaliesUseCase"/> that runs them and
+    /// upserts <see cref="Core.Domain.Alert"/> rows by signature, and the alert read query and
+    /// lifecycle service for the Alerty page. No AI here — detection is deterministic and free;
+    /// the 13-B commentator adds optional LLM explanations on top.
+    /// </summary>
+    public static IServiceCollection AddCofferAnomalies(this IServiceCollection services)
+    {
+        services.AddTransient<IAnomalyDetector, HighAmountInCategoryDetector>();
+        services.AddTransient<IAnomalyDetector, NewMerchantDetector>();
+        services.AddTransient<IAnomalyDetector, CategorySpikeDetector>();
+        services.AddTransient<IAnomalyDetector, DuplicatePaymentDetector>();
+        services.AddTransient<IAnomalyDetector, MissingRecurrenceDetector>();
+        services.AddTransient<IDetectAnomaliesUseCase, AnomalyDetectionService>();
+        services.AddTransient<IAlertsQuery, AlertsQuery>();
+        services.AddTransient<IAlertService, AlertService>();
+        return services;
+    }
 
     /// <summary>
     /// Registers the Phase 10-B AI plumbing: the secret store for API keys, the

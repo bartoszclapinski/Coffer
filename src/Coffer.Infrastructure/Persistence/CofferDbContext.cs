@@ -29,6 +29,8 @@ public sealed class CofferDbContext : DbContext
 
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
+    public DbSet<Alert> Alerts => Set<Alert>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -50,6 +52,7 @@ public sealed class CofferDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CategoryCacheConfiguration());
         modelBuilder.ApplyConfiguration(new AiUsageEntryConfiguration());
         modelBuilder.ApplyConfiguration(new AppSettingConfiguration());
+        modelBuilder.ApplyConfiguration(new AlertConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

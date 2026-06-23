@@ -7,6 +7,7 @@
         xmlns:importVm="clr-namespace:Coffer.Application.ViewModels.Import;assembly=Coffer.Application"
         xmlns:txVm="clr-namespace:Coffer.Application.ViewModels.Transactions;assembly=Coffer.Application"
         xmlns:chatVm="clr-namespace:Coffer.Application.ViewModels.Chat;assembly=Coffer.Application"
+        xmlns:alertsVm="clr-namespace:Coffer.Application.ViewModels.Alerts;assembly=Coffer.Application"
         xmlns:settingsVm="clr-namespace:Coffer.Application.ViewModels.Settings;assembly=Coffer.Application"
         xmlns:views="clr-namespace:Coffer.Desktop.Views"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
@@ -29,6 +30,9 @@
         </DataTemplate>
         <DataTemplate DataType="chatVm:ChatViewModel">
             <views:ChatView />
+        </DataTemplate>
+        <DataTemplate DataType="alertsVm:AlertsViewModel">
+            <views:AlertsView />
         </DataTemplate>
         <DataTemplate DataType="settingsVm:SettingsViewModel">
             <views:SettingsView />
@@ -72,6 +76,12 @@
                             Classes.active="{Binding IsChatActive}"
                             Content="Asystent"
                             Command="{Binding ShowChatCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left" />
+                    <Button Classes="nav"
+                            Classes.active="{Binding IsAlertsActive}"
+                            Content="Alerty"
+                            Command="{Binding ShowAlertsCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"
