@@ -4,6 +4,7 @@ using Coffer.Core.Anomalies;
 using Coffer.Core.Categorization;
 using Coffer.Core.Chat;
 using Coffer.Core.Dashboard;
+using Coffer.Core.Goals;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
 using Coffer.Core.Security;
@@ -15,6 +16,8 @@ using Coffer.Infrastructure.Anomalies.Detectors;
 using Coffer.Infrastructure.Categorization;
 using Coffer.Infrastructure.Chat;
 using Coffer.Infrastructure.Dashboard;
+using Coffer.Infrastructure.Goals;
+using Coffer.Infrastructure.Goals.Strategies;
 using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Logging;
 using Coffer.Infrastructure.Parsing;
@@ -45,7 +48,31 @@ public static class ServiceRegistration
             .AddCofferAi()
             .AddCofferChat()
             .AddCofferImport()
-            .AddCofferAnomalies();
+            .AddCofferAnomalies()
+            .AddCofferGoals();
+
+    /// <summary>
+    /// Registers the Phase 9 financial advisor engine (doc 07): one <see cref="GoalStrategy"/> per
+    /// <see cref="GoalType"/>, the <see cref="IGoalFeasibilityEngine"/> that dispatches to them and
+    /// wires the cross-goal free-cash pull, the <see cref="IMortgagePrepaymentCalculator"/> that
+    /// quantifies both shorten/reduce modes without recommending either, and the
+    /// <see cref="IFinancialContextBuilder"/> that derives the deterministic context from the
+    /// transaction history. Everything here is pure and free — the engine calculates; the 14-C AI
+    /// only explains.
+    /// </summary>
+    public static IServiceCollection AddCofferGoals(this IServiceCollection services)
+    {
+        services.AddTransient<GoalStrategy, PurchaseGoalStrategy>();
+        services.AddTransient<GoalStrategy, LargeExpenseGoalStrategy>();
+        services.AddTransient<GoalStrategy, EmergencyFundGoalStrategy>();
+        services.AddTransient<GoalStrategy, MortgagePrepaymentGoalStrategy>();
+        services.AddTransient<GoalStrategy, InvestmentGoalStrategy>();
+        services.AddTransient<GoalStrategy, LongTermGoalStrategy>();
+        services.AddTransient<IGoalFeasibilityEngine, GoalFeasibilityEngine>();
+        services.AddSingleton<IMortgagePrepaymentCalculator, MortgagePrepaymentCalculator>();
+        services.AddTransient<IFinancialContextBuilder, FinancialContextBuilder>();
+        return services;
+    }
 
     /// <summary>
     /// Registers the Phase 8 anomaly engine: the five statistical <see cref="IAnomalyDetector"/>s

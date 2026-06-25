@@ -31,6 +31,12 @@ public sealed class CofferDbContext : DbContext
 
     public DbSet<Alert> Alerts => Set<Alert>();
 
+    public DbSet<Goal> Goals => Set<Goal>();
+
+    public DbSet<GoalContribution> GoalContributions => Set<GoalContribution>();
+
+    public DbSet<GoalSnapshot> GoalSnapshots => Set<GoalSnapshot>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -53,6 +59,9 @@ public sealed class CofferDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AiUsageEntryConfiguration());
         modelBuilder.ApplyConfiguration(new AppSettingConfiguration());
         modelBuilder.ApplyConfiguration(new AlertConfiguration());
+        modelBuilder.ApplyConfiguration(new GoalConfiguration());
+        modelBuilder.ApplyConfiguration(new GoalContributionConfiguration());
+        modelBuilder.ApplyConfiguration(new GoalSnapshotConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
