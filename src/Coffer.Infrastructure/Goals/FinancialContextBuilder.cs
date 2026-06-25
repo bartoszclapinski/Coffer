@@ -16,10 +16,10 @@ namespace Coffer.Infrastructure.Goals;
 /// </summary>
 public sealed class FinancialContextBuilder : IFinancialContextBuilder
 {
-    private const int WindowMonths = 6;
-    private const int FixedPresenceThreshold = 5;
-    private const string Currency = "PLN";
-    private const string UncategorizedName = "Bez kategorii";
+    private const int _windowMonths = 6;
+    private const int _fixedPresenceThreshold = 5;
+    private const string _currency = "PLN";
+    private const string _uncategorizedName = "Bez kategorii";
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
 
@@ -33,7 +33,7 @@ public sealed class FinancialContextBuilder : IFinancialContextBuilder
     {
         await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
 
-        var scope = db.Transactions.AsNoTracking().Where(t => t.Currency == Currency);
+        var scope = db.Transactions.AsNoTracking().Where(t => t.Currency == _currency);
         var hasData = await scope.AnyAsync(ct).ConfigureAwait(false);
 
         // Anchor on the latest transaction rather than the wall clock so a gap since the last import
@@ -42,13 +42,13 @@ public sealed class FinancialContextBuilder : IFinancialContextBuilder
             ? await scope.MaxAsync(t => t.Date, ct).ConfigureAwait(false)
             : today;
         var monthStart = new DateOnly(anchor.Year, anchor.Month, 1);
-        var windowStart = monthStart.AddMonths(-WindowMonths);
+        var windowStart = monthStart.AddMonths(-_windowMonths);
 
         var window = scope.Where(t => t.Date >= windowStart && t.Date < monthStart);
 
         var monthlyIncome = await window.Where(t => t.Amount > 0m)
             .SumAsync(t => (decimal?)t.Amount, ct).ConfigureAwait(false) ?? 0m;
-        monthlyIncome /= WindowMonths;
+        monthlyIncome /= _windowMonths;
 
         var debitsByCategoryMonth = await window.Where(t => t.Amount < 0m)
             .GroupBy(t => new { t.CategoryId, t.Date.Year, t.Date.Month })
@@ -66,7 +66,7 @@ public sealed class FinancialContextBuilder : IFinancialContextBuilder
         foreach (var row in debitsByCategoryMonth)
         {
             var slot = MonthIndex(windowStart, row.Year, row.Month);
-            if (slot < 0 || slot >= WindowMonths)
+            if (slot < 0 || slot >= _windowMonths)
             {
                 continue;
             }
@@ -74,7 +74,7 @@ public sealed class FinancialContextBuilder : IFinancialContextBuilder
             var key = row.CategoryId ?? Guid.Empty;
             if (!perCategory.TryGetValue(key, out var months))
             {
-                months = new decimal[WindowMonths];
+                months = new decimal[_windowMonths];
                 perCategory[key] = months;
             }
 
@@ -82,31 +82,31 @@ public sealed class FinancialContextBuilder : IFinancialContextBuilder
         }
 
         var monthlyFixed = 0m;
-        var variableByMonth = new decimal[WindowMonths];
+        var variableByMonth = new decimal[_windowMonths];
         var categoryAverages = new Dictionary<string, decimal>();
 
         foreach (var (categoryId, months) in perCategory)
         {
             var presence = months.Count(m => m > 0m);
-            var average = months.Sum() / WindowMonths;
+            var average = months.Sum() / _windowMonths;
 
-            var name = categoryId != Guid.Empty && categoryNames.TryGetValue(categoryId, out var n) ? n : UncategorizedName;
+            var name = categoryId != Guid.Empty && categoryNames.TryGetValue(categoryId, out var n) ? n : _uncategorizedName;
             categoryAverages[name] = average;
 
-            if (presence >= FixedPresenceThreshold)
+            if (presence >= _fixedPresenceThreshold)
             {
                 monthlyFixed += average;
             }
             else
             {
-                for (var i = 0; i < WindowMonths; i++)
+                for (var i = 0; i < _windowMonths; i++)
                 {
                     variableByMonth[i] += months[i];
                 }
             }
         }
 
-        var monthlyVariableAvg = variableByMonth.Sum() / WindowMonths;
+        var monthlyVariableAvg = variableByMonth.Sum() / _windowMonths;
         var monthlyVariableStdDev = SampleStdDev(variableByMonth);
 
         return new FinancialContext
