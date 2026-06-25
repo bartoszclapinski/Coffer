@@ -10,7 +10,7 @@ namespace Coffer.Infrastructure.Goals.Strategies;
 /// </summary>
 public sealed class EmergencyFundGoalStrategy : GoalStrategy
 {
-    private const int MonthsOfExpenses = 6;
+    private const int _monthsOfExpenses = 6;
 
     public override GoalType Type => GoalType.EmergencyFund;
 
@@ -20,7 +20,7 @@ public sealed class EmergencyFundGoalStrategy : GoalStrategy
         ArgumentNullException.ThrowIfNull(ctx);
 
         var monthlyExpenses = ctx.MonthlyFixedExpenses + ctx.MonthlyVariableAvg;
-        var dynamicTarget = Math.Max(goal.TargetAmount, MonthsOfExpenses * monthlyExpenses);
+        var dynamicTarget = Math.Max(goal.TargetAmount, _monthsOfExpenses * monthlyExpenses);
         return EvaluateSavingsGoal(goal, ctx, dynamicTarget);
     }
 }

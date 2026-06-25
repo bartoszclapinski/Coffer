@@ -9,8 +9,8 @@ namespace Coffer.Infrastructure.Tests.Goals;
 
 public class GoalFeasibilityEngineTests
 {
-    private static readonly DateOnly Today = new(2026, 1, 1);
-    private static readonly DateOnly InAYear = new(2027, 1, 1);
+    private static readonly DateOnly _today = new(2026, 1, 1);
+    private static readonly DateOnly _inAYear = new(2027, 1, 1);
 
     private static IGoalFeasibilityEngine NewEngine() =>
         new GoalFeasibilityEngine(
@@ -38,7 +38,7 @@ public class GoalFeasibilityEngineTests
             OtherActiveGoals = others ?? [],
             CategoryAverages6m = new Dictionary<string, decimal>(),
             SeasonalityModifiers = new Dictionary<int, decimal>(),
-            Today = Today,
+            Today = _today,
         };
 
     private static Goal Goal(
@@ -55,7 +55,7 @@ public class GoalFeasibilityEngineTests
             Type = type,
             TargetAmount = target,
             Currency = "PLN",
-            TargetDate = targetDate ?? InAYear,
+            TargetDate = targetDate ?? _inAYear,
             Priority = Priority.Medium,
             IsArchived = archived,
             CreatedAt = DateTime.UtcNow,
@@ -68,7 +68,7 @@ public class GoalFeasibilityEngineTests
                 Id = Guid.NewGuid(),
                 GoalId = goal.Id,
                 Amount = saved,
-                Date = Today,
+                Date = _today,
                 Source = ContributionSource.Manual,
             });
         }
@@ -95,7 +95,7 @@ public class GoalFeasibilityEngineTests
         var result = NewEngine().Evaluate(Goal(12_000m, saved: 12_000m), Ctx(5000, 2000, 600));
 
         result.Status.Should().Be(GoalStatus.Achieved);
-        result.ProjectedDate.Should().Be(Today);
+        result.ProjectedDate.Should().Be(_today);
     }
 
     [Fact]
