@@ -306,7 +306,7 @@ public class AiUsageEntry
     public DateTime At { get; set; }
     public string Provider { get; set; } = "";          // Claude | OpenAI
     public string Model { get; set; } = "";
-    public string Purpose { get; set; } = "";           // categorization | chat | vision | parser-fallback | anomaly-comment
+    public string Purpose { get; set; } = "";           // categorization | chat | vision | parser-fallback | anomaly-comment | advisor-report
     public int InputTokens { get; set; }
     public int OutputTokens { get; set; }
     public decimal EstimatedCostUsd { get; set; }

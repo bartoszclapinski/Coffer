@@ -138,3 +138,26 @@
 - **UI not interactively verified by the agent** — the manual DoD ("open Doradca → AI suggests 2–3
   specific cuts grounded in actual category history"; "ask the assistant 'jak idzie mój cel na
   wakacje' → it invokes `GetGoals`") must be exercised on the owner's machine before merge.
+
+## 2026-06-25 — Sprint 14 closed
+
+- All three PRs merged with CI green: **14-A** (#113 — domain `Goal`/`GoalContribution`/
+  `GoalSnapshot`, the six-strategy `GoalFeasibilityEngine`, `MortgagePrepaymentCalculator`,
+  `FinancialContext` builder), **14-B** (#115 — Avalonia **Doradca** page: goals CRUD, simulator
+  slider, scenarios, 12-month projection chart), **14-C** (#117 — `AdvisorReportGenerator`, daily
+  snapshot job, `GetGoals` chat tool, suggestions surfaced on Doradca). Full suite green
+  (320 infra + 96 app + 8 core = 424). **Phase 9 done.**
+- Closes Phase 9 of the roadmap. The desktop app now spans setup/login → import → categorise →
+  review → dashboard → chat → alerts → advisor — the last desktop-only phase before the
+  mobile-dependent ones (3 Sync, 5 Receipts).
+- Deviations from the plan, all kept as-is and documented in the per-PR entries above:
+  `SeasonalityModifiers` keyed by `int` month (1.0 stub this sprint); `MortgagePrepaymentStrategy`
+  does savings-feasibility while `MortgagePrepaymentCalculator` produces the shorten-vs-reduce
+  comparison from UI-supplied loan terms; `GoalsQuery` orders client-side (priority persists as a
+  string); `GetGoals` returns the **live** engine projection rather than the persisted snapshot
+  (the snapshot lacks `RequiredMonthlySaving`).
+- Deferred within Phase 9 (recorded in the plan): Conservative/Aggressive aggressiveness profiles,
+  a real seasonality model, and savings-account auto-detect linkage.
+- **Manual click-through DoD pending on the owner's machine** — create "Wakacje Grecja — 8000 zł
+  do lipca 2026" and move the simulator slider; open Doradca and confirm 2–3 grounded cutting
+  suggestions; ask "jak idzie mój cel na wakacje" and confirm `GetGoals` in the tool-trace.
