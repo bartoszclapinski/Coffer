@@ -149,6 +149,7 @@ public class MainViewModelTests
             new FakeGoalService([]),
             new FakeFinancialContextBuilder(),
             new FakeGoalFeasibilityEngine(),
+            new FakeAdvisorReportQuery(),
             NullLogger<GoalsViewModel>.Instance);
         var settings = new SettingsViewModel(
             new FakeAiSettings(),

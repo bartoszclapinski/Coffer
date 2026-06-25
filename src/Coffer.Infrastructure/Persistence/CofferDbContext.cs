@@ -37,6 +37,10 @@ public sealed class CofferDbContext : DbContext
 
     public DbSet<GoalSnapshot> GoalSnapshots => Set<GoalSnapshot>();
 
+    public DbSet<AdvisorReport> AdvisorReports => Set<AdvisorReport>();
+
+    public DbSet<AdvisorSuggestion> AdvisorSuggestions => Set<AdvisorSuggestion>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -62,6 +66,8 @@ public sealed class CofferDbContext : DbContext
         modelBuilder.ApplyConfiguration(new GoalConfiguration());
         modelBuilder.ApplyConfiguration(new GoalContributionConfiguration());
         modelBuilder.ApplyConfiguration(new GoalSnapshotConfiguration());
+        modelBuilder.ApplyConfiguration(new AdvisorReportConfiguration());
+        modelBuilder.ApplyConfiguration(new AdvisorSuggestionConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

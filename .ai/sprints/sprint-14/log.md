@@ -96,3 +96,45 @@
   EmergencyFund `EffectiveTarget`). Full suite green (306 infra + 94 app + 8 core).
 - **UI not interactively verified by the agent** — the manual DoD (create "Wakacje Grecja" 8000 zł,
   move the simulator slider, archive a goal) must be exercised on the owner's machine before merge.
+
+## 2026-06-25 — 14-C advisor AI + chat integration (PR pending)
+
+- Shipped the AI layer: `AiPurpose.AdvisorReport = "advisor-report"`; `AdvisorReport` +
+  `AdvisorSuggestion` entities (one report per day, `AdvisorEntryKind` discriminator: `Risk` ties a
+  `GoalId` + description, `Suggestion` carries title / `decimal Savings` / description /
+  `CategoryAffected`) with EF configs (unique index on `Date`, cascade FK, enum-as-string) and the
+  `AddAdvisorReports` migration; `IAdvisorReportGenerator` + `AdvisorReportGenerator`
+  (`Infrastructure/AI/`) mirroring the 13-B commentator pattern — budget gate (`AiPriority.Normal`) →
+  anonymised prompt (hard rule #7) → `CompleteJsonAsync` → metered once as `advisor-report`, with a
+  graceful engine-only fallback (`GeneratedByAi=false`) on a blocked gate, a provider throw, or
+  malformed JSON. The fallback never fabricates suggestion numbers; risks keyed by an unknown goal id
+  are dropped.
+- Daily snapshot job (`Infrastructure/Goals/GoalSnapshotJob.cs`, `IGoalSnapshotJob`): idempotent
+  within a day (gated on whether any `GoalSnapshot` exists for the date), writes one snapshot per
+  active goal, builds `CategorySpending` (current-month debits vs `CategoryAverages6m`, anchored on
+  the latest transaction date), regenerates the day's report, and replaces any existing report for
+  the day. Wired as a fire-and-forget desktop-startup task in `App.axaml.cs` (off the bootstrap
+  thread because it may make an LLM call) — once per day, no background scheduler (per the resolved
+  open question).
+- `GetGoalsTool : ChatTool` (`Infrastructure/Chat/`) — realises the `GetGoals` tool deferred in
+  Sprint 12. Returns active goals with the **live** engine projection (status, target, projected
+  date, required/current monthly saving) rather than the persisted snapshot, since `GoalSnapshot`
+  lacks `RequiredMonthlySaving`. Registered `AddTransient<IChatTool, GetGoalsTool>()` in
+  `AddCofferChat`; the `FindAnomaliesTool` discoverability test now also calls `AddCofferGoals()`
+  because enumerating `IChatTool` constructs `GetGoalsTool`'s goals-engine dependencies.
+- **Doradca UI wiring (DoD).** Added `IAdvisorReportQuery` + `AdvisorReportQuery` (latest report by
+  date, entries included), an `AdvisorSuggestionViewModel` (formats title / "+N zł/mies." savings /
+  category), and surfaced the day's suggestions in `GoalsViewModel` (`Suggestions` collection,
+  `HasSuggestions`, `SuggestionsAreEngineOnly`). `GoalsView.axaml` now shows a "Sugestie doradcy —
+  gdzie przyciąć" card at the top of the right column (always visible, independent of goal
+  selection), each suggestion citing its category badge and monthly savings. Only `Suggestion`
+  entries are surfaced; per-goal risks stay on the deterministic engine card.
+- Tests: 8 `AdvisorReportGeneratorTests` (scripted fake provider — meters once, anonymises prompt,
+  budget-denied/throw/malformed-JSON → engine-only, no fabricated numbers, unknown-goal risk dropped,
+  no-results short-circuit), 3 `GetGoalsToolTests` + 1 DI-discoverability over a real SQLCipher DB,
+  3 `GoalSnapshotJobTests` (one snapshot per active goal, archived skipped, idempotent within a day),
+  2 new `GoalsViewModelTests` (suggestions surfaced from the latest report; none when no report).
+  `MigrationRunnerTests` updated for `AddAdvisorReports`. Full suite green (320 infra + 96 app + 8 core).
+- **UI not interactively verified by the agent** — the manual DoD ("open Doradca → AI suggests 2–3
+  specific cuts grounded in actual category history"; "ask the assistant 'jak idzie mój cel na
+  wakacje' → it invokes `GetGoals`") must be exercised on the owner's machine before merge.
