@@ -76,7 +76,15 @@ Coffer turns the owner's transaction history into forward-looking guidance: the 
 
 ## Open questions
 
-- **Default aggressiveness profile** — plan assumes a single **Balanced** profile in v1 (Conservative/Aggressive multipliers deferred). Confirm before 14-A, since it sets the free-cash buffer in every strategy.
-- **Goal-transaction linkage scope** — plan assumes **manual + tag** contributions only; savings-account auto-detect (`ContributionSource.AutoDetect`) is modelled in the enum but not wired in v1. Confirm.
-- **Seasonality source** — `SeasonalityModifiers` can be derived from per-month historical spend or left as a neutral (1.0) stub in 14-A and filled in later. Decide whether `LargeExpenseStrategy` ships with real seasonality or a stub in this sprint.
-- **Snapshot job host** — daily job runs as a desktop startup task (no scheduler), mirroring the Sprint-13 "post-import + manual" stance. Confirm there is no need for a background timer in v1.
+All four resolved by the owner (2026-06-25), recorded as decisions in `log.md`:
+- **Default aggressiveness profile** → **Balanced only** in v1; Conservative/Aggressive deferred (see "Deferred to a follow-up" below).
+- **Goal-transaction linkage scope** → **manual + tag** only; `ContributionSource.AutoDetect` stays modelled in the enum but unwired.
+- **Seasonality source** → **neutral 1.0 stub** for `SeasonalityModifiers` this sprint; real per-month modelling deferred (see below).
+- **Snapshot job host** → **desktop startup task** once per day, no background scheduler (lands in 14-C).
+
+## Deferred to a follow-up
+
+Explicitly out of Sprint 14 but to be picked up later within Phase 9 (or a Phase-9 follow-up sprint):
+- **Conservative / Aggressive aggressiveness profiles** — only Balanced ships in v1. The strategies must take the free-cash buffer / risk multipliers as inputs so the other two profiles drop in later without changing strategy logic or contracts.
+- **Real seasonality model** — `SeasonalityModifiers` is a 1.0 stub this sprint; deriving per-month modifiers from historical spend (so `LargeExpenseStrategy` adjusts for "save less in December") is a separate, testable follow-up.
+- **Savings-account auto-detect linkage** — `ContributionSource.AutoDetect` is modelled but unwired; needs the "savings sub-account associated with a goal" concept first.
