@@ -19,8 +19,15 @@ public sealed class EmergencyFundGoalStrategy : GoalStrategy
         ArgumentNullException.ThrowIfNull(goal);
         ArgumentNullException.ThrowIfNull(ctx);
 
+        return EvaluateSavingsGoal(goal, ctx, ResolveTargetAmount(goal, ctx));
+    }
+
+    public override decimal ResolveTargetAmount(Goal goal, FinancialContext ctx)
+    {
+        ArgumentNullException.ThrowIfNull(goal);
+        ArgumentNullException.ThrowIfNull(ctx);
+
         var monthlyExpenses = ctx.MonthlyFixedExpenses + ctx.MonthlyVariableAvg;
-        var dynamicTarget = Math.Max(goal.TargetAmount, _monthsOfExpenses * monthlyExpenses);
-        return EvaluateSavingsGoal(goal, ctx, dynamicTarget);
+        return Math.Max(goal.TargetAmount, _monthsOfExpenses * monthlyExpenses);
     }
 }

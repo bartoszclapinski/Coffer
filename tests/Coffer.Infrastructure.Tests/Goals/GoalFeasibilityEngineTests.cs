@@ -122,6 +122,40 @@ public class GoalFeasibilityEngineTests
     }
 
     [Fact]
+    public void Evaluate_EmergencyFund_EffectiveTargetIsSixMonthsOfExpenses()
+    {
+        var result = NewEngine().Evaluate(
+            Goal(1_000m, GoalType.EmergencyFund),
+            Ctx(income: 8000, fixedExpenses: 2000, variableAvg: 1000));
+
+        result.EffectiveTarget.Should().Be(18_000m, "the strategy lifts the stated target to 6 × (fixed + variable)");
+    }
+
+    [Fact]
+    public void Simulate_HigherMonthlySaving_ReachesGoalNoLater()
+    {
+        var engine = NewEngine();
+        var goal = Goal(12_000m);
+        var ctx = Ctx(5000, 2000, 600);
+
+        var slow = engine.Simulate(goal, ctx, 500m);
+        var fast = engine.Simulate(goal, ctx, 2000m);
+
+        fast.MonthlySaving.Should().Be(2000m);
+        fast.ProjectedDate.Should().BeOnOrBefore(slow.ProjectedDate);
+    }
+
+    [Fact]
+    public void Simulate_UnregisteredType_Throws()
+    {
+        var engine = new GoalFeasibilityEngine([new PurchaseGoalStrategy()]);
+
+        var act = () => engine.Simulate(Goal(1_000m, GoalType.Investment), Ctx(5000, 2000, 600), 500m);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
     public void EvaluateAll_SkipsArchivedGoals()
     {
         var active = Goal(12_000m);

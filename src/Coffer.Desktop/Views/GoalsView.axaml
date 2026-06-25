@@ -1,0 +1,296 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Goals;assembly=Coffer.Application"
+             xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
+             x:Class="Coffer.Desktop.Views.GoalsView"
+             x:DataType="vm:GoalsViewModel"
+             x:CompileBindings="False">
+    <UserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="20,16" />
+        </Style>
+        <Style Selector="Border.badge">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.badgeText">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style Selector="TextBlock.metricLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8E8E93" />
+        </Style>
+        <Style Selector="TextBlock.metricValue">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ColumnDefinitions="360,*">
+        <!-- Left: list + new-goal form -->
+        <ScrollViewer Grid.Column="0">
+            <StackPanel Margin="32,32,16,32" Spacing="16">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Doradca"
+                               FontSize="26"
+                               FontWeight="Light"
+                               Foreground="#1D1D1F" />
+                    <TextBlock Text="Cele oszczędnościowe i symulacje"
+                               Foreground="#8E8E93" />
+                </StackPanel>
+
+                <ProgressBar IsIndeterminate="True" Height="4"
+                             IsVisible="{Binding IsLoading}" />
+
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#D14"
+                           TextWrapping="Wrap"
+                           IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                <TextBlock Text="Nie masz jeszcze żadnych celów. Dodaj pierwszy poniżej."
+                           Foreground="#8E8E93"
+                           TextWrapping="Wrap"
+                           IsVisible="{Binding IsEmpty}" />
+
+                <ListBox ItemsSource="{Binding Goals}"
+                         SelectedItem="{Binding SelectedGoal}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         IsVisible="{Binding HasGoals}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:GoalDetailViewModel">
+                            <Border Classes="card" Margin="0,0,0,8">
+                                <StackPanel Spacing="6">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding Name}"
+                                                   FontSize="15"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#1D1D1F"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Border Grid.Column="1" Classes="badge"
+                                                Background="{Binding StatusColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}">
+                                            <TextBlock Classes="badgeText" Text="{Binding StatusText}" />
+                                        </Border>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <TextBlock Classes="metricLabel" Text="{Binding TargetText}" />
+                                        <TextBlock Classes="metricLabel" Text="{Binding ProjectedDateText}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Border Classes="card">
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="sectionTitle" Text="Nowy cel" />
+                        <TextBox Watermark="Nazwa (np. Wakacje Grecja)"
+                                 Text="{Binding NewGoalName}" />
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding GoalTypeOptions}"
+                                  SelectedItem="{Binding NewGoalType}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:GoalTypeOption">
+                                    <TextBlock Text="{Binding Label}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <NumericUpDown Watermark="Kwota docelowa"
+                                       Minimum="0"
+                                       Increment="100"
+                                       FormatString="N2"
+                                       Value="{Binding NewGoalTargetAmount}" />
+                        <DatePicker SelectedDate="{Binding NewGoalTargetDate}" />
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding PriorityOptions}"
+                                  SelectedItem="{Binding NewGoalPriority}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PriorityOption">
+                                    <TextBlock Text="{Binding Label}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Button Content="Dodaj cel"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding CreateGoalCommand}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Right: detail panel -->
+        <ScrollViewer Grid.Column="1">
+            <ContentControl Content="{Binding SelectedGoal}"
+                            IsVisible="{Binding SelectedGoal, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <ContentControl.ContentTemplate>
+                    <DataTemplate x:DataType="vm:GoalDetailViewModel">
+                        <StackPanel Margin="16,32,32,32" Spacing="16">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="22"
+                                               FontWeight="SemiBold"
+                                               Foreground="#1D1D1F" />
+                                    <TextBlock Text="{Binding TypeText}" Foreground="#8E8E93" />
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="Archiwizuj"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{Binding !IsBusy}"
+                                        Command="{Binding ArchiveCommand}" />
+                            </Grid>
+
+                            <Border Classes="card">
+                                <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto">
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                                        <TextBlock Classes="metricLabel" Text="Cel" />
+                                        <TextBlock Classes="metricValue" Text="{Binding TargetText}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                                        <TextBlock Classes="metricLabel" Text="Zaoszczędzono" />
+                                        <TextBlock Classes="metricValue" Text="{Binding SavedText}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2">
+                                        <TextBlock Classes="metricLabel" Text="Pozostało" />
+                                        <TextBlock Classes="metricValue" Text="{Binding RemainingText}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
+                                        <TextBlock Classes="metricLabel" Text="Pewność" />
+                                        <TextBlock Classes="metricValue" Text="{Binding ConfidenceText}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,12,0,0">
+                                        <TextBlock Classes="metricLabel" Text="Termin" />
+                                        <TextBlock Classes="metricValue" Text="{Binding TargetDateText}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,12,0,0">
+                                        <TextBlock Classes="metricLabel" Text="Prognoza" />
+                                        <TextBlock Classes="metricValue" Text="{Binding ProjectedDateText}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,12,0,0">
+                                        <TextBlock Classes="metricLabel" Text="Wymagane" />
+                                        <TextBlock Classes="metricValue" Text="{Binding RequiredMonthlyText}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="1" Grid.Column="3" Spacing="2" Margin="0,12,0,0">
+                                        <TextBlock Classes="metricLabel" Text="Obecne tempo" />
+                                        <TextBlock Classes="metricValue" Text="{Binding CurrentMonthlyText}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Classes="sectionTitle" Text="Symulator — ile odkładać miesięcznie" />
+                                    <Slider Minimum="0" Maximum="10000"
+                                            TickFrequency="100"
+                                            Value="{Binding MonthlySavingInput}" />
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <NumericUpDown Grid.Column="0"
+                                                       Minimum="0"
+                                                       Increment="50"
+                                                       FormatString="N2"
+                                                       Width="160"
+                                                       Value="{Binding MonthlySavingInput}" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12"
+                                                    VerticalAlignment="Center">
+                                            <TextBlock Classes="metricLabel" Text="Prognoza:" VerticalAlignment="Center" />
+                                            <TextBlock Classes="metricValue" Text="{Binding SimulatedProjectedDateText}"
+                                                       VerticalAlignment="Center" />
+                                            <Border Classes="badge"
+                                                    Background="{Binding SimulatedStatusColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}">
+                                                <TextBlock Classes="badgeText" Text="{Binding SimulatedStatusText}" />
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+                                    <lvc:CartesianChart Height="220"
+                                                        Series="{Binding ProjectionSeries}"
+                                                        XAxes="{Binding ProjectionXAxes}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="sectionTitle" Text="Scenariusze" />
+                                    <ItemsControl ItemsSource="{Binding Scenarios}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:GoalScenarioViewModel">
+                                                <Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,8">
+                                                    <TextBlock Grid.Column="0" Text="{Binding Label}"
+                                                               Foreground="#1D1D1F" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Classes="metricLabel"
+                                                               Text="{Binding MonthlySavingText}"
+                                                               Margin="12,0" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="2" Classes="metricLabel"
+                                                               Text="{Binding ProjectedDateText}"
+                                                               Margin="12,0" VerticalAlignment="Center" />
+                                                    <Border Grid.Column="3" Classes="badge" Margin="12,0,0,0"
+                                                            Background="{Binding StatusColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}">
+                                                        <TextBlock Classes="badgeText" Text="{Binding StatusText}" />
+                                                    </Border>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card" IsVisible="{Binding HasRisks}">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="sectionTitle" Text="Ryzyka" />
+                                    <ItemsControl ItemsSource="{Binding Risks}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}"
+                                                           Foreground="#48484A"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,0,0,4" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="sectionTitle" Text="Dodaj wpłatę" />
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <NumericUpDown Grid.Column="0"
+                                                       Minimum="0"
+                                                       Increment="50"
+                                                       FormatString="N2"
+                                                       Watermark="Kwota wpłaty"
+                                                       Value="{Binding ContributionAmount}" />
+                                        <Button Grid.Column="1"
+                                                Content="Dodaj"
+                                                Margin="12,0,0,0"
+                                                IsEnabled="{Binding !IsBusy}"
+                                                Command="{Binding AddContributionCommand}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </DataTemplate>
+                </ContentControl.ContentTemplate>
+            </ContentControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

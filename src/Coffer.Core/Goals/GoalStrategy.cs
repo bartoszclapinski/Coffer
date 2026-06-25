@@ -172,6 +172,7 @@ public abstract class GoalStrategy
         {
             GoalId = goal.Id,
             Status = status,
+            EffectiveTarget = targetAmount,
             ProjectedDate = projectedDate,
             RequiredMonthlySaving = required,
             CurrentMonthlySaving = current,
@@ -180,6 +181,45 @@ public abstract class GoalStrategy
             Risks = risks,
             DiagnosticSummary = summary,
         };
+    }
+
+    /// <summary>
+    /// The target this strategy evaluates against. Most goals use the stored amount; an emergency
+    /// fund overrides this to size itself off current expenses, so the simulator and chart cap track
+    /// the same target the verdict used.
+    /// </summary>
+    public virtual decimal ResolveTargetAmount(Goal goal, FinancialContext ctx)
+    {
+        ArgumentNullException.ThrowIfNull(goal);
+        return goal.TargetAmount;
+    }
+
+    /// <summary>
+    /// A deterministic "what if I save this much per month" outcome for the simulator slider: the
+    /// engine projects the payoff date and status at <paramref name="monthlySaving"/> against the
+    /// strategy's effective target. Pure — the same inputs always yield the same scenario.
+    /// </summary>
+    public Scenario Simulate(Goal goal, FinancialContext ctx, decimal monthlySaving)
+    {
+        ArgumentNullException.ThrowIfNull(goal);
+        ArgumentNullException.ThrowIfNull(ctx);
+
+        var target = ResolveTargetAmount(goal, ctx);
+        var saved = Saved(goal);
+        var remaining = Math.Max(0m, target - saved);
+        var months = WholeMonthsBetween(ctx.Today, goal.TargetDate);
+        var required = months <= 0 ? remaining : remaining / months;
+
+        if (remaining <= 0m)
+        {
+            return new Scenario("Symulacja", monthlySaving, ctx.Today, GoalStatus.Achieved);
+        }
+
+        return new Scenario(
+            "Symulacja",
+            monthlySaving,
+            ProjectDateAtPace(ctx.Today, remaining, monthlySaving),
+            StatusFor(required, monthlySaving, ctx.Profile));
     }
 
     /// <summary>Three deterministic what-ifs: current pace, the most the profile sustains, and the pace that hits the date.</summary>

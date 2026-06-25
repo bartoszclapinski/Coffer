@@ -13,4 +13,10 @@ public interface IGoalFeasibilityEngine
     GoalFeasibilityResult Evaluate(Goal goal, FinancialContext ctx);
 
     IReadOnlyList<GoalFeasibilityResult> EvaluateAll(IReadOnlyList<Goal> goals, FinancialContext ctx);
+
+    /// <summary>
+    /// Projects a goal's payoff date and status at a hypothetical monthly saving (the Doradca
+    /// simulator slider). Deterministic and free — drives the live "what if I save X/month" panel.
+    /// </summary>
+    Scenario Simulate(Goal goal, FinancialContext ctx, decimal monthlySaving);
 }
