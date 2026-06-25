@@ -15,7 +15,8 @@ public class MigrationRunnerTests : IDisposable
     private const string _expectedCategorizationMigration = "20260605120600_AddCategorizationSchema";
     private const string _expectedAiUsageLedgerMigration = "20260605205525_AddAiUsageLedger";
     private const string _expectedAnomalyMigration = "20260623063443_AddAnomalyAlerts";
-    private const string _expectedLatestMigration = "20260625104507_AddGoals";
+    private const string _expectedGoalsMigration = "20260625104507_AddGoals";
+    private const string _expectedLatestMigration = "20260625144724_AddAdvisorReports";
 
     private readonly string _tempDir;
     private readonly string _dbPath;
@@ -138,6 +139,7 @@ public class MigrationRunnerTests : IDisposable
             _expectedCategorizationMigration,
             _expectedAiUsageLedgerMigration,
             _expectedAnomalyMigration,
+            _expectedGoalsMigration,
             _expectedLatestMigration);
     }
 

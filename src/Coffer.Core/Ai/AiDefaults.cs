@@ -34,4 +34,5 @@ public static class AiPurpose
     public const string Vision = "vision";
     public const string ParserFallback = "parser-fallback";
     public const string AnomalyComment = "anomaly-comment";
+    public const string AdvisorReport = "advisor-report";
 }

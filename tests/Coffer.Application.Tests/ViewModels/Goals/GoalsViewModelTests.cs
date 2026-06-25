@@ -101,21 +101,83 @@ public class GoalsViewModelTests
         service.Contributions[0].GoalId.Should().Be(goal.Id);
     }
 
+    [Fact]
+    public async Task LoadAsync_SurfacesAdvisorSuggestions_FromLatestReport()
+    {
+        var store = new List<Goal> { Goal("Wakacje", 8000m) };
+        var vm = CreateViewModel(store, out _, out _, out var reportQuery);
+        reportQuery.Report = new AdvisorReport
+        {
+            Id = Guid.NewGuid(),
+            Date = new DateOnly(2026, 6, 25),
+            GeneratedAt = DateTime.UtcNow,
+            GeneratedByAi = true,
+            Entries =
+            [
+                new AdvisorSuggestion
+                {
+                    Id = Guid.NewGuid(),
+                    Kind = AdvisorEntryKind.Suggestion,
+                    Title = "Restauracje do średniej",
+                    Savings = 329m,
+                    Description = "Z 540 do 211 zł.",
+                    CategoryAffected = "Restauracje",
+                },
+                new AdvisorSuggestion
+                {
+                    Id = Guid.NewGuid(),
+                    Kind = AdvisorEntryKind.Risk,
+                    GoalId = store[0].Id,
+                    Description = "Napięty termin.",
+                },
+            ],
+        };
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.HasSuggestions.Should().BeTrue();
+        vm.SuggestionsAreEngineOnly.Should().BeFalse();
+        vm.Suggestions.Should().ContainSingle("only Suggestion entries are surfaced, not Risk entries");
+        vm.Suggestions[0].Title.Should().Be("Restauracje do średniej");
+        vm.Suggestions[0].CategoryText.Should().Be("Restauracje");
+        vm.Suggestions[0].SavingsText.Should().Contain("329");
+    }
+
+    [Fact]
+    public async Task LoadAsync_NoReport_HasNoSuggestions()
+    {
+        var vm = CreateViewModel([Goal("Wakacje", 8000m)], out _, out _, out _);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.HasSuggestions.Should().BeFalse();
+        vm.Suggestions.Should().BeEmpty();
+    }
+
     private static GoalsViewModel CreateViewModel(
         List<Goal> store,
         out FakeGoalService service,
-        out FakeGoalFeasibilityEngine engine)
+        out FakeGoalFeasibilityEngine engine) =>
+        CreateViewModel(store, out service, out engine, out _);
+
+    private static GoalsViewModel CreateViewModel(
+        List<Goal> store,
+        out FakeGoalService service,
+        out FakeGoalFeasibilityEngine engine,
+        out FakeAdvisorReportQuery reportQuery)
     {
         var query = new FakeGoalsQuery();
         query.Goals.AddRange(store);
         service = new FakeGoalService(query.Goals);
         engine = new FakeGoalFeasibilityEngine();
+        reportQuery = new FakeAdvisorReportQuery();
 
         return new GoalsViewModel(
             query,
             service,
             new FakeFinancialContextBuilder(),
             engine,
+            reportQuery,
             NullLogger<GoalsViewModel>.Instance);
     }
 

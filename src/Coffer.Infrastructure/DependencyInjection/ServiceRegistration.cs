@@ -73,6 +73,8 @@ public static class ServiceRegistration
         services.AddTransient<IFinancialContextBuilder, FinancialContextBuilder>();
         services.AddTransient<IGoalsQuery, GoalsQuery>();
         services.AddTransient<IGoalService, GoalService>();
+        services.AddTransient<IAdvisorReportQuery, AdvisorReportQuery>();
+        services.AddTransient<IGoalSnapshotJob, GoalSnapshotJob>();
         return services;
     }
 
@@ -125,6 +127,7 @@ public static class ServiceRegistration
         services.AddTransient<IAiBudgetGate, AiBudgetGate>();
         services.AddTransient<IAiSettings, AppSettingsStore>();
         services.AddTransient<IAnomalyCommentator, AnomalyCommentator>();
+        services.AddTransient<IAdvisorReportGenerator, AdvisorReportGenerator>();
         return services;
     }
 
@@ -141,6 +144,7 @@ public static class ServiceRegistration
         services.AddTransient<IChatTool, GetSpendingByCategoryTool>();
         services.AddTransient<IChatTool, GetMonthlyTrendTool>();
         services.AddTransient<IChatTool, FindAnomaliesTool>();
+        services.AddTransient<IChatTool, GetGoalsTool>();
         services.AddTransient<IChatService, ChatService>();
         return services;
     }

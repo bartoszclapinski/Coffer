@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Coffer.Core.Domain;
 using Coffer.Core.Goals;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,6 +21,7 @@ public sealed partial class GoalsViewModel : ObservableObject
     private readonly IGoalService _service;
     private readonly IFinancialContextBuilder _contextBuilder;
     private readonly IGoalFeasibilityEngine _engine;
+    private readonly IAdvisorReportQuery _reportQuery;
     private readonly ILogger<GoalsViewModel> _logger;
 
     [ObservableProperty]
@@ -30,6 +32,12 @@ public sealed partial class GoalsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _hasGoals;
+
+    [ObservableProperty]
+    private bool _hasSuggestions;
+
+    [ObservableProperty]
+    private bool _suggestionsAreEngineOnly;
 
     [ObservableProperty]
     private GoalDetailViewModel? _selectedGoal;
@@ -54,18 +62,21 @@ public sealed partial class GoalsViewModel : ObservableObject
         IGoalService service,
         IFinancialContextBuilder contextBuilder,
         IGoalFeasibilityEngine engine,
+        IAdvisorReportQuery reportQuery,
         ILogger<GoalsViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(service);
         ArgumentNullException.ThrowIfNull(contextBuilder);
         ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(reportQuery);
         ArgumentNullException.ThrowIfNull(logger);
 
         _query = query;
         _service = service;
         _contextBuilder = contextBuilder;
         _engine = engine;
+        _reportQuery = reportQuery;
         _logger = logger;
 
         GoalTypeOptions = Enum.GetValues<GoalType>()
@@ -80,6 +91,8 @@ public sealed partial class GoalsViewModel : ObservableObject
     }
 
     public ObservableCollection<GoalDetailViewModel> Goals { get; } = [];
+
+    public ObservableCollection<AdvisorSuggestionViewModel> Suggestions { get; } = [];
 
     public IReadOnlyList<GoalTypeOption> GoalTypeOptions { get; }
 
@@ -172,6 +185,24 @@ public sealed partial class GoalsViewModel : ObservableObject
         HasGoals = Goals.Count > 0;
         SelectedGoal = Goals.FirstOrDefault(g => g.Id == previousId) ?? Goals.FirstOrDefault();
         OnPropertyChanged(nameof(IsEmpty));
+
+        await RefreshSuggestionsAsync(ct).ConfigureAwait(true);
+    }
+
+    private async Task RefreshSuggestionsAsync(CancellationToken ct)
+    {
+        Suggestions.Clear();
+        var report = await _reportQuery.GetLatestAsync(ct).ConfigureAwait(true);
+        if (report is not null)
+        {
+            foreach (var entry in report.Entries.Where(e => e.Kind == AdvisorEntryKind.Suggestion))
+            {
+                Suggestions.Add(new AdvisorSuggestionViewModel(entry));
+            }
+        }
+
+        HasSuggestions = Suggestions.Count > 0;
+        SuggestionsAreEngineOnly = report is { GeneratedByAi: false } && HasSuggestions;
     }
 
     private async Task ArchiveAsync(GoalDetailViewModel goal)

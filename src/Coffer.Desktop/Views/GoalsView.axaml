@@ -138,8 +138,55 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Right: detail panel -->
+        <!-- Right: advisor suggestions + detail panel -->
         <ScrollViewer Grid.Column="1">
+          <StackPanel>
+            <Border Classes="card" Margin="16,32,32,0"
+                    IsVisible="{Binding HasSuggestions}">
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="sectionTitle" Margin="0"
+                               Text="Sugestie doradcy — gdzie przyciąć" />
+                    <TextBlock Text="Wygenerowano bez AI (na podstawie samego silnika)."
+                               Classes="metricLabel"
+                               TextWrapping="Wrap"
+                               IsVisible="{Binding SuggestionsAreEngineOnly}" />
+                    <ItemsControl ItemsSource="{Binding Suggestions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:AdvisorSuggestionViewModel">
+                                <Border Background="#F5F5F7" CornerRadius="8"
+                                        Padding="14,12" Margin="0,0,0,8">
+                                    <StackPanel Spacing="4">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding Title}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#1D1D1F"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SavingsText}"
+                                                       Foreground="#34C759"
+                                                       FontWeight="SemiBold"
+                                                       Margin="12,0,0,0"
+                                                       IsVisible="{Binding HasSavings}" />
+                                        </Grid>
+                                        <TextBlock Text="{Binding Description}"
+                                                   Foreground="#48484A"
+                                                   TextWrapping="Wrap" />
+                                        <Border Classes="badge" HorizontalAlignment="Left"
+                                                Background="#E5E5EA"
+                                                IsVisible="{Binding HasCategory}">
+                                            <TextBlock Text="{Binding CategoryText}"
+                                                       FontSize="12"
+                                                       Foreground="#1D1D1F" />
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
             <ContentControl Content="{Binding SelectedGoal}"
                             IsVisible="{Binding SelectedGoal, Converter={x:Static ObjectConverters.IsNotNull}}">
                 <ContentControl.ContentTemplate>
@@ -291,6 +338,7 @@
                     </DataTemplate>
                 </ContentControl.ContentTemplate>
             </ContentControl>
+          </StackPanel>
         </ScrollViewer>
     </Grid>
 </UserControl>

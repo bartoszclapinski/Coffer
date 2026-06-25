@@ -8,6 +8,7 @@ using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Setup;
 using Coffer.Core.Categorization;
+using Coffer.Core.Goals;
 using Coffer.Core.Security;
 using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
@@ -231,6 +232,7 @@ public partial class App : Avalonia.Application
     private Window BuildMainWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
         SeedDefaultCategories();
+        StartDailyAdvisorRefresh();
 
         var window = Services.GetRequiredService<MainWindow>();
         var vm = Services.GetRequiredService<MainViewModel>();
@@ -239,6 +241,25 @@ public partial class App : Avalonia.Application
 
         StartAutoLockMonitor(desktop);
         return window;
+    }
+
+    private static void StartDailyAdvisorRefresh()
+    {
+        // Once-a-day goal snapshots + advisor report (doc 07). Idempotent within a day, so firing on
+        // every launch is safe. Runs off the bootstrap thread because it may make an LLM call; a
+        // failure here must never block the user from the app.
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var job = Services.GetRequiredService<IGoalSnapshotJob>();
+                await job.RunAsync(DateOnly.FromDateTime(DateTime.Now), CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Daily advisor refresh failed; continuing without today's report");
+            }
+        });
     }
 
     private static void SeedDefaultCategories()

@@ -16,6 +16,19 @@ public sealed class FakeGoalsQuery : IGoalsQuery
     }
 }
 
+public sealed class FakeAdvisorReportQuery : IAdvisorReportQuery
+{
+    public AdvisorReport? Report { get; set; }
+
+    public int Calls { get; private set; }
+
+    public Task<AdvisorReport?> GetLatestAsync(CancellationToken ct)
+    {
+        Calls++;
+        return Task.FromResult(Report);
+    }
+}
+
 public sealed class FakeGoalService : IGoalService
 {
     private readonly List<Goal> _store;
