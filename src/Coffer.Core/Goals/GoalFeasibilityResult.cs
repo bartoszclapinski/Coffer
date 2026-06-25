@@ -13,6 +13,13 @@ public sealed record GoalFeasibilityResult
 
     public required GoalStatus Status { get; init; }
 
+    /// <summary>
+    /// The target the engine actually evaluated against — equals <see cref="Domain.Goal.TargetAmount"/>
+    /// for most goals, but an emergency fund derives it from current expenses, so the UI shows this
+    /// rather than the stored amount. Defaults to 0 for results that predate the field.
+    /// </summary>
+    public decimal EffectiveTarget { get; init; }
+
     public required DateOnly ProjectedDate { get; init; }
 
     public required decimal RequiredMonthlySaving { get; init; }

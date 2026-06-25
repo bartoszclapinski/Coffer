@@ -71,6 +71,8 @@ public static class ServiceRegistration
         services.AddTransient<IGoalFeasibilityEngine, GoalFeasibilityEngine>();
         services.AddSingleton<IMortgagePrepaymentCalculator, MortgagePrepaymentCalculator>();
         services.AddTransient<IFinancialContextBuilder, FinancialContextBuilder>();
+        services.AddTransient<IGoalsQuery, GoalsQuery>();
+        services.AddTransient<IGoalService, GoalService>();
         return services;
     }
 

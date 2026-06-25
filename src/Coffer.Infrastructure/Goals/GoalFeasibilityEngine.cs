@@ -32,6 +32,19 @@ public sealed class GoalFeasibilityEngine : IGoalFeasibilityEngine
         return strategy.Evaluate(goal, ctx);
     }
 
+    public Scenario Simulate(Goal goal, FinancialContext ctx, decimal monthlySaving)
+    {
+        ArgumentNullException.ThrowIfNull(goal);
+        ArgumentNullException.ThrowIfNull(ctx);
+
+        if (!_strategies.TryGetValue(goal.Type, out var strategy))
+        {
+            throw new InvalidOperationException($"No goal strategy registered for type '{goal.Type}'.");
+        }
+
+        return strategy.Simulate(goal, ctx, monthlySaving);
+    }
+
     public IReadOnlyList<GoalFeasibilityResult> EvaluateAll(IReadOnlyList<Goal> goals, FinancialContext ctx)
     {
         ArgumentNullException.ThrowIfNull(goals);

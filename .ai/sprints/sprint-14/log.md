@@ -68,3 +68,31 @@
   `EvaluateAll` can map results back to goals. Variable std-dev's square root drops to `double`
   (then back to `decimal`), matching the anomaly engine's convention for statistical spread; all
   stored/compared money stays `decimal`.
+
+## 2026-06-25 — 14-B Doradca page implemented (PR pending)
+
+- Shipped the Avalonia **Doradca** page end to end: `IGoalsQuery`/`IGoalService` (Core) +
+  `GoalsQuery`/`GoalService` (Infrastructure, `IDbContextFactory`, contributions soft-deleted via
+  `IsArchived`), `GoalsViewModel` + `GoalDetailViewModel` + `GoalScenarioViewModel`
+  (CommunityToolkit.Mvvm), `GoalsView.axaml` (goals list, create form, metrics, simulator slider,
+  12-month LiveCharts projection, scenarios, risks, add-contribution), and shell wiring
+  (`MainViewModel.Advisor`/`ShowAdvisor`, `MainWindow.axaml` nav button + data template, desktop DI).
+- Engine extension for the simulator: added `GoalStrategy.Simulate` / `IGoalFeasibilityEngine.Simulate`
+  (re-runs the projection at an arbitrary monthly pace) and an `EffectiveTarget` field on
+  `GoalFeasibilityResult` (the strategy-resolved target — e.g. EmergencyFund's 6× expenses — so the
+  UI charts the real goal line, not the stated one). The VM never duplicates engine math: the slider
+  calls `engine.Simulate`.
+- Deviation — **`GoalsQuery` orders client-side, not in SQL.** `Goal.Priority` is persisted as a
+  string (`HasConversion<string>()`), so `OrderByDescending(g => g.Priority)` in the DB sorts
+  alphabetically (Medium > Low > High) instead of by urgency. A `GoalsQueryTests` ordering test
+  caught this; the query now materialises active goals then orders in memory where the enum compares
+  by its int value. The active-goals set is small, so the cost is negligible.
+- Single VM for both list and detail: one `GoalDetailViewModel` serves the list row and the detail
+  panel (`Goals` collection + `SelectedGoal`), avoiding a separate row VM. `StatusColor` is exposed
+  as a hex string consumed by the existing `HexColorToBrushConverter` rather than a new converter.
+- Tests: 6 `GoalsViewModelTests`, 5 `GoalDetailViewModelTests`, `MainViewModelTests` updated for the
+  new shell page (Application layer), plus `GoalsQueryTests` (3) and `GoalServiceTests` (6) over a
+  real SQLCipher DB and 4 new engine tests (Simulate monotonicity + unregistered-type throw,
+  EmergencyFund `EffectiveTarget`). Full suite green (306 infra + 94 app + 8 core).
+- **UI not interactively verified by the agent** — the manual DoD (create "Wakacje Grecja" 8000 zł,
+  move the simulator slider, archive a goal) must be exercised on the owner's machine before merge.
