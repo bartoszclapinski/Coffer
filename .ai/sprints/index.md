@@ -1,6 +1,6 @@
 # Sprint index
 
-Status as of: 2026-06-23 (sprint-13 closed)
+Status as of: 2026-06-25 (sprint-14 planned)
 
 | Sprint | Phase | Goal | Status |
 |---|---|---|---|
@@ -18,6 +18,7 @@ Status as of: 2026-06-23 (sprint-13 closed)
 | [sprint-11](sprint-11/sprint-11.md) | 6 | Dashboard and charts: `IDashboardQuery` + server-side (`GROUP BY`) aggregations, `DashboardViewModel`, Avalonia Dashboard page (current-month spend/income/net KPI cards, 30-day spend trend, 12-month bar, top-categories doughnut, recent transactions) via LiveCharts2; Dashboard becomes the post-login landing page. Single PR. With no explicit as-of the dashboard anchors on the latest transaction's month so an idle current month does not render empty | Closed (2026-06-07) |
 | [sprint-12](sprint-12/sprint-12.md) | 7 | Chat with data: extend `IAiProvider`/`AiRequest` for tool calling, four read-only EF-backed financial tools (`GetTotalSpent` / `GetTransactions` / `GetSpendingByCategory` / `GetMonthlyTrend`), `ChatService` tool-call loop (reasoning model, budget gate, ledger per turn, anonymised tool output), and an Avalonia chat page with a per-response tool-trace. Anomaly/goals/receipt tools deferred to their phases. Two PRs (12-A plumbing+tools+service → 12-B UI) | Closed (2026-06-22) |
 | [sprint-13](sprint-13/sprint-13.md) | 8 | Anomalies and alerts: domain `Alert` + five statistical detectors (high-amount z-score, new-merchant, category-spike, duplicate-payment, missing-recurrence) over a 30-day recent / 6-month baseline window, a detection use case (post-import + manual rescan, signature-deduped) persisting alerts with templated Polish text, and an Avalonia Alerty page with accept/dismiss. Then an `AnomalyCommentator` (LLM title/description for the top 10, budget-gated, ledgered as `anomaly-comment`, anonymised) and a `FindAnomalies` chat tool. Mobile push deferred. Two PRs (13-A engine+UI → 13-B AI+chat) | Closed (2026-06-23) |
+| [sprint-14](sprint-14/sprint-14.md) | 9 | Financial advisor: domain `Goal` / `GoalContribution` / `GoalSnapshot`, a deterministic `GoalFeasibilityEngine` with one strategy per goal type (purchase, large-expense, emergency-fund, mortgage-prepayment, investment, long-term), a `MortgagePrepaymentCalculator`, and a `FinancialContext` builder over the transaction history, then an Avalonia **Doradca** page (goals CRUD, simulator slider, scenarios, 12-month projection chart), then an `AdvisorReportGenerator` (LLM risks + grounded cutting suggestions, budget-gated, ledgered as `advisor-report`, anonymised), a daily snapshot job, and the `GetGoals` chat tool deferred in Sprint 12. Engine calculates, AI explains. Three PRs (14-A engine → 14-B UI → 14-C AI+chat) | Planned |
 
 **Phase 0 closed end-to-end on 2026-05-20.** Cold-start setup → wizard → `MainWindow`; subsequent cold start → DPAPI cache bypass OR login window → `MainWindow`; 15-min idle → auto-lock → login. ~104 automated tests, CI green.
 
