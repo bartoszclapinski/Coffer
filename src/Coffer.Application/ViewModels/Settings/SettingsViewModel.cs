@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using Coffer.Application.Localization;
 using Coffer.Core.Ai;
+using Coffer.Core.Localization;
 using Coffer.Core.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -18,6 +20,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IAiSettings _settings;
     private readonly ISecretStore _secrets;
     private readonly IAiUsageLedger _ledger;
+    private readonly ILocalizer _localizer;
+    private readonly ILanguageStore _languageStore;
     private readonly ILogger<SettingsViewModel> _logger;
 
     [ObservableProperty]
@@ -25,6 +29,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage = "";
+
+    [ObservableProperty]
+    private LanguageOption _selectedLanguage;
 
     [ObservableProperty]
     private string _selectedProvider = AiDefaults.ClaudeProvider;
@@ -50,17 +57,25 @@ public sealed partial class SettingsViewModel : ObservableObject
         IAiSettings settings,
         ISecretStore secrets,
         IAiUsageLedger ledger,
+        ILocalizer localizer,
+        ILanguageStore languageStore,
         ILogger<SettingsViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(secrets);
         ArgumentNullException.ThrowIfNull(ledger);
+        ArgumentNullException.ThrowIfNull(localizer);
+        ArgumentNullException.ThrowIfNull(languageStore);
         ArgumentNullException.ThrowIfNull(logger);
 
         _settings = settings;
         _secrets = secrets;
         _ledger = ledger;
+        _localizer = localizer;
+        _languageStore = languageStore;
         _logger = logger;
+
+        _selectedLanguage = Languages.First(l => l.Language == localizer.Current);
     }
 
     public ObservableCollection<string> Providers { get; } =
@@ -68,6 +83,23 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public ObservableCollection<string> Models { get; } =
         ["claude-haiku-4-5", "claude-sonnet-4-6", "gpt-4o-mini", "gpt-4o"];
+
+    public IReadOnlyList<LanguageOption> Languages { get; } =
+    [
+        new(AppLanguage.Polish, "Polski"),
+        new(AppLanguage.English, "English"),
+    ];
+
+    partial void OnSelectedLanguageChanged(LanguageOption value)
+    {
+        if (value is null || value.Language == _localizer.Current)
+        {
+            return;
+        }
+
+        _localizer.SetLanguage(value.Language);
+        _languageStore.Save(value.Language);
+    }
 
     [RelayCommand]
     private async Task LoadAsync()

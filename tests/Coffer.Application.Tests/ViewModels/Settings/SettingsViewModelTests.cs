@@ -1,6 +1,7 @@
 using Coffer.Application.Tests.Fakes;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Core.Ai;
+using Coffer.Core.Localization;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -81,9 +82,29 @@ public class SettingsViewModelTests
         vm.HasApiKey.Should().BeFalse();
     }
 
+    [Fact]
+    public void SelectingLanguage_SwitchesLocalizerAndPersists()
+    {
+        var localizer = new FakeLocalizer();
+        var store = new FakeLanguageStore();
+        var vm = new SettingsViewModel(
+            new FakeAiSettings(),
+            new FakeSecretStore(),
+            new FakeAiUsageLedger(),
+            localizer,
+            store,
+            NullLogger<SettingsViewModel>.Instance);
+
+        vm.SelectedLanguage = vm.Languages.First(l => l.Language == AppLanguage.English);
+
+        localizer.Current.Should().Be(AppLanguage.English);
+        store.Stored.Should().Be(AppLanguage.English);
+        store.SaveCalls.Should().Be(1);
+    }
+
     private static SettingsViewModel Create(
         FakeAiSettings settings,
         FakeSecretStore secrets,
         FakeAiUsageLedger ledger) =>
-        new(settings, secrets, ledger, NullLogger<SettingsViewModel>.Instance);
+        new(settings, secrets, ledger, new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
 }

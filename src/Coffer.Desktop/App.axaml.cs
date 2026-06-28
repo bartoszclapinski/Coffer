@@ -4,11 +4,13 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using Coffer.Application.Localization;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Setup;
 using Coffer.Core.Categorization;
 using Coffer.Core.Goals;
+using Coffer.Core.Localization;
 using Coffer.Core.Security;
 using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
@@ -35,6 +37,8 @@ public partial class App : Avalonia.Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        ApplySavedLanguage();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             _desktop = desktop;
@@ -42,6 +46,23 @@ public partial class App : Avalonia.Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void ApplySavedLanguage()
+    {
+        // Apply the persisted UI language before any window is built so the first screen
+        // (setup/login/main) renders in the chosen language. The store reads a plaintext
+        // file and never throws; a failure here must not block startup.
+        try
+        {
+            var localizer = Services.GetRequiredService<ILocalizer>();
+            var languageStore = Services.GetRequiredService<ILanguageStore>();
+            localizer.SetLanguage(languageStore.Load());
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to apply saved UI language; continuing with the default");
+        }
     }
 
     private Window ResolveStartupWindow(IClassicDesktopStyleApplicationLifetime desktop)
