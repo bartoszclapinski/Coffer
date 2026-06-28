@@ -6,6 +6,7 @@ using Coffer.Core.Chat;
 using Coffer.Core.Dashboard;
 using Coffer.Core.Goals;
 using Coffer.Core.Import;
+using Coffer.Core.Localization;
 using Coffer.Core.Parsing;
 using Coffer.Core.Security;
 using Coffer.Core.Transactions;
@@ -19,6 +20,7 @@ using Coffer.Infrastructure.Dashboard;
 using Coffer.Infrastructure.Goals;
 using Coffer.Infrastructure.Goals.Strategies;
 using Coffer.Infrastructure.Import;
+using Coffer.Infrastructure.Localization;
 using Coffer.Infrastructure.Logging;
 using Coffer.Infrastructure.Parsing;
 using Coffer.Infrastructure.Parsing.Pko;
@@ -203,6 +205,8 @@ public static class ServiceRegistration
     public static IServiceCollection AddCofferVaultPaths(this IServiceCollection services)
     {
         services.AddSingleton<IVaultPaths, CofferVaultPaths>();
+        // Plaintext language preference, readable pre-login (before the DEK exists).
+        services.AddSingleton<ILanguageStore, FileLanguageStore>();
         return services;
     }
 

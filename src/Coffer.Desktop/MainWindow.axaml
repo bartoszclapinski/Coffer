@@ -11,6 +11,7 @@
         xmlns:goalsVm="clr-namespace:Coffer.Application.ViewModels.Goals;assembly=Coffer.Application"
         xmlns:settingsVm="clr-namespace:Coffer.Application.ViewModels.Settings;assembly=Coffer.Application"
         xmlns:views="clr-namespace:Coffer.Desktop.Views"
+        xmlns:l="clr-namespace:Coffer.Desktop.Localization"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
         x:Class="Coffer.Desktop.MainWindow"
         x:DataType="vm:MainViewModel"
@@ -52,7 +53,7 @@
                                FontSize="22"
                                FontWeight="SemiBold"
                                Foreground="#1D4ED8" />
-                    <TextBlock Text="Twój sejf finansowy"
+                    <TextBlock Text="{l:Localize App.Tagline}"
                                FontSize="12"
                                Foreground="#8E8E93" />
                 </StackPanel>
@@ -60,43 +61,43 @@
                 <StackPanel Grid.Row="1" Margin="12,8,12,8" Spacing="4">
                     <Button Classes="nav"
                             Classes.active="{Binding IsDashboardActive}"
-                            Content="Pulpit"
+                            Content="{l:Localize Nav.Dashboard}"
                             Command="{Binding ShowDashboardCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"
                             Classes.active="{Binding IsImportActive}"
-                            Content="Import"
+                            Content="{l:Localize Nav.Import}"
                             Command="{Binding ShowImportCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"
                             Classes.active="{Binding IsTransactionsActive}"
-                            Content="Transakcje"
+                            Content="{l:Localize Nav.Transactions}"
                             Command="{Binding ShowTransactionsCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"
                             Classes.active="{Binding IsChatActive}"
-                            Content="Asystent"
+                            Content="{l:Localize Nav.Assistant}"
                             Command="{Binding ShowChatCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"
                             Classes.active="{Binding IsAlertsActive}"
-                            Content="Alerty"
+                            Content="{l:Localize Nav.Alerts}"
                             Command="{Binding ShowAlertsCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"
                             Classes.active="{Binding IsAdvisorActive}"
-                            Content="Doradca"
+                            Content="{l:Localize Nav.Advisor}"
                             Command="{Binding ShowAdvisorCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"
                             Classes.active="{Binding IsSettingsActive}"
-                            Content="Ustawienia"
+                            Content="{l:Localize Nav.Settings}"
                             Command="{Binding ShowSettingsCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
@@ -109,7 +110,7 @@
                                    FontSize="11"
                                    Foreground="#8E8E93"
                                    TextTrimming="CharacterEllipsis" />
-                        <Button Content="Wyloguj"
+                        <Button Content="{l:Localize Nav.Logout}"
                                 HorizontalAlignment="Stretch"
                                 IsEnabled="{Binding !IsBusy}"
                                 Command="{Binding LogoutCommand}" />

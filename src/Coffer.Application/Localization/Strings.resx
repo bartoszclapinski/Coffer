@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App.Tagline" xml:space="preserve">
+    <value>Your financial vault</value>
+  </data>
+  <data name="Nav.Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Nav.Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Nav.Transactions" xml:space="preserve">
+    <value>Transactions</value>
+  </data>
+  <data name="Nav.Assistant" xml:space="preserve">
+    <value>Assistant</value>
+  </data>
+  <data name="Nav.Alerts" xml:space="preserve">
+    <value>Alerts</value>
+  </data>
+  <data name="Nav.Advisor" xml:space="preserve">
+    <value>Advisor</value>
+  </data>
+  <data name="Nav.Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Nav.Version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="Nav.Logout" xml:space="preserve">
+    <value>Log out</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings.Subtitle" xml:space="preserve">
+    <value>AI and monthly budget configuration.</value>
+  </data>
+  <data name="Settings.Language.Section" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings.Language.Label" xml:space="preserve">
+    <value>Interface language</value>
+  </data>
+  <data name="Settings.Ai.Section" xml:space="preserve">
+    <value>AI provider</value>
+  </data>
+  <data name="Settings.Ai.Provider" xml:space="preserve">
+    <value>Provider</value>
+  </data>
+  <data name="Settings.Ai.Model" xml:space="preserve">
+    <value>Categorization model</value>
+  </data>
+  <data name="Settings.ApiKey.Section" xml:space="preserve">
+    <value>API key (Claude)</value>
+  </data>
+  <data name="Settings.ApiKey.Hint" xml:space="preserve">
+    <value>The key is encrypted locally (DPAPI) and is never stored in plaintext or logged.</value>
+  </data>
+  <data name="Settings.ApiKey.Present" xml:space="preserve">
+    <value>An API key is saved.</value>
+  </data>
+  <data name="Settings.ApiKey.Absent" xml:space="preserve">
+    <value>No API key saved.</value>
+  </data>
+  <data name="Settings.ApiKey.New" xml:space="preserve">
+    <value>New key</value>
+  </data>
+  <data name="Settings.ApiKey.Save" xml:space="preserve">
+    <value>Save key</value>
+  </data>
+  <data name="Settings.ApiKey.Clear" xml:space="preserve">
+    <value>Delete key</value>
+  </data>
+  <data name="Settings.Budget.Section" xml:space="preserve">
+    <value>Monthly budget</value>
+  </data>
+  <data name="Settings.Budget.Cap" xml:space="preserve">
+    <value>Monthly cap (PLN)</value>
+  </data>
+  <data name="Settings.Budget.Spent" xml:space="preserve">
+    <value>Spent this month</value>
+  </data>
+  <data name="Settings.Save" xml:space="preserve">
+    <value>Save settings</value>
+  </data>
+</root>

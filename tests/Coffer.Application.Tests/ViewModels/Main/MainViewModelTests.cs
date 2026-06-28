@@ -155,6 +155,8 @@ public class MainViewModelTests
             new FakeAiSettings(),
             new FakeSecretStore(),
             new FakeAiUsageLedger(),
+            new FakeLocalizer(),
+            new FakeLanguageStore(),
             NullLogger<SettingsViewModel>.Instance);
 
         return new MainViewModel(
