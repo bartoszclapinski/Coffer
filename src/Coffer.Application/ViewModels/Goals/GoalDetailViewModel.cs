@@ -107,7 +107,8 @@ public sealed partial class GoalDetailViewModel : ObservableObject
 
         Scenarios = new ObservableCollection<GoalScenarioViewModel>(
             result.AlternativeScenarios.Select(s => new GoalScenarioViewModel(s, localizer)));
-        Risks = new ObservableCollection<string>(result.Risks.Select(r => r.Description));
+        Risks = new ObservableCollection<string>(
+            result.Risks.Select(r => GoalDisplay.RiskKey(r.Code) is { } key ? localizer[key] : r.Description));
 
         MonthlySavingInput = result.RequiredMonthlySaving > 0m
             ? decimal.Round(result.RequiredMonthlySaving, 2)

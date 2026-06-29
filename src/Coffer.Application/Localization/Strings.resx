@@ -706,4 +706,28 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="Goal.Priority.High" xml:space="preserve">
     <value>High</value>
   </data>
+  <data name="Goal.Scenario.CurrentPace" xml:space="preserve">
+    <value>Current pace</value>
+  </data>
+  <data name="Goal.Scenario.MaxSustainable" xml:space="preserve">
+    <value>Max sustainable</value>
+  </data>
+  <data name="Goal.Scenario.OnTarget" xml:space="preserve">
+    <value>On target</value>
+  </data>
+  <data name="Goal.Scenario.Simulation" xml:space="preserve">
+    <value>Simulation</value>
+  </data>
+  <data name="Goal.Risk.NoFreeCash" xml:space="preserve">
+    <value>Income minus committed spend and other goals leaves no free cash.</value>
+  </data>
+  <data name="Goal.Risk.InsufficientFreeCash" xml:space="preserve">
+    <value>Required monthly saving exceeds the free cash the profile commits.</value>
+  </data>
+  <data name="Goal.Risk.PastTargetDate" xml:space="preserve">
+    <value>The target date has passed with money still to save.</value>
+  </data>
+  <data name="Goal.Risk.VolatileSpending" xml:space="preserve">
+    <value>Variable spending swings widely month to month, so free cash is unpredictable.</value>
+  </data>
 </root>

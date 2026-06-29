@@ -65,5 +65,28 @@ internal static class GoalDisplay
         _ => priority.ToString(),
     };
 
+    /// <summary>Resource key for a <see cref="Scenario.LabelCode"/>; unknown codes pass through unchanged.</summary>
+    public static string ScenarioLabelKey(string labelCode) => labelCode switch
+    {
+        "CURRENT_PACE" => "Goal.Scenario.CurrentPace",
+        "MAX_SUSTAINABLE" => "Goal.Scenario.MaxSustainable",
+        "ON_TARGET" => "Goal.Scenario.OnTarget",
+        "SIMULATION" => "Goal.Scenario.Simulation",
+        _ => labelCode,
+    };
+
+    /// <summary>
+    /// Resource key for a <see cref="RiskFactor.Code"/>, or <c>null</c> for an unmapped code so the
+    /// caller can fall back to the engine's raw <see cref="RiskFactor.Description"/>.
+    /// </summary>
+    public static string? RiskKey(string code) => code switch
+    {
+        "NO_FREE_CASH" => "Goal.Risk.NoFreeCash",
+        "INSUFFICIENT_FREE_CASH" => "Goal.Risk.InsufficientFreeCash",
+        "PAST_TARGET_DATE" => "Goal.Risk.PastTargetDate",
+        "VOLATILE_SPENDING" => "Goal.Risk.VolatileSpending",
+        _ => null,
+    };
+
     public static string Money(decimal amount) => amount.ToString("N2", _polish) + " zł";
 }

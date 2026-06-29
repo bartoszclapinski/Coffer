@@ -22,6 +22,35 @@ public class GoalDetailViewModelTests
     }
 
     [Fact]
+    public void Constructor_ResolvesScenarioLabelAndRiskTextThroughLocalizer()
+    {
+        var (goal, result, context, engine) = Build();
+        result = result with
+        {
+            Risks = [new RiskFactor("NO_FREE_CASH", "raw english fallback")],
+        };
+
+        var vm = new GoalDetailViewModel(goal, result, context, engine, new FakeLocalizer(), _ => Task.CompletedTask, (_, _, _) => Task.CompletedTask);
+
+        vm.Scenarios[0].Label.Should().Be("Goal.Scenario.CurrentPace");
+        vm.Risks.Should().ContainSingle().Which.Should().Be("Goal.Risk.NoFreeCash");
+    }
+
+    [Fact]
+    public void Constructor_UnmappedRiskCode_FallsBackToDescription()
+    {
+        var (goal, result, context, engine) = Build();
+        result = result with
+        {
+            Risks = [new RiskFactor("UNKNOWN_CODE", "raw english fallback")],
+        };
+
+        var vm = new GoalDetailViewModel(goal, result, context, engine, new FakeLocalizer(), _ => Task.CompletedTask, (_, _, _) => Task.CompletedTask);
+
+        vm.Risks.Should().ContainSingle().Which.Should().Be("raw english fallback");
+    }
+
+    [Fact]
     public void Constructor_BuildsProjectionAndSimulationFromRequiredPace()
     {
         var (goal, result, context, engine) = Build();
@@ -103,7 +132,7 @@ public class GoalDetailViewModelTests
             RequiredMonthlySaving = 200m,
             CurrentMonthlySaving = 50m,
             ConfidenceScore = 0.8m,
-            AlternativeScenarios = [new Scenario("Current pace", 50m, new DateOnly(2028, 1, 1), GoalStatus.AtRisk)],
+            AlternativeScenarios = [new Scenario("CURRENT_PACE", 50m, new DateOnly(2028, 1, 1), GoalStatus.AtRisk)],
             Risks = [],
             DiagnosticSummary = "",
         };
