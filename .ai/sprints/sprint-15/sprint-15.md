@@ -1,7 +1,7 @@
 # Sprint 15 — Bilingual UI (PL + EN) i18n
 
 **Phase:** — (cross-cutting; not a roadmap feature phase — an i18n foundation under all desktop phases)
-**Status:** Planned
+**Status:** Closed (2026-06-29)
 **Depends on:** none (touches every shipped desktop view, so effectively all of sprints 5–14)
 
 ## Goal
