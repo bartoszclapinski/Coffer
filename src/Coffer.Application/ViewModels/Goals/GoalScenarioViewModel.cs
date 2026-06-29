@@ -19,7 +19,7 @@ public sealed class GoalScenarioViewModel
         ArgumentNullException.ThrowIfNull(scenario);
         ArgumentNullException.ThrowIfNull(localizer);
 
-        Label = scenario.Label;
+        Label = localizer[GoalDisplay.ScenarioLabelKey(scenario.LabelCode)];
         MonthlySavingText = scenario.MonthlySaving.ToString("N2", _polish) + " zł" + localizer["Goal.PerMonthSuffix"];
         ProjectedDateText = GoalDisplay.IsUnreachable(scenario.ProjectedDate)
             ? localizer["Goal.ProjectedDate.Unreachable"]

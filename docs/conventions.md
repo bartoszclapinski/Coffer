@@ -4,7 +4,10 @@ These are the conventions for this codebase. The `.editorconfig` enforces most o
 
 ## Language
 
-- **All code, comments, identifiers, and docs are in English.** UI labels and prompts shown to the user are in Polish.
+- **All code, comments, identifiers, and docs are in English.**
+- **User-facing UI strings are bilingual (Polish + English) via resource keys** — never hardcode a display string in a view or view-model. Add the string to `Coffer.Application/Localization/Strings.resx` (English, the **neutral** culture) and `Strings.pl.resx` (Polish satellite), then resolve it at the display boundary through `ILocalizer` (in markup via the `{l:Localize Key}` extension). The user switches language at runtime in Settings; money/number formatting stays `pl-PL` + `" zł"` regardless of UI language (v1).
+- **Resource keys are dotted by area:** `Nav.Dashboard`, `Settings.ApiKey.Save`, `Goal.Status.OnTrack`, `Import.Error.UnknownBank`. Every key must exist in **both** resx files (a parity test enforces this).
+- **`Coffer.Core` and `Coffer.Infrastructure` emit stable codes/enums, not presentation text** (hard rule #3) — e.g. `RiskFactor.Code`, `Scenario.LabelCode`. The display layer maps the code to a resource key.
 - Don't mix languages within a file.
 - Polish-only data (transaction descriptions, merchant names) is fine — that's data, not code.
 

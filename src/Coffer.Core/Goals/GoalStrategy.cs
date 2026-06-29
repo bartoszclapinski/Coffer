@@ -212,11 +212,11 @@ public abstract class GoalStrategy
 
         if (remaining <= 0m)
         {
-            return new Scenario("Symulacja", monthlySaving, ctx.Today, GoalStatus.Achieved);
+            return new Scenario("SIMULATION", monthlySaving, ctx.Today, GoalStatus.Achieved);
         }
 
         return new Scenario(
-            "Symulacja",
+            "SIMULATION",
             monthlySaving,
             ProjectDateAtPace(ctx.Today, remaining, monthlySaving),
             StatusFor(required, monthlySaving, ctx.Profile));
@@ -234,17 +234,17 @@ public abstract class GoalStrategy
         return
         [
             new Scenario(
-                "Current pace",
+                "CURRENT_PACE",
                 current,
                 ProjectDateAtPace(ctx.Today, remaining, current),
                 StatusFor(required, current, ctx.Profile)),
             new Scenario(
-                "Max sustainable",
+                "MAX_SUSTAINABLE",
                 usable,
                 ProjectDateAtPace(ctx.Today, remaining, usable),
                 StatusFor(required, usable, ctx.Profile)),
             new Scenario(
-                "On target",
+                "ON_TARGET",
                 required,
                 targetDate,
                 GoalStatus.OnTrack),

@@ -131,7 +131,7 @@ public sealed class FakeGoalFeasibilityEngine : IGoalFeasibilityEngine
     public Scenario Simulate(Goal goal, FinancialContext ctx, decimal monthlySaving)
     {
         SimulateCalls++;
-        return new Scenario("Symulacja", monthlySaving, new DateOnly(2027, 6, 1), Status);
+        return new Scenario("SIMULATION", monthlySaving, new DateOnly(2027, 6, 1), Status);
     }
 
     private GoalFeasibilityResult BuildResult(Goal goal) => new()
@@ -143,7 +143,7 @@ public sealed class FakeGoalFeasibilityEngine : IGoalFeasibilityEngine
         RequiredMonthlySaving = 200m,
         CurrentMonthlySaving = 50m,
         ConfidenceScore = 0.8m,
-        AlternativeScenarios = [new Scenario("Current pace", 50m, new DateOnly(2028, 1, 1), GoalStatus.AtRisk)],
+        AlternativeScenarios = [new Scenario("CURRENT_PACE", 50m, new DateOnly(2028, 1, 1), GoalStatus.AtRisk)],
         Risks = [],
         DiagnosticSummary = "",
     };

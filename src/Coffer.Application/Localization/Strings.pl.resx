@@ -706,4 +706,28 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="Goal.Priority.High" xml:space="preserve">
     <value>Wysoki</value>
   </data>
+  <data name="Goal.Scenario.CurrentPace" xml:space="preserve">
+    <value>Obecne tempo</value>
+  </data>
+  <data name="Goal.Scenario.MaxSustainable" xml:space="preserve">
+    <value>Maksymalne możliwe</value>
+  </data>
+  <data name="Goal.Scenario.OnTarget" xml:space="preserve">
+    <value>Na czas</value>
+  </data>
+  <data name="Goal.Scenario.Simulation" xml:space="preserve">
+    <value>Symulacja</value>
+  </data>
+  <data name="Goal.Risk.NoFreeCash" xml:space="preserve">
+    <value>Po odjęciu stałych i zmiennych wydatków oraz innych celów nie zostaje wolnych środków.</value>
+  </data>
+  <data name="Goal.Risk.InsufficientFreeCash" xml:space="preserve">
+    <value>Wymagana miesięczna kwota przekracza wolne środki, które przeznacza profil.</value>
+  </data>
+  <data name="Goal.Risk.PastTargetDate" xml:space="preserve">
+    <value>Termin docelowy minął, a część kwoty wciąż pozostaje do odłożenia.</value>
+  </data>
+  <data name="Goal.Risk.VolatileSpending" xml:space="preserve">
+    <value>Wydatki zmienne wahają się znacznie z miesiąca na miesiąc, więc wolne środki są nieprzewidywalne.</value>
+  </data>
 </root>
