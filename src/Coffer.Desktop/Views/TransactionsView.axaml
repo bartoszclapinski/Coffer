@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Transactions;assembly=Coffer.Application"
              xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:l="clr-namespace:Coffer.Desktop.Localization"
              mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
              x:Class="Coffer.Desktop.Views.TransactionsView"
              x:DataType="vm:TransactionsViewModel"
@@ -11,16 +12,16 @@
     <Grid Margin="40,32" RowDefinitions="Auto,Auto,*">
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
             <StackPanel Grid.Column="0" Spacing="4">
-                <TextBlock Text="Transakcje"
+                <TextBlock Text="{l:Localize Transactions.Title}"
                            FontSize="26"
                            FontWeight="Light"
                            Foreground="#1D1D1F" />
-                <TextBlock Text="Lista transakcji z ostatnich miesięcy."
+                <TextBlock Text="{l:Localize Transactions.Subtitle}"
                            Foreground="#8E8E93" />
             </StackPanel>
             <Button Grid.Column="1"
                     VerticalAlignment="Center"
-                    Content="Kategoryzuj istniejące"
+                    Content="{l:Localize Transactions.Recategorize}"
                     Command="{Binding RecategorizeExistingCommand}" />
         </Grid>
 
@@ -28,16 +29,16 @@
         <Grid Grid.Row="1" Margin="0,20,0,0" ColumnDefinitions="*,12,170,12,170,12,150">
             <TextBox Grid.Column="0"
                      Text="{Binding SearchText, Mode=TwoWay}"
-                     Watermark="Szukaj po opisie lub sprzedawcy…" />
+                     Watermark="{l:Localize Transactions.SearchWatermark}" />
             <ComboBox Grid.Column="2"
                       HorizontalAlignment="Stretch"
-                      PlaceholderText="Wszystkie konta"
+                      PlaceholderText="{l:Localize Transactions.Filter.AllAccounts}"
                       ItemsSource="{Binding Accounts}"
                       SelectedItem="{Binding SelectedAccount, Mode=TwoWay}">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{Binding Name}" />
+                            <TextBlock Text="{Binding Name, Converter={x:Static conv:LocalizeKeyConverter.Instance}}" />
                             <TextBlock Text="{Binding BankCode}" Foreground="#8E8E93" />
                         </StackPanel>
                     </DataTemplate>
@@ -45,7 +46,7 @@
             </ComboBox>
             <ComboBox Grid.Column="4"
                       HorizontalAlignment="Stretch"
-                      PlaceholderText="Wszystkie kategorie"
+                      PlaceholderText="{l:Localize Transactions.Filter.AllCategories}"
                       ItemsSource="{Binding CategoryFilters}"
                       SelectedItem="{Binding SelectedCategoryFilter, Mode=TwoWay}">
                 <ComboBox.ItemTemplate>
@@ -53,7 +54,7 @@
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Ellipse Width="10" Height="10" VerticalAlignment="Center"
                                      Fill="{Binding Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
-                            <TextBlock Text="{Binding Name}" />
+                            <TextBlock Text="{Binding Name, Converter={x:Static conv:LocalizeKeyConverter.Instance}}" />
                         </StackPanel>
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
@@ -61,7 +62,13 @@
             <ComboBox Grid.Column="6"
                       HorizontalAlignment="Stretch"
                       ItemsSource="{Binding DateRanges}"
-                      SelectedItem="{Binding SelectedRange, Mode=TwoWay}" />
+                      SelectedItem="{Binding SelectedRange, Mode=TwoWay}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding LabelKey, Converter={x:Static conv:LocalizeKeyConverter.Instance}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
         </Grid>
 
         <Panel Grid.Row="2" Margin="0,20,0,0">
@@ -75,7 +82,7 @@
                        VerticalAlignment="Top"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-            <TextBlock Text="Brak transakcji. Zmień filtry lub zaimportuj wyciąg, aby je tu zobaczyć."
+            <TextBlock Text="{l:Localize Transactions.Empty}"
                        Foreground="#8E8E93"
                        TextWrapping="Wrap"
                        HorizontalAlignment="Center"
@@ -94,19 +101,19 @@
                       BorderThickness="1"
                       CornerRadius="8">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Data"
+                    <DataGridTextColumn Header="{l:Localize Transactions.Column.Date}"
                                         Binding="{Binding Date, StringFormat=\{0:yyyy-MM-dd\}}"
                                         Width="110" />
-                    <DataGridTextColumn Header="Opis"
+                    <DataGridTextColumn Header="{l:Localize Transactions.Column.Description}"
                                         Binding="{Binding Description}"
                                         Width="2*" />
-                    <DataGridTextColumn Header="Sprzedawca"
+                    <DataGridTextColumn Header="{l:Localize Transactions.Column.Merchant}"
                                         Binding="{Binding Merchant}"
                                         Width="*" />
-                    <DataGridTextColumn Header="Konto"
+                    <DataGridTextColumn Header="{l:Localize Transactions.Column.Account}"
                                         Binding="{Binding AccountName}"
                                         Width="*" />
-                    <DataGridTemplateColumn Header="Kategoria" Width="1.6*">
+                    <DataGridTemplateColumn Header="{l:Localize Transactions.Column.Category}" Width="1.6*">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="6,0">
@@ -116,7 +123,7 @@
                                              Fill="{Binding SelectedCategory.Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
                                     <ComboBox Grid.Column="1"
                                               HorizontalAlignment="Stretch"
-                                              PlaceholderText="Bez kategorii"
+                                              PlaceholderText="{l:Localize Transactions.Uncategorized}"
                                               ItemsSource="{Binding Categories}"
                                               SelectedItem="{Binding SelectedCategory, Mode=TwoWay}">
                                         <ComboBox.ItemTemplate>
@@ -133,7 +140,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="Kwota" Width="140">
+                    <DataGridTemplateColumn Header="{l:Localize Transactions.Column.Amount}" Width="140">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock HorizontalAlignment="Right"

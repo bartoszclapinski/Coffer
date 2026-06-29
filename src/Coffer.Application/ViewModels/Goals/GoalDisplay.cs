@@ -4,25 +4,34 @@ using Coffer.Core.Goals;
 namespace Coffer.Application.ViewModels.Goals;
 
 /// <summary>
-/// Shared Polish display formatting for the Doradca page — status/type/priority captions, badge
-/// colours, and date strings — so the goal and scenario view-models stay consistent and the views
-/// stay markup-only. Colours match the dashboard/alerts palette.
+/// Shared display helpers for the Doradca page — resource keys for status/type/priority captions,
+/// badge colours, and money formatting — so the goal and scenario view-models stay consistent and
+/// the views stay markup-only. The actual localized string lookup happens at the VM boundary via an
+/// injected <c>ILocalizer</c>; this type only maps enums to keys. Colours and money formatting are
+/// language-independent (money stays pl-PL, hard rule on currency formatting).
 /// </summary>
 internal static class GoalDisplay
 {
     private static readonly CultureInfo _polish = CultureInfo.GetCultureInfo("pl-PL");
 
+    /// <summary>Resource key for a projected date, or a pl-PL formatted date string.</summary>
+    /// <remarks>
+    /// Unreachable dates return the <c>Goal.ProjectedDate.Unreachable</c> key (resolve via localizer);
+    /// reachable dates are formatted directly and returned as-is (no key).
+    /// </remarks>
     public static string FormatProjectedDate(DateOnly date) =>
-        date >= DateOnly.MaxValue ? "nieosiągalny" : date.ToString("d MMM yyyy", _polish);
+        date >= DateOnly.MaxValue ? "Goal.ProjectedDate.Unreachable" : date.ToString("d MMM yyyy", _polish);
 
-    public static string StatusToPolish(GoalStatus status) => status switch
+    public static bool IsUnreachable(DateOnly date) => date >= DateOnly.MaxValue;
+
+    public static string StatusKey(GoalStatus status) => status switch
     {
-        GoalStatus.OnTrack => "Na dobrej drodze",
-        GoalStatus.NeedsAttention => "Wymaga uwagi",
-        GoalStatus.AtRisk => "Zagrożony",
-        GoalStatus.Late => "Po terminie",
-        GoalStatus.Achieved => "Osiągnięty",
-        GoalStatus.Paused => "Wstrzymany",
+        GoalStatus.OnTrack => "Goal.Status.OnTrack",
+        GoalStatus.NeedsAttention => "Goal.Status.NeedsAttention",
+        GoalStatus.AtRisk => "Goal.Status.AtRisk",
+        GoalStatus.Late => "Goal.Status.Late",
+        GoalStatus.Achieved => "Goal.Status.Achieved",
+        GoalStatus.Paused => "Goal.Status.Paused",
         _ => status.ToString(),
     };
 
@@ -37,22 +46,22 @@ internal static class GoalDisplay
         _ => "#8E8E93",
     };
 
-    public static string TypeToPolish(GoalType type) => type switch
+    public static string TypeKey(GoalType type) => type switch
     {
-        GoalType.Purchase => "Zakup",
-        GoalType.LargeExpense => "Duży wydatek",
-        GoalType.EmergencyFund => "Fundusz awaryjny",
-        GoalType.MortgagePrepayment => "Nadpłata kredytu",
-        GoalType.Investment => "Inwestycja",
-        GoalType.LongTerm => "Cel długoterminowy",
+        GoalType.Purchase => "Goal.Type.Purchase",
+        GoalType.LargeExpense => "Goal.Type.LargeExpense",
+        GoalType.EmergencyFund => "Goal.Type.EmergencyFund",
+        GoalType.MortgagePrepayment => "Goal.Type.MortgagePrepayment",
+        GoalType.Investment => "Goal.Type.Investment",
+        GoalType.LongTerm => "Goal.Type.LongTerm",
         _ => type.ToString(),
     };
 
-    public static string PriorityToPolish(Priority priority) => priority switch
+    public static string PriorityKey(Priority priority) => priority switch
     {
-        Priority.Low => "Niski",
-        Priority.Medium => "Średni",
-        Priority.High => "Wysoki",
+        Priority.Low => "Goal.Priority.Low",
+        Priority.Medium => "Goal.Priority.Medium",
+        Priority.High => "Goal.Priority.High",
         _ => priority.ToString(),
     };
 

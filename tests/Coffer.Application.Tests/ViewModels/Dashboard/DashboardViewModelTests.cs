@@ -29,7 +29,7 @@ public class DashboardViewModelTests
                     Guid.NewGuid(), "PKO", null, "Paliwo", "#FF9500"),
             ],
             HasData: true);
-        var vm = new DashboardViewModel(new FakeDashboardQuery(snapshot), NullLogger<DashboardViewModel>.Instance);
+        var vm = new DashboardViewModel(new FakeDashboardQuery(snapshot), new FakeLocalizer(), NullLogger<DashboardViewModel>.Instance);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -51,7 +51,7 @@ public class DashboardViewModelTests
     public async Task Load_DefaultFilterUsesPlnAndNoAccount()
     {
         var query = new FakeDashboardQuery();
-        var vm = new DashboardViewModel(query, NullLogger<DashboardViewModel>.Instance);
+        var vm = new DashboardViewModel(query, new FakeLocalizer(), NullLogger<DashboardViewModel>.Instance);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -63,7 +63,7 @@ public class DashboardViewModelTests
     [Fact]
     public async Task Load_EmptySnapshot_ReportsEmptyState()
     {
-        var vm = new DashboardViewModel(new FakeDashboardQuery(), NullLogger<DashboardViewModel>.Instance);
+        var vm = new DashboardViewModel(new FakeDashboardQuery(), new FakeLocalizer(), NullLogger<DashboardViewModel>.Instance);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -77,7 +77,7 @@ public class DashboardViewModelTests
     public async Task Load_WhenQueryThrows_SetsErrorAndClearsEmptyState()
     {
         var query = new FakeDashboardQuery { Throw = new InvalidOperationException("boom") };
-        var vm = new DashboardViewModel(query, NullLogger<DashboardViewModel>.Instance);
+        var vm = new DashboardViewModel(query, new FakeLocalizer(), NullLogger<DashboardViewModel>.Instance);
 
         await vm.LoadCommand.ExecuteAsync(null);
 

@@ -126,23 +126,28 @@ public class MainViewModelTests
     {
         var dashboard = new DashboardViewModel(
             new FakeDashboardQuery(),
+            new FakeLocalizer(),
             NullLogger<DashboardViewModel>.Instance);
         var import = new ImportViewModel(
             new FakeFilePicker(),
             new FakeImportStatementUseCase(),
             new FakeAccountService(),
+            new FakeLocalizer(),
             NullLogger<ImportViewModel>.Instance);
         var transactions = new TransactionsViewModel(
             new FakeGetTransactionsQuery(),
             new FakeCategoryService(),
+            new FakeLocalizer(),
             NullLogger<TransactionsViewModel>.Instance);
         var chat = new ChatViewModel(
             new StubChatService(),
+            new FakeLocalizer(),
             NullLogger<ChatViewModel>.Instance);
         var alerts = new AlertsViewModel(
             new FakeDetectAnomaliesUseCase(),
             new FakeAlertsQuery(),
             new FakeAlertService(),
+            new FakeLocalizer(),
             NullLogger<AlertsViewModel>.Instance);
         var advisor = new GoalsViewModel(
             new FakeGoalsQuery(),
@@ -150,6 +155,7 @@ public class MainViewModelTests
             new FakeFinancialContextBuilder(),
             new FakeGoalFeasibilityEngine(),
             new FakeAdvisorReportQuery(),
+            new FakeLocalizer(),
             NullLogger<GoalsViewModel>.Instance);
         var settings = new SettingsViewModel(
             new FakeAiSettings(),
@@ -160,7 +166,7 @@ public class MainViewModelTests
             NullLogger<SettingsViewModel>.Instance);
 
         return new MainViewModel(
-            dashboard, import, transactions, chat, alerts, advisor, settings, loginService, NullLogger<MainViewModel>.Instance);
+            dashboard, import, transactions, chat, alerts, advisor, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class StubChatService : IChatService

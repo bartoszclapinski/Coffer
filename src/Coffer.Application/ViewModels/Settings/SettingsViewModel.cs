@@ -124,7 +124,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load AI settings");
-            StatusMessage = "Nie udało się wczytać ustawień.";
+            StatusMessage = _localizer["Settings.Status.LoadFailed"];
         }
         finally
         {
@@ -148,12 +148,12 @@ public sealed partial class SettingsViewModel : ObservableObject
             await _settings.SetActiveProviderAsync(SelectedProvider, ct).ConfigureAwait(true);
             await _settings.SetCategorizationModelAsync(CategorizationModel, ct).ConfigureAwait(true);
             await _settings.SetMonthlyCapPlnAsync(MonthlyCapPln, ct).ConfigureAwait(true);
-            StatusMessage = "Zapisano ustawienia.";
+            StatusMessage = _localizer["Settings.Status.Saved"];
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save AI settings");
-            StatusMessage = "Nie udało się zapisać ustawień.";
+            StatusMessage = _localizer["Settings.Status.SaveFailed"];
         }
         finally
         {
@@ -180,13 +180,13 @@ public sealed partial class SettingsViewModel : ObservableObject
                 .ConfigureAwait(true);
             ApiKeyInput = "";
             HasApiKey = true;
-            StatusMessage = "Zapisano klucz API.";
+            StatusMessage = _localizer["Settings.Status.KeySaved"];
         }
         catch (Exception ex)
         {
             // Never log the key itself (hard rule #6) — only that the write failed.
             _logger.LogError(ex, "Failed to store Claude API key");
-            StatusMessage = "Nie udało się zapisać klucza API.";
+            StatusMessage = _localizer["Settings.Status.KeySaveFailed"];
         }
         finally
         {
@@ -212,12 +212,12 @@ public sealed partial class SettingsViewModel : ObservableObject
                 .DeleteSecretAsync(AiDefaults.ClaudeApiKeySecret, CancellationToken.None)
                 .ConfigureAwait(true);
             HasApiKey = false;
-            StatusMessage = "Usunięto klucz API.";
+            StatusMessage = _localizer["Settings.Status.KeyCleared"];
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete Claude API key");
-            StatusMessage = "Nie udało się usunąć klucza API.";
+            StatusMessage = _localizer["Settings.Status.KeyClearFailed"];
         }
         finally
         {

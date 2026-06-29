@@ -1,3 +1,4 @@
+using Coffer.Application.Tests.Fakes;
 using Coffer.Application.ViewModels.Setup;
 using Coffer.Core.Security;
 using FluentAssertions;
@@ -15,7 +16,7 @@ public class SetupWizardViewModelTests
         var setup = new FakeSetupService();
         var seedManager = new FakeSeedManager(_fakeMnemonic);
         var checker = new FakePasswordStrengthChecker(4);
-        var vm = new SetupWizardViewModel(setup, seedManager, checker);
+        var vm = new SetupWizardViewModel(setup, seedManager, checker, new FakeLocalizer());
 
         vm.NextCommand.Execute(null);
 
@@ -29,7 +30,7 @@ public class SetupWizardViewModelTests
         var setup = new FakeSetupService();
         var seedManager = new FakeSeedManager(_fakeMnemonic);
         var checker = new FakePasswordStrengthChecker(4);
-        var vm = new SetupWizardViewModel(setup, seedManager, checker);
+        var vm = new SetupWizardViewModel(setup, seedManager, checker, new FakeLocalizer());
         vm.NextCommand.Execute(null); // Welcome → Password
         // Password is empty; IsValid = false.
 
@@ -44,7 +45,7 @@ public class SetupWizardViewModelTests
         var setup = new FakeSetupService();
         var seedManager = new FakeSeedManager(_fakeMnemonic);
         var checker = new FakePasswordStrengthChecker(4);
-        var vm = new SetupWizardViewModel(setup, seedManager, checker);
+        var vm = new SetupWizardViewModel(setup, seedManager, checker, new FakeLocalizer());
 
         SetupCompletedEventArgs? capturedArgs = null;
         vm.SetupCompleted += (_, args) => capturedArgs = args;
@@ -63,7 +64,7 @@ public class SetupWizardViewModelTests
         var setup = new FakeSetupService(throwOnComplete: failure);
         var seedManager = new FakeSeedManager(_fakeMnemonic);
         var checker = new FakePasswordStrengthChecker(4);
-        var vm = new SetupWizardViewModel(setup, seedManager, checker);
+        var vm = new SetupWizardViewModel(setup, seedManager, checker, new FakeLocalizer());
 
         SetupCompletedEventArgs? capturedArgs = null;
         vm.SetupCompleted += (_, args) => capturedArgs = args;

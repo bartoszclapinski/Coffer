@@ -1,3 +1,4 @@
+using Coffer.Application.Localization;
 using Coffer.Core.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,21 +10,12 @@ namespace Coffer.Application.ViewModels.Login;
 /// View-model behind <c>LoginWindow</c>. Owns a single password property, busy
 /// state, and an error message. <see cref="LoginCommand"/> drives
 /// <see cref="ILoginService.LoginWithPasswordAsync"/> and translates the typed
-/// exceptions into specific Polish UI messages.
+/// exceptions into specific localized UI messages.
 /// </summary>
 public sealed partial class LoginViewModel : ObservableObject
 {
-    private const string _wrongPasswordMessage = "Nieprawidłowe hasło.";
-    private const string _vaultCorruptedFormatMessage =
-        "Plik sejfu jest uszkodzony. W Sprincie 7 pojawi się odzyskiwanie z frazy BIP39.";
-    private const string _vaultCorruptedIoMessage =
-        "Nie udało się odczytać pliku sejfu. Sprawdź czy folder %LocalAppData%\\Coffer\\ jest dostępny.";
-    private const string _vaultMissingMessage =
-        "Brak pliku sejfu. Uruchom aplikację ponownie.";
-    private const string _genericFailureMessage =
-        "Nie udało się zalogować. Spróbuj ponownie.";
-
     private readonly ILoginService _loginService;
+    private readonly ILocalizer _localizer;
     private readonly ILogger<LoginViewModel> _logger;
 
     [ObservableProperty]
@@ -35,12 +27,14 @@ public sealed partial class LoginViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBusy;
 
-    public LoginViewModel(ILoginService loginService, ILogger<LoginViewModel> logger)
+    public LoginViewModel(ILoginService loginService, ILocalizer localizer, ILogger<LoginViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(loginService);
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
 
         _loginService = loginService;
+        _localizer = localizer;
         _logger = logger;
     }
 
@@ -65,28 +59,28 @@ public sealed partial class LoginViewModel : ObservableObject
         }
         catch (InvalidMasterPasswordException)
         {
-            ErrorMessage = _wrongPasswordMessage;
+            ErrorMessage = _localizer["Login.Error.WrongPassword"];
             Password = "";
         }
         catch (VaultCorruptedException ex)
         {
             ErrorMessage = ex.Reason switch
             {
-                VaultCorruptionReason.DekFileFormat => _vaultCorruptedFormatMessage,
-                VaultCorruptionReason.DekFileIo => _vaultCorruptedIoMessage,
-                _ => _genericFailureMessage,
+                VaultCorruptionReason.DekFileFormat => _localizer["Login.Error.VaultCorruptedFormat"],
+                VaultCorruptionReason.DekFileIo => _localizer["Login.Error.VaultCorruptedIo"],
+                _ => _localizer["Login.Error.Generic"],
             };
             _logger.LogWarning(ex, "Login failed — vault corrupted ({Reason})", ex.Reason);
         }
         catch (VaultMissingException ex)
         {
-            ErrorMessage = _vaultMissingMessage;
+            ErrorMessage = _localizer["Login.Error.VaultMissing"];
             _logger.LogWarning(ex, "Login attempted with no DEK file present");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during login");
-            ErrorMessage = _genericFailureMessage;
+            ErrorMessage = _localizer["Login.Error.Generic"];
         }
         finally
         {

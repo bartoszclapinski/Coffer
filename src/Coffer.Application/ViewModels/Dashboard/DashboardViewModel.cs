@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Coffer.Application.Localization;
 using Coffer.Core.Dashboard;
 using Coffer.Core.Transactions;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -26,6 +27,7 @@ public sealed partial class DashboardViewModel : ObservableObject
     private static readonly SKColor _monthlyFill = SKColor.Parse("#1D4ED8");
 
     private readonly IDashboardQuery _query;
+    private readonly ILocalizer _localizer;
     private readonly ILogger<DashboardViewModel> _logger;
 
     [ObservableProperty]
@@ -53,6 +55,7 @@ public sealed partial class DashboardViewModel : ObservableObject
     private int _transactionCount;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SubtitleText))]
     private string _currentMonthLabel = "";
 
     [ObservableProperty]
@@ -70,12 +73,14 @@ public sealed partial class DashboardViewModel : ObservableObject
     [ObservableProperty]
     private Axis[] _monthlyXAxes = [];
 
-    public DashboardViewModel(IDashboardQuery query, ILogger<DashboardViewModel> logger)
+    public DashboardViewModel(IDashboardQuery query, ILocalizer localizer, ILogger<DashboardViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
 
         _query = query;
+        _localizer = localizer;
         _logger = logger;
     }
 
@@ -84,6 +89,8 @@ public sealed partial class DashboardViewModel : ObservableObject
     public ObservableCollection<CategorySlice> TopCategories { get; } = [];
 
     public bool IsEmpty => !IsLoading && !HasData && string.IsNullOrEmpty(ErrorMessage);
+
+    public string SubtitleText => _localizer.Format("Dashboard.Subtitle", CurrentMonthLabel);
 
     [RelayCommand]
     private async Task LoadAsync(CancellationToken ct)
@@ -102,7 +109,7 @@ public sealed partial class DashboardViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load dashboard");
-            ErrorMessage = "Nie udało się wczytać pulpitu. Spróbuj ponownie.";
+            ErrorMessage = _localizer["Dashboard.Error"];
         }
         finally
         {
@@ -126,7 +133,7 @@ public sealed partial class DashboardViewModel : ObservableObject
         [
             new LineSeries<decimal>
             {
-                Name = "Wydatki",
+                Name = _localizer["Dashboard.Spend"],
                 Values = snapshot.DailySpend.Select(p => p.Total).ToArray(),
                 Stroke = new SolidColorPaint(_spendStroke, 2),
                 Fill = new SolidColorPaint(_spendFill),
@@ -150,7 +157,7 @@ public sealed partial class DashboardViewModel : ObservableObject
         [
             new ColumnSeries<decimal>
             {
-                Name = "Wydatki",
+                Name = _localizer["Dashboard.Spend"],
                 Values = snapshot.MonthlySpend.Select(p => p.Total).ToArray(),
                 Fill = new SolidColorPaint(_monthlyFill),
             },

@@ -1,3 +1,4 @@
+using Coffer.Application.Tests.Fakes;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Core.Security;
 using FluentAssertions;
@@ -11,7 +12,7 @@ public class LoginViewModelTests
     public async Task LoginCommand_OnSuccess_RaisesLoginCompletedAndClearsBusy()
     {
         var service = new FakeLoginService();
-        var vm = new LoginViewModel(service, NullLogger<LoginViewModel>.Instance)
+        var vm = new LoginViewModel(service, new FakeLocalizer(), NullLogger<LoginViewModel>.Instance)
         {
             Password = "correct",
         };
@@ -33,14 +34,14 @@ public class LoginViewModelTests
         {
             ThrowOnLogin = new InvalidMasterPasswordException(),
         };
-        var vm = new LoginViewModel(service, NullLogger<LoginViewModel>.Instance)
+        var vm = new LoginViewModel(service, new FakeLocalizer(), NullLogger<LoginViewModel>.Instance)
         {
             Password = "wrong",
         };
 
         await vm.LoginCommand.ExecuteAsync(null);
 
-        vm.ErrorMessage.Should().Be("Nieprawidłowe hasło.");
+        vm.ErrorMessage.Should().Be("Login.Error.WrongPassword");
         vm.Password.Should().BeEmpty();
         vm.IsBusy.Should().BeFalse();
     }
@@ -54,14 +55,14 @@ public class LoginViewModelTests
                 VaultCorruptionReason.DekFileFormat,
                 "malformed"),
         };
-        var vm = new LoginViewModel(service, NullLogger<LoginViewModel>.Instance)
+        var vm = new LoginViewModel(service, new FakeLocalizer(), NullLogger<LoginViewModel>.Instance)
         {
             Password = "anything",
         };
 
         await vm.LoginCommand.ExecuteAsync(null);
 
-        vm.ErrorMessage.Should().Contain("Plik sejfu jest uszkodzony");
+        vm.ErrorMessage.Should().Be("Login.Error.VaultCorruptedFormat");
     }
 
     [Fact]
@@ -71,20 +72,20 @@ public class LoginViewModelTests
         {
             ThrowOnLogin = new InvalidOperationException("unexpected"),
         };
-        var vm = new LoginViewModel(service, NullLogger<LoginViewModel>.Instance)
+        var vm = new LoginViewModel(service, new FakeLocalizer(), NullLogger<LoginViewModel>.Instance)
         {
             Password = "anything",
         };
 
         await vm.LoginCommand.ExecuteAsync(null);
 
-        vm.ErrorMessage.Should().Be("Nie udało się zalogować. Spróbuj ponownie.");
+        vm.ErrorMessage.Should().Be("Login.Error.Generic");
     }
 
     [Fact]
     public void ClearSensitive_ZeroesPassword()
     {
-        var vm = new LoginViewModel(new FakeLoginService(), NullLogger<LoginViewModel>.Instance)
+        var vm = new LoginViewModel(new FakeLoginService(), new FakeLocalizer(), NullLogger<LoginViewModel>.Instance)
         {
             Password = "something",
         };

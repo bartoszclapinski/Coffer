@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Dashboard;assembly=Coffer.Application"
              xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:l="clr-namespace:Coffer.Desktop.Localization"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
              mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
              x:Class="Coffer.Desktop.Views.DashboardView"
@@ -39,11 +40,11 @@
         <Grid Margin="40,32" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
             <!-- Header -->
             <StackPanel Grid.Row="0" Spacing="4">
-                <TextBlock Text="Pulpit"
+                <TextBlock Text="{l:Localize Dashboard.Title}"
                            FontSize="26"
                            FontWeight="Light"
                            Foreground="#1D1D1F" />
-                <TextBlock Text="{Binding CurrentMonthLabel, StringFormat='Przegląd finansów — {0}'}"
+                <TextBlock Text="{Binding SubtitleText}"
                            Foreground="#8E8E93" />
             </StackPanel>
 
@@ -60,7 +61,7 @@
 
             <TextBlock Grid.Row="1"
                        Margin="0,40,0,0"
-                       Text="Brak danych. Zaimportuj wyciąg, aby zobaczyć tu podsumowanie."
+                       Text="{l:Localize Dashboard.Empty}"
                        Foreground="#8E8E93"
                        TextWrapping="Wrap"
                        HorizontalAlignment="Center"
@@ -72,7 +73,7 @@
                   IsVisible="{Binding HasData}">
                 <Border Grid.Column="0" Classes="card">
                     <StackPanel>
-                        <TextBlock Classes="kpiLabel" Text="Wydatki" />
+                        <TextBlock Classes="kpiLabel" Text="{l:Localize Dashboard.Spend}" />
                         <TextBlock Classes="kpiValue">
                             <TextBlock.Text>
                                 <MultiBinding StringFormat="{}{0:N2} {1}">
@@ -85,7 +86,7 @@
                 </Border>
                 <Border Grid.Column="2" Classes="card">
                     <StackPanel>
-                        <TextBlock Classes="kpiLabel" Text="Przychody" />
+                        <TextBlock Classes="kpiLabel" Text="{l:Localize Dashboard.Income}" />
                         <TextBlock Classes="kpiValue">
                             <TextBlock.Text>
                                 <MultiBinding StringFormat="{}{0:N2} {1}">
@@ -98,7 +99,7 @@
                 </Border>
                 <Border Grid.Column="4" Classes="card">
                     <StackPanel>
-                        <TextBlock Classes="kpiLabel" Text="Saldo" />
+                        <TextBlock Classes="kpiLabel" Text="{l:Localize Dashboard.Balance}" />
                         <TextBlock Classes="kpiValue"
                                    Foreground="{Binding Net, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
                             <TextBlock.Text>
@@ -119,7 +120,7 @@
                   IsVisible="{Binding HasData}">
                 <Border Grid.Row="0" Grid.Column="0" Classes="card">
                     <StackPanel>
-                        <TextBlock Classes="sectionTitle" Text="Wydatki — ostatnie 30 dni" />
+                        <TextBlock Classes="sectionTitle" Text="{l:Localize Dashboard.Spend30}" />
                         <lvc:CartesianChart Height="220"
                                             Series="{Binding DailySpendSeries}"
                                             XAxes="{Binding DailyXAxes}" />
@@ -127,14 +128,14 @@
                 </Border>
                 <Border Grid.Row="0" Grid.Column="2" Classes="card">
                     <StackPanel>
-                        <TextBlock Classes="sectionTitle" Text="Kategorie (ten miesiąc)" />
+                        <TextBlock Classes="sectionTitle" Text="{l:Localize Dashboard.Categories}" />
                         <lvc:PieChart Height="220"
                                       Series="{Binding CategorySeries}" />
                     </StackPanel>
                 </Border>
                 <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Classes="card">
                     <StackPanel>
-                        <TextBlock Classes="sectionTitle" Text="Wydatki — ostatnie 12 miesięcy" />
+                        <TextBlock Classes="sectionTitle" Text="{l:Localize Dashboard.Spend12}" />
                         <lvc:CartesianChart Height="200"
                                             Series="{Binding MonthlySpendSeries}"
                                             XAxes="{Binding MonthlyXAxes}" />
@@ -146,7 +147,7 @@
             <Border Grid.Row="4" Margin="0,16,0,0" Classes="card"
                     IsVisible="{Binding HasData}">
                 <StackPanel>
-                    <TextBlock Classes="sectionTitle" Text="Ostatnie transakcje" />
+                    <TextBlock Classes="sectionTitle" Text="{l:Localize Dashboard.Recent}" />
                     <ItemsControl ItemsSource="{Binding RecentTransactions}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>

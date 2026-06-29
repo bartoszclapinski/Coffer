@@ -28,7 +28,7 @@ public class ImportViewModelTests
         picker = new FakeFilePicker(picked);
         useCase = new FakeImportStatementUseCase();
         accounts = new FakeAccountService(seedAccounts);
-        return new ImportViewModel(picker, useCase, accounts, logger ?? NullLogger<ImportViewModel>.Instance);
+        return new ImportViewModel(picker, useCase, accounts, new FakeLocalizer(), logger ?? NullLogger<ImportViewModel>.Instance);
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public class ImportViewModelTests
     }
 
     [Fact]
-    public async Task Import_UnsupportedBank_ShowsPolishMessage()
+    public async Task Import_UnsupportedBank_ShowsLocalizedMessage()
     {
         var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
         await vm.LoadAccountsCommand.ExecuteAsync(null);
@@ -156,7 +156,7 @@ public class ImportViewModelTests
         await vm.ImportCommand.ExecuteAsync(null);
 
         vm.HasSummary.Should().BeFalse();
-        vm.ErrorMessage.Should().Contain("banku");
+        vm.ErrorMessage.Should().Be("Import.Error.UnsupportedBank");
         vm.IsImporting.Should().BeFalse();
     }
 
@@ -170,7 +170,7 @@ public class ImportViewModelTests
         await vm.ImportCommand.ExecuteAsync(null);
 
         useCase.Calls.Should().Be(0);
-        vm.ErrorMessage.Should().Contain("format");
+        vm.ErrorMessage.Should().Be("Import.Error.UnsupportedFormat");
     }
 
     [Fact]

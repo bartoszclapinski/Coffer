@@ -106,7 +106,7 @@
                 <Border Grid.Row="2" Margin="12,8,12,16" Padding="12"
                         Background="#F5F5F7" CornerRadius="8">
                     <StackPanel Spacing="8">
-                        <TextBlock Text="{Binding AppVersion, StringFormat='Wersja {0}'}"
+                        <TextBlock Text="{Binding VersionText}"
                                    FontSize="11"
                                    Foreground="#8E8E93"
                                    TextTrimming="CharacterEllipsis" />

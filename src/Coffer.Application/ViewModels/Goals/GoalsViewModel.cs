@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Coffer.Application.Localization;
 using Coffer.Core.Domain;
 using Coffer.Core.Goals;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -22,6 +23,7 @@ public sealed partial class GoalsViewModel : ObservableObject
     private readonly IFinancialContextBuilder _contextBuilder;
     private readonly IGoalFeasibilityEngine _engine;
     private readonly IAdvisorReportQuery _reportQuery;
+    private readonly ILocalizer _localizer;
     private readonly ILogger<GoalsViewModel> _logger;
 
     [ObservableProperty]
@@ -63,6 +65,7 @@ public sealed partial class GoalsViewModel : ObservableObject
         IFinancialContextBuilder contextBuilder,
         IGoalFeasibilityEngine engine,
         IAdvisorReportQuery reportQuery,
+        ILocalizer localizer,
         ILogger<GoalsViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -70,6 +73,7 @@ public sealed partial class GoalsViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(contextBuilder);
         ArgumentNullException.ThrowIfNull(engine);
         ArgumentNullException.ThrowIfNull(reportQuery);
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
 
         _query = query;
@@ -77,13 +81,14 @@ public sealed partial class GoalsViewModel : ObservableObject
         _contextBuilder = contextBuilder;
         _engine = engine;
         _reportQuery = reportQuery;
+        _localizer = localizer;
         _logger = logger;
 
         GoalTypeOptions = Enum.GetValues<GoalType>()
-            .Select(t => new GoalTypeOption(t, GoalDisplay.TypeToPolish(t)))
+            .Select(t => new GoalTypeOption(t, _localizer[GoalDisplay.TypeKey(t)]))
             .ToArray();
         PriorityOptions = Enum.GetValues<Priority>()
-            .Select(p => new PriorityOption(p, GoalDisplay.PriorityToPolish(p)))
+            .Select(p => new PriorityOption(p, _localizer[GoalDisplay.PriorityKey(p)]))
             .ToArray();
 
         _newGoalType = GoalTypeOptions[0];
@@ -113,7 +118,7 @@ public sealed partial class GoalsViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load goals");
-            ErrorMessage = "Nie udało się wczytać celów. Spróbuj ponownie.";
+            ErrorMessage = _localizer["Goals.Error.Load"];
         }
         finally
         {
@@ -131,7 +136,7 @@ public sealed partial class GoalsViewModel : ObservableObject
             || NewGoalType is not { } type
             || NewGoalPriority is not { } priority)
         {
-            ErrorMessage = "Uzupełnij nazwę, kwotę i datę celu.";
+            ErrorMessage = _localizer["Goals.Error.Validation"];
             return;
         }
 
@@ -158,7 +163,7 @@ public sealed partial class GoalsViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create goal");
-            ErrorMessage = "Nie udało się utworzyć celu. Spróbuj ponownie.";
+            ErrorMessage = _localizer["Goals.Error.Create"];
         }
     }
 
@@ -179,7 +184,7 @@ public sealed partial class GoalsViewModel : ObservableObject
                 continue;
             }
 
-            Goals.Add(new GoalDetailViewModel(goal, result, context, _engine, ArchiveAsync, AddContributionAsync));
+            Goals.Add(new GoalDetailViewModel(goal, result, context, _engine, _localizer, ArchiveAsync, AddContributionAsync));
         }
 
         HasGoals = Goals.Count > 0;
@@ -222,7 +227,7 @@ public sealed partial class GoalsViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to archive goal {GoalId}", goal.Id);
             goal.IsBusy = false;
-            ErrorMessage = "Nie udało się zarchiwizować celu. Spróbuj ponownie.";
+            ErrorMessage = _localizer["Goals.Error.Archive"];
         }
     }
 
@@ -243,13 +248,13 @@ public sealed partial class GoalsViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to add contribution to goal {GoalId}", goal.Id);
             goal.IsBusy = false;
-            ErrorMessage = "Nie udało się dodać wpłaty. Spróbuj ponownie.";
+            ErrorMessage = _localizer["Goals.Error.Contribution"];
         }
     }
 }
 
-/// <summary>A goal-type choice for the new-goal form: the enum value plus its Polish caption.</summary>
+/// <summary>A goal-type choice for the new-goal form: the enum value plus its localized caption.</summary>
 public sealed record GoalTypeOption(GoalType Value, string Label);
 
-/// <summary>A priority choice for the new-goal form: the enum value plus its Polish caption.</summary>
+/// <summary>A priority choice for the new-goal form: the enum value plus its localized caption.</summary>
 public sealed record PriorityOption(Priority Value, string Label);

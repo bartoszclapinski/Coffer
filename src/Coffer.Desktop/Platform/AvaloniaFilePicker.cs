@@ -1,5 +1,6 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
+using Coffer.Application.Localization;
 using Coffer.Core.Import;
 using Microsoft.Extensions.Logging;
 
@@ -13,16 +14,14 @@ namespace Coffer.Desktop.Platform;
 /// </summary>
 public sealed class AvaloniaFilePicker : IFilePicker
 {
-    private static readonly FilePickerFileType _statementFiles = new("Wyciągi bankowe (PDF, CSV)")
-    {
-        Patterns = ["*.pdf", "*.csv"],
-    };
-
+    private readonly ILocalizer _localizer;
     private readonly ILogger<AvaloniaFilePicker> _logger;
 
-    public AvaloniaFilePicker(ILogger<AvaloniaFilePicker> logger)
+    public AvaloniaFilePicker(ILocalizer localizer, ILogger<AvaloniaFilePicker> logger)
     {
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
+        _localizer = localizer;
         _logger = logger;
     }
 
@@ -40,11 +39,16 @@ public sealed class AvaloniaFilePicker : IFilePicker
             return null;
         }
 
+        var statementFiles = new FilePickerFileType(_localizer["FilePicker.StatementFiles"])
+        {
+            Patterns = ["*.pdf", "*.csv"],
+        };
+
         var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Wybierz wyciąg bankowy",
+            Title = _localizer["FilePicker.Title"],
             AllowMultiple = false,
-            FileTypeFilter = [_statementFiles],
+            FileTypeFilter = [statementFiles],
         }).ConfigureAwait(true);
 
         if (files.Count == 0)

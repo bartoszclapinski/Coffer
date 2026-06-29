@@ -1,4 +1,5 @@
 using System.Reflection;
+using Coffer.Application.Localization;
 using Coffer.Application.ViewModels.Alerts;
 using Coffer.Application.ViewModels.Chat;
 using Coffer.Application.ViewModels.Dashboard;
@@ -23,6 +24,7 @@ namespace Coffer.Application.ViewModels.Main;
 public sealed partial class MainViewModel : ObservableObject
 {
     private readonly ILoginService _loginService;
+    private readonly ILocalizer _localizer;
     private readonly ILogger<MainViewModel> _logger;
 
     [ObservableProperty]
@@ -47,6 +49,7 @@ public sealed partial class MainViewModel : ObservableObject
         GoalsViewModel goalsViewModel,
         SettingsViewModel settingsViewModel,
         ILoginService loginService,
+        ILocalizer localizer,
         ILogger<MainViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(dashboardViewModel);
@@ -57,6 +60,7 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(goalsViewModel);
         ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
 
         Dashboard = dashboardViewModel;
@@ -67,6 +71,7 @@ public sealed partial class MainViewModel : ObservableObject
         Advisor = goalsViewModel;
         Settings = settingsViewModel;
         _loginService = loginService;
+        _localizer = localizer;
         _logger = logger;
         AppVersion = ResolveAppVersion();
 
@@ -75,6 +80,8 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     public string AppVersion { get; }
+
+    public string VersionText => _localizer.Format("Nav.Version", AppVersion);
 
     public DashboardViewModel Dashboard { get; }
 

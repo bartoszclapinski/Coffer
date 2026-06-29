@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Import;assembly=Coffer.Application"
+             xmlns:l="clr-namespace:Coffer.Desktop.Localization"
              mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
              x:Class="Coffer.Desktop.Views.ImportView"
              x:DataType="vm:ImportViewModel"
@@ -10,11 +11,11 @@
     <ScrollViewer>
         <StackPanel Margin="40,32" Spacing="24" MaxWidth="640" HorizontalAlignment="Left">
             <StackPanel Spacing="4">
-                <TextBlock Text="Import wyciągu"
+                <TextBlock Text="{l:Localize Import.Title}"
                            FontSize="26"
                            FontWeight="Light"
                            Foreground="#1D1D1F" />
-                <TextBlock Text="Wybierz konto i plik wyciągu (PDF lub CSV), a Coffer rozpozna bank i zaimportuje transakcje."
+                <TextBlock Text="{l:Localize Import.Subtitle}"
                            TextWrapping="Wrap"
                            Foreground="#8E8E93" />
             </StackPanel>
@@ -22,10 +23,10 @@
             <!-- Account -->
             <Border Background="#FFFFFF" CornerRadius="10" Padding="20" BorderBrush="#E5E5EA" BorderThickness="1">
                 <StackPanel Spacing="12">
-                    <TextBlock Text="Konto" FontWeight="SemiBold" Foreground="#1D1D1F" />
+                    <TextBlock Text="{l:Localize Import.Account}" FontWeight="SemiBold" Foreground="#1D1D1F" />
 
                     <ComboBox HorizontalAlignment="Stretch"
-                              PlaceholderText="Wybierz konto"
+                              PlaceholderText="{l:Localize Import.Account.Placeholder}"
                               IsEnabled="{Binding !IsCreatingNewAccount}"
                               ItemsSource="{Binding Accounts}"
                               SelectedItem="{Binding SelectedAccount, Mode=TwoWay}">
@@ -39,27 +40,27 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <CheckBox Content="Utwórz nowe konto"
+                    <CheckBox Content="{l:Localize Import.Account.CreateNew}"
                               IsChecked="{Binding IsCreatingNewAccount, Mode=TwoWay}" />
 
                     <StackPanel Spacing="10" IsVisible="{Binding IsCreatingNewAccount}">
                         <StackPanel Spacing="4">
-                            <TextBlock Text="Nazwa" Foreground="#8E8E93" />
+                            <TextBlock Text="{l:Localize Import.Account.Name}" Foreground="#8E8E93" />
                             <TextBox Text="{Binding NewAccountName, Mode=TwoWay}"
-                                     Watermark="np. Konto osobiste PKO" />
+                                     Watermark="{l:Localize Import.Account.NameWatermark}" />
                         </StackPanel>
                         <StackPanel Spacing="4">
-                            <TextBlock Text="Numer konta" Foreground="#8E8E93" />
+                            <TextBlock Text="{l:Localize Import.Account.Number}" Foreground="#8E8E93" />
                             <TextBox Text="{Binding NewAccountNumber, Mode=TwoWay}"
-                                     Watermark="PL.." />
+                                     Watermark="{l:Localize Import.Account.NumberWatermark}" />
                         </StackPanel>
                         <Grid ColumnDefinitions="*,12,*">
                             <StackPanel Grid.Column="0" Spacing="4">
-                                <TextBlock Text="Waluta" Foreground="#8E8E93" />
+                                <TextBlock Text="{l:Localize Import.Account.Currency}" Foreground="#8E8E93" />
                                 <TextBox Text="{Binding NewAccountCurrency, Mode=TwoWay}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2" Spacing="4">
-                                <TextBlock Text="Typ" Foreground="#8E8E93" />
+                                <TextBlock Text="{l:Localize Import.Account.Type}" Foreground="#8E8E93" />
                                 <ComboBox HorizontalAlignment="Stretch"
                                           ItemsSource="{Binding AccountTypes}"
                                           SelectedItem="{Binding NewAccountType, Mode=TwoWay}" />
@@ -72,16 +73,16 @@
             <!-- File -->
             <Border Background="#FFFFFF" CornerRadius="10" Padding="20" BorderBrush="#E5E5EA" BorderThickness="1">
                 <StackPanel Spacing="12">
-                    <TextBlock Text="Plik wyciągu" FontWeight="SemiBold" Foreground="#1D1D1F" />
+                    <TextBlock Text="{l:Localize Import.File}" FontWeight="SemiBold" Foreground="#1D1D1F" />
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Button Content="Wybierz plik…"
+                        <Button Content="{l:Localize Import.File.Browse}"
                                 IsEnabled="{Binding !IsImporting}"
                                 Command="{Binding BrowseCommand}" />
                         <TextBlock Text="{Binding PickedFileName}"
                                    VerticalAlignment="Center"
                                    Foreground="#1D1D1F"
                                    IsVisible="{Binding HasPickedFile}" />
-                        <TextBlock Text="Nie wybrano pliku"
+                        <TextBlock Text="{l:Localize Import.File.None}"
                                    VerticalAlignment="Center"
                                    Foreground="#8E8E93"
                                    IsVisible="{Binding !HasPickedFile}" />
@@ -91,7 +92,7 @@
 
             <!-- Action + progress -->
             <StackPanel Spacing="12">
-                <Button Content="Importuj"
+                <Button Content="{l:Localize Import.Action}"
                         MinWidth="140"
                         HorizontalAlignment="Left"
                         IsDefault="True"
@@ -113,12 +114,12 @@
                     BorderBrush="#E5E5EA" BorderThickness="1"
                     IsVisible="{Binding HasSummary}">
                 <StackPanel Spacing="10">
-                    <TextBlock Text="Podsumowanie importu" FontWeight="SemiBold" Foreground="#1D1D1F" />
-                    <TextBlock Text="{Binding SummaryAdded, StringFormat='Dodano transakcji: {0}'}"
+                    <TextBlock Text="{l:Localize Import.Summary.Title}" FontWeight="SemiBold" Foreground="#1D1D1F" />
+                    <TextBlock Text="{Binding SummaryAddedText}"
                                Foreground="#1D1D1F" />
-                    <TextBlock Text="{Binding SummarySkipped, StringFormat='Pominięto duplikatów: {0}'}"
+                    <TextBlock Text="{Binding SummarySkippedText}"
                                Foreground="#1D1D1F" />
-                    <TextBlock Text="Ten plik był już wcześniej zaimportowany."
+                    <TextBlock Text="{l:Localize Import.Summary.AlreadyImported}"
                                Foreground="#8E8E93"
                                IsVisible="{Binding SummaryAlreadyImported}" />
                     <ItemsControl ItemsSource="{Binding Warnings}">

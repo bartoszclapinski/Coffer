@@ -26,7 +26,7 @@ public class AlertsViewModelTests
         var query = new FakeAlertsQuery();
         query.Items.Add(Item("a"));
         query.Items.Add(Item("b"));
-        var vm = new AlertsViewModel(detect, query, new FakeAlertService(), NullLogger<AlertsViewModel>.Instance);
+        var vm = new AlertsViewModel(detect, query, new FakeAlertService(), new FakeLocalizer(), NullLogger<AlertsViewModel>.Instance);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -44,6 +44,7 @@ public class AlertsViewModelTests
             new FakeDetectAnomaliesUseCase(),
             new FakeAlertsQuery(),
             new FakeAlertService(),
+            new FakeLocalizer(),
             NullLogger<AlertsViewModel>.Instance);
 
         await vm.LoadCommand.ExecuteAsync(null);
@@ -57,7 +58,7 @@ public class AlertsViewModelTests
     public async Task Load_WhenDetectionThrows_SetsErrorAndClearsEmptyState()
     {
         var detect = new FakeDetectAnomaliesUseCase { Throw = new InvalidOperationException("boom") };
-        var vm = new AlertsViewModel(detect, new FakeAlertsQuery(), new FakeAlertService(), NullLogger<AlertsViewModel>.Instance);
+        var vm = new AlertsViewModel(detect, new FakeAlertsQuery(), new FakeAlertService(), new FakeLocalizer(), NullLogger<AlertsViewModel>.Instance);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -72,7 +73,7 @@ public class AlertsViewModelTests
         var query = new FakeAlertsQuery();
         query.Items.Add(Item("a"));
         var service = new FakeAlertService();
-        var vm = new AlertsViewModel(new FakeDetectAnomaliesUseCase(), query, service, NullLogger<AlertsViewModel>.Instance);
+        var vm = new AlertsViewModel(new FakeDetectAnomaliesUseCase(), query, service, new FakeLocalizer(), NullLogger<AlertsViewModel>.Instance);
         await vm.LoadCommand.ExecuteAsync(null);
         var row = vm.Alerts.Single();
 
@@ -90,7 +91,7 @@ public class AlertsViewModelTests
         var query = new FakeAlertsQuery();
         query.Items.Add(Item("a"));
         var service = new FakeAlertService();
-        var vm = new AlertsViewModel(new FakeDetectAnomaliesUseCase(), query, service, NullLogger<AlertsViewModel>.Instance);
+        var vm = new AlertsViewModel(new FakeDetectAnomaliesUseCase(), query, service, new FakeLocalizer(), NullLogger<AlertsViewModel>.Instance);
         await vm.LoadCommand.ExecuteAsync(null);
         var row = vm.Alerts.Single();
 

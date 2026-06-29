@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Coffer.Application.Localization;
 using Coffer.Core.Chat;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -18,6 +19,7 @@ namespace Coffer.Application.ViewModels.Chat;
 public sealed partial class ChatViewModel : ObservableObject
 {
     private readonly IChatService _chatService;
+    private readonly ILocalizer _localizer;
     private readonly ILogger<ChatViewModel> _logger;
 
     [ObservableProperty]
@@ -37,24 +39,28 @@ public sealed partial class ChatViewModel : ObservableObject
     [ObservableProperty]
     private bool _budgetExceeded;
 
-    public ChatViewModel(IChatService chatService, ILogger<ChatViewModel> logger)
+    public ChatViewModel(IChatService chatService, ILocalizer localizer, ILogger<ChatViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(chatService);
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
 
         _chatService = chatService;
+        _localizer = localizer;
         _logger = logger;
+
+        SuggestedPrompts =
+        [
+            localizer["Chat.Prompt.Fuel"],
+            localizer["Chat.Prompt.ByCategory"],
+            localizer["Chat.Prompt.GroceriesTrend"],
+            localizer["Chat.Prompt.Last10"],
+        ];
     }
 
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
 
-    public IReadOnlyList<string> SuggestedPrompts { get; } =
-    [
-        "Ile wydałem na paliwo w tym miesiącu?",
-        "Pokaż moje wydatki według kategorii w czerwcu.",
-        "Jak zmieniały się moje wydatki na spożywcze przez ostatnie pół roku?",
-        "Pokaż ostatnie 10 transakcji.",
-    ];
+    public IReadOnlyList<string> SuggestedPrompts { get; }
 
     public bool IsEmpty => Messages.Count == 0 && !IsBusy;
 
@@ -106,7 +112,7 @@ public sealed partial class ChatViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Chat turn failed");
-            ErrorMessage = "Przepraszam, wystąpił błąd. Spróbuj ponownie za chwilę.";
+            ErrorMessage = _localizer["Chat.Error"];
         }
         finally
         {

@@ -1,3 +1,4 @@
+using Coffer.Application.Tests.Fakes;
 using Coffer.Application.ViewModels.Chat;
 using Coffer.Core.Chat;
 using FluentAssertions;
@@ -122,7 +123,7 @@ public class ChatViewModelTests
     }
 
     private static ChatViewModel Vm(FakeChatService service) =>
-        new(service, NullLogger<ChatViewModel>.Instance);
+        new(service, new FakeLocalizer(), NullLogger<ChatViewModel>.Instance);
 
     private sealed class FakeChatService : IChatService
     {
