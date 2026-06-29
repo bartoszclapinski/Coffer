@@ -24,7 +24,7 @@ public class TransactionsViewModelTests
     {
         query = new FakeGetTransactionsQuery(items, accounts);
         categories = new FakeCategoryService(seedCategories);
-        return new TransactionsViewModel(query, categories, NullLogger<TransactionsViewModel>.Instance);
+        return new TransactionsViewModel(query, categories, new FakeLocalizer(), NullLogger<TransactionsViewModel>.Instance);
     }
 
     [Fact]

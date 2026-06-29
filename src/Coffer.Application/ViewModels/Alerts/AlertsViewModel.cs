@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Coffer.Application.Localization;
 using Coffer.Core.Anomalies;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +18,7 @@ public sealed partial class AlertsViewModel : ObservableObject
     private readonly IDetectAnomaliesUseCase _detect;
     private readonly IAlertsQuery _query;
     private readonly IAlertService _service;
+    private readonly ILocalizer _localizer;
     private readonly ILogger<AlertsViewModel> _logger;
 
     [ObservableProperty]
@@ -32,16 +34,19 @@ public sealed partial class AlertsViewModel : ObservableObject
         IDetectAnomaliesUseCase detect,
         IAlertsQuery query,
         IAlertService service,
+        ILocalizer localizer,
         ILogger<AlertsViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(detect);
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(service);
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
 
         _detect = detect;
         _query = query;
         _service = service;
+        _localizer = localizer;
         _logger = logger;
     }
 
@@ -63,7 +68,7 @@ public sealed partial class AlertsViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load alerts");
-            ErrorMessage = "Nie udało się wczytać alertów. Spróbuj ponownie.";
+            ErrorMessage = _localizer["Alerts.Error"];
         }
         finally
         {

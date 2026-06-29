@@ -1,3 +1,4 @@
+using Coffer.Application.Localization;
 using Coffer.Core.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -19,11 +20,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public SetupWizardViewModel(
         ISetupService setupService,
         ISeedManager seedManager,
-        IPasswordStrengthChecker strengthChecker)
+        IPasswordStrengthChecker strengthChecker,
+        ILocalizer localizer)
     {
         ArgumentNullException.ThrowIfNull(setupService);
         ArgumentNullException.ThrowIfNull(seedManager);
         ArgumentNullException.ThrowIfNull(strengthChecker);
+        ArgumentNullException.ThrowIfNull(localizer);
 
         _setupService = setupService;
         _seedManager = seedManager;
@@ -32,7 +35,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         Password = new MasterPasswordStepViewModel(strengthChecker, () => Mnemonic);
         SeedDisplay = new BipSeedDisplayStepViewModel();
         Verification = new BipSeedVerificationStepViewModel(() => Mnemonic);
-        Confirm = new ConfirmStepViewModel(CompleteSetupAsync);
+        Confirm = new ConfirmStepViewModel(CompleteSetupAsync, localizer);
     }
 
     public WelcomeStepViewModel Welcome { get; }

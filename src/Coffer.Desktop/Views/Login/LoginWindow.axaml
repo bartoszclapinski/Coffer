@@ -3,27 +3,28 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Login;assembly=Coffer.Application"
+        xmlns:l="clr-namespace:Coffer.Desktop.Localization"
         mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="320"
         x:Class="Coffer.Desktop.Views.Login.LoginWindow"
         x:DataType="vm:LoginViewModel"
         x:CompileBindings="False"
-        Title="Coffer — logowanie"
+        Title="{l:Localize Login.WindowTitle}"
         Width="480" Height="320"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
     <Grid RowDefinitions="Auto,*,Auto" Margin="32">
         <StackPanel Grid.Row="0" Spacing="6">
-            <TextBlock Text="Logowanie"
+            <TextBlock Text="{l:Localize Login.Title}"
                        FontSize="22"
                        FontWeight="Light" />
-            <TextBlock Text="Wpisz hasło główne, aby odblokować sejf."
+            <TextBlock Text="{l:Localize Login.Subtitle}"
                        TextWrapping="Wrap"
                        Foreground="#999" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Spacing="12" Margin="0,24,0,0" VerticalAlignment="Center">
             <StackPanel Spacing="4">
-                <TextBlock Text="Hasło" />
+                <TextBlock Text="{l:Localize Login.Password}" />
                 <TextBox x:Name="PasswordBox"
                          PasswordChar="●"
                          IsEnabled="{Binding !IsBusy}"
@@ -42,7 +43,7 @@
         </StackPanel>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
-            <Button Content="Zaloguj"
+            <Button Content="{l:Localize Login.SignIn}"
                     MinWidth="120"
                     IsDefault="True"
                     IsEnabled="{Binding !IsBusy}"

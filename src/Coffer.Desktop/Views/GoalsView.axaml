@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Goals;assembly=Coffer.Application"
              xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:l="clr-namespace:Coffer.Desktop.Localization"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
              mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
              x:Class="Coffer.Desktop.Views.GoalsView"
@@ -49,11 +50,11 @@
         <ScrollViewer Grid.Column="0">
             <StackPanel Margin="32,32,16,32" Spacing="16">
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Doradca"
+                    <TextBlock Text="{l:Localize Goals.Title}"
                                FontSize="26"
                                FontWeight="Light"
                                Foreground="#1D1D1F" />
-                    <TextBlock Text="Cele oszczędnościowe i symulacje"
+                    <TextBlock Text="{l:Localize Goals.Subtitle}"
                                Foreground="#8E8E93" />
                 </StackPanel>
 
@@ -65,7 +66,7 @@
                            TextWrapping="Wrap"
                            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-                <TextBlock Text="Nie masz jeszcze żadnych celów. Dodaj pierwszy poniżej."
+                <TextBlock Text="{l:Localize Goals.Empty}"
                            Foreground="#8E8E93"
                            TextWrapping="Wrap"
                            IsVisible="{Binding IsEmpty}" />
@@ -103,8 +104,8 @@
 
                 <Border Classes="card">
                     <StackPanel Spacing="10">
-                        <TextBlock Classes="sectionTitle" Text="Nowy cel" />
-                        <TextBox Watermark="Nazwa (np. Wakacje Grecja)"
+                        <TextBlock Classes="sectionTitle" Text="{l:Localize Goals.New.Title}" />
+                        <TextBox Watermark="{l:Localize Goals.New.NameWatermark}"
                                  Text="{Binding NewGoalName}" />
                         <ComboBox HorizontalAlignment="Stretch"
                                   ItemsSource="{Binding GoalTypeOptions}"
@@ -115,7 +116,7 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <NumericUpDown Watermark="Kwota docelowa"
+                        <NumericUpDown Watermark="{l:Localize Goals.New.TargetAmountWatermark}"
                                        Minimum="0"
                                        Increment="100"
                                        FormatString="N2"
@@ -130,7 +131,7 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <Button Content="Dodaj cel"
+                        <Button Content="{l:Localize Goals.New.Submit}"
                                 HorizontalAlignment="Stretch"
                                 Command="{Binding CreateGoalCommand}" />
                     </StackPanel>
@@ -145,8 +146,8 @@
                     IsVisible="{Binding HasSuggestions}">
                 <StackPanel Spacing="12">
                     <TextBlock Classes="sectionTitle" Margin="0"
-                               Text="Sugestie doradcy — gdzie przyciąć" />
-                    <TextBlock Text="Wygenerowano bez AI (na podstawie samego silnika)."
+                               Text="{l:Localize Goals.Suggestions.Title}" />
+                    <TextBlock Text="{l:Localize Goals.Suggestions.EngineOnly}"
                                Classes="metricLabel"
                                TextWrapping="Wrap"
                                IsVisible="{Binding SuggestionsAreEngineOnly}" />
@@ -201,7 +202,7 @@
                                     <TextBlock Text="{Binding TypeText}" Foreground="#8E8E93" />
                                 </StackPanel>
                                 <Button Grid.Column="1"
-                                        Content="Archiwizuj"
+                                        Content="{l:Localize Goal.Archive}"
                                         VerticalAlignment="Center"
                                         IsEnabled="{Binding !IsBusy}"
                                         Command="{Binding ArchiveCommand}" />
@@ -210,35 +211,35 @@
                             <Border Classes="card">
                                 <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto">
                                     <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
-                                        <TextBlock Classes="metricLabel" Text="Cel" />
+                                        <TextBlock Classes="metricLabel" Text="{l:Localize Goal.Metric.Target}" />
                                         <TextBlock Classes="metricValue" Text="{Binding TargetText}" />
                                     </StackPanel>
                                     <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
-                                        <TextBlock Classes="metricLabel" Text="Zaoszczędzono" />
+                                        <TextBlock Classes="metricLabel" Text="{l:Localize Goal.Metric.Saved}" />
                                         <TextBlock Classes="metricValue" Text="{Binding SavedText}" />
                                     </StackPanel>
                                     <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2">
-                                        <TextBlock Classes="metricLabel" Text="Pozostało" />
+                                        <TextBlock Classes="metricLabel" Text="{l:Localize Goal.Metric.Remaining}" />
                                         <TextBlock Classes="metricValue" Text="{Binding RemainingText}" />
                                     </StackPanel>
                                     <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
-                                        <TextBlock Classes="metricLabel" Text="Pewność" />
+                                        <TextBlock Classes="metricLabel" Text="{l:Localize Goal.Metric.Confidence}" />
                                         <TextBlock Classes="metricValue" Text="{Binding ConfidenceText}" />
                                     </StackPanel>
                                     <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,12,0,0">
-                                        <TextBlock Classes="metricLabel" Text="Termin" />
+                                        <TextBlock Classes="metricLabel" Text="{l:Localize Goal.Metric.Deadline}" />
                                         <TextBlock Classes="metricValue" Text="{Binding TargetDateText}" />
                                     </StackPanel>
                                     <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,12,0,0">
-                                        <TextBlock Classes="metricLabel" Text="Prognoza" />
+                                        <TextBlock Classes="metricLabel" Text="{l:Localize Goal.Metric.Projection}" />
                                         <TextBlock Classes="metricValue" Text="{Binding ProjectedDateText}" />
                                     </StackPanel>
                                     <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,12,0,0">
-                                        <TextBlock Classes="metricLabel" Text="Wymagane" />
+                                        <TextBlock Classes="metricLabel" Text="{l:Localize Goal.Metric.Required}" />
                                         <TextBlock Classes="metricValue" Text="{Binding RequiredMonthlyText}" />
                                     </StackPanel>
                                     <StackPanel Grid.Row="1" Grid.Column="3" Spacing="2" Margin="0,12,0,0">
-                                        <TextBlock Classes="metricLabel" Text="Obecne tempo" />
+                                        <TextBlock Classes="metricLabel" Text="{l:Localize Goal.Metric.CurrentPace}" />
                                         <TextBlock Classes="metricValue" Text="{Binding CurrentMonthlyText}" />
                                     </StackPanel>
                                 </Grid>
@@ -246,7 +247,7 @@
 
                             <Border Classes="card">
                                 <StackPanel Spacing="12">
-                                    <TextBlock Classes="sectionTitle" Text="Symulator — ile odkładać miesięcznie" />
+                                    <TextBlock Classes="sectionTitle" Text="{l:Localize Goal.Simulator.Title}" />
                                     <Slider Minimum="0" Maximum="10000"
                                             TickFrequency="100"
                                             Value="{Binding MonthlySavingInput}" />
@@ -259,7 +260,7 @@
                                                        Value="{Binding MonthlySavingInput}" />
                                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12"
                                                     VerticalAlignment="Center">
-                                            <TextBlock Classes="metricLabel" Text="Prognoza:" VerticalAlignment="Center" />
+                                            <TextBlock Classes="metricLabel" Text="{l:Localize Goal.Simulator.ProjectionLabel}" VerticalAlignment="Center" />
                                             <TextBlock Classes="metricValue" Text="{Binding SimulatedProjectedDateText}"
                                                        VerticalAlignment="Center" />
                                             <Border Classes="badge"
@@ -276,7 +277,7 @@
 
                             <Border Classes="card">
                                 <StackPanel Spacing="8">
-                                    <TextBlock Classes="sectionTitle" Text="Scenariusze" />
+                                    <TextBlock Classes="sectionTitle" Text="{l:Localize Goal.Scenarios.Title}" />
                                     <ItemsControl ItemsSource="{Binding Scenarios}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="vm:GoalScenarioViewModel">
@@ -302,7 +303,7 @@
 
                             <Border Classes="card" IsVisible="{Binding HasRisks}">
                                 <StackPanel Spacing="8">
-                                    <TextBlock Classes="sectionTitle" Text="Ryzyka" />
+                                    <TextBlock Classes="sectionTitle" Text="{l:Localize Goal.Risks.Title}" />
                                     <ItemsControl ItemsSource="{Binding Risks}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
@@ -318,16 +319,16 @@
 
                             <Border Classes="card">
                                 <StackPanel Spacing="10">
-                                    <TextBlock Classes="sectionTitle" Text="Dodaj wpłatę" />
+                                    <TextBlock Classes="sectionTitle" Text="{l:Localize Goal.Contribution.Title}" />
                                     <Grid ColumnDefinitions="*,Auto">
                                         <NumericUpDown Grid.Column="0"
                                                        Minimum="0"
                                                        Increment="50"
                                                        FormatString="N2"
-                                                       Watermark="Kwota wpłaty"
+                                                       Watermark="{l:Localize Goal.Contribution.AmountWatermark}"
                                                        Value="{Binding ContributionAmount}" />
                                         <Button Grid.Column="1"
-                                                Content="Dodaj"
+                                                Content="{l:Localize Goal.Contribution.Submit}"
                                                 Margin="12,0,0,0"
                                                 IsEnabled="{Binding !IsBusy}"
                                                 Command="{Binding AddContributionCommand}" />

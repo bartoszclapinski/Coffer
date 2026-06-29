@@ -157,13 +157,11 @@ public partial class App : Avalonia.Application
 
     private Window BuildMigrationConfirmWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
+        var localizer = Services.GetRequiredService<ILocalizer>();
+
         var message = new TextBlock
         {
-            Text =
-                "Wymagana aktualizacja bazy danych.\n\n" +
-                "Przed aktualizacją zostanie automatycznie utworzona kopia zapasowa. " +
-                "Bez aktualizacji aplikacja nie może działać z istniejącymi danymi.\n\n" +
-                "Czy chcesz kontynuować?",
+            Text = localizer["App.Migration.Message"],
             TextWrapping = Avalonia.Media.TextWrapping.Wrap,
         };
 
@@ -173,8 +171,8 @@ public partial class App : Avalonia.Application
             IsVisible = false,
         };
 
-        var continueButton = new Button { Content = "Kontynuuj", IsDefault = true };
-        var cancelButton = new Button { Content = "Zamknij aplikację", IsCancel = true };
+        var continueButton = new Button { Content = localizer["App.Migration.Continue"], IsDefault = true };
+        var cancelButton = new Button { Content = localizer["App.Migration.Quit"], IsCancel = true };
 
         var buttons = new StackPanel
         {
@@ -186,7 +184,7 @@ public partial class App : Avalonia.Application
 
         var window = new Window
         {
-            Title = "Coffer — aktualizacja bazy danych",
+            Title = localizer["App.Migration.Title"],
             Width = 560,
             Height = 320,
             WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -210,7 +208,7 @@ public partial class App : Avalonia.Application
             continueButton.IsEnabled = false;
             cancelButton.IsEnabled = false;
             status.IsVisible = true;
-            status.Text = "Tworzenie kopii zapasowej i aktualizacja…";
+            status.Text = localizer["App.Migration.Progress"];
 
             try
             {
@@ -223,9 +221,7 @@ public partial class App : Avalonia.Application
             catch (Exception ex)
             {
                 Log.Error(ex, "Database migration failed at startup");
-                status.Text =
-                    "Aktualizacja bazy danych nie powiodła się. Kopia zapasowa pozostała nienaruszona. " +
-                    "Zamknij aplikację i spróbuj ponownie.";
+                status.Text = localizer["App.Migration.Failed"];
                 cancelButton.IsEnabled = true;
             }
         };
@@ -374,17 +370,12 @@ public partial class App : Avalonia.Application
 
     private static Window BuildPartialStateError(bool dekExists, bool dbExists, string folder)
     {
+        var localizer = Services.GetRequiredService<ILocalizer>();
         var present = dekExists ? "dek.encrypted" : "coffer.db";
         var missing = dekExists ? "coffer.db" : "dek.encrypted";
         return BuildSimpleMessageWindow(
-            title: "Coffer — niedopasowany stan sejfu",
-            message:
-                $"Wykryto niedopasowany stan sejfu w {folder}\\: " +
-                $"{present} istnieje, ale {missing} brakuje.\n\n" +
-                "Sejf wymaga obu plików razem. Aby zacząć od nowa, usuń oba pliki " +
-                "(razem z coffer.db-wal i coffer.db-shm jeśli istnieją) " +
-                "i uruchom aplikację ponownie. Aby zalogować się do istniejącego " +
-                "sejfu, przywróć brakujący plik z kopii zapasowej.");
+            title: localizer["App.PartialVault.Title"],
+            message: localizer.Format("App.PartialVault.Message", folder, present, missing));
     }
 
     private static Window BuildSimpleMessageWindow(string title, string message)

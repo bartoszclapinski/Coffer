@@ -142,4 +142,568 @@
   <data name="Settings.Save" xml:space="preserve">
     <value>Save settings</value>
   </data>
+  <data name="Dashboard.Title" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Dashboard.Subtitle" xml:space="preserve">
+    <value>Financial overview — {0}</value>
+  </data>
+  <data name="Dashboard.Empty" xml:space="preserve">
+    <value>No data yet. Import a statement to see a summary here.</value>
+  </data>
+  <data name="Dashboard.Spend" xml:space="preserve">
+    <value>Spending</value>
+  </data>
+  <data name="Dashboard.Income" xml:space="preserve">
+    <value>Income</value>
+  </data>
+  <data name="Dashboard.Balance" xml:space="preserve">
+    <value>Balance</value>
+  </data>
+  <data name="Dashboard.Spend30" xml:space="preserve">
+    <value>Spending — last 30 days</value>
+  </data>
+  <data name="Dashboard.Categories" xml:space="preserve">
+    <value>Categories (this month)</value>
+  </data>
+  <data name="Dashboard.Spend12" xml:space="preserve">
+    <value>Spending — last 12 months</value>
+  </data>
+  <data name="Dashboard.Recent" xml:space="preserve">
+    <value>Recent transactions</value>
+  </data>
+  <data name="Dashboard.Error" xml:space="preserve">
+    <value>Failed to load the dashboard. Please try again.</value>
+  </data>
+  <data name="Import.Title" xml:space="preserve">
+    <value>Import statement</value>
+  </data>
+  <data name="Import.Subtitle" xml:space="preserve">
+    <value>Choose an account and a statement file (PDF or CSV); Coffer will detect the bank and import the transactions.</value>
+  </data>
+  <data name="Import.Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Import.Account.Placeholder" xml:space="preserve">
+    <value>Select account</value>
+  </data>
+  <data name="Import.Account.CreateNew" xml:space="preserve">
+    <value>Create new account</value>
+  </data>
+  <data name="Import.Account.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Import.Account.NameWatermark" xml:space="preserve">
+    <value>e.g. PKO personal account</value>
+  </data>
+  <data name="Import.Account.Number" xml:space="preserve">
+    <value>Account number</value>
+  </data>
+  <data name="Import.Account.NumberWatermark" xml:space="preserve">
+    <value>PL..</value>
+  </data>
+  <data name="Import.Account.Currency" xml:space="preserve">
+    <value>Currency</value>
+  </data>
+  <data name="Import.Account.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Import.File" xml:space="preserve">
+    <value>Statement file</value>
+  </data>
+  <data name="Import.File.Browse" xml:space="preserve">
+    <value>Choose file…</value>
+  </data>
+  <data name="Import.File.None" xml:space="preserve">
+    <value>No file selected</value>
+  </data>
+  <data name="Import.Action" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Import.Summary.Title" xml:space="preserve">
+    <value>Import summary</value>
+  </data>
+  <data name="Import.Summary.Added" xml:space="preserve">
+    <value>Transactions added: {0}</value>
+  </data>
+  <data name="Import.Summary.Skipped" xml:space="preserve">
+    <value>Duplicates skipped: {0}</value>
+  </data>
+  <data name="Import.Summary.AlreadyImported" xml:space="preserve">
+    <value>This file was already imported earlier.</value>
+  </data>
+  <data name="Import.Stage.Reading" xml:space="preserve">
+    <value>Reading file…</value>
+  </data>
+  <data name="Import.Stage.DetectingBank" xml:space="preserve">
+    <value>Detecting bank…</value>
+  </data>
+  <data name="Import.Stage.Parsing" xml:space="preserve">
+    <value>Processing statement…</value>
+  </data>
+  <data name="Import.Stage.Deduplicating" xml:space="preserve">
+    <value>Checking for duplicates…</value>
+  </data>
+  <data name="Import.Stage.Categorizing" xml:space="preserve">
+    <value>Categorizing transactions…</value>
+  </data>
+  <data name="Import.Stage.Saving" xml:space="preserve">
+    <value>Saving transactions…</value>
+  </data>
+  <data name="Import.Error.UnsupportedBank" xml:space="preserve">
+    <value>The bank of this statement was not recognized. Currently PKO BP is supported (CSV "Historia rachunku").</value>
+  </data>
+  <data name="Import.Error.UnsupportedFormat" xml:space="preserve">
+    <value>Unsupported file format. Choose a PDF or CSV file.</value>
+  </data>
+  <data name="Import.Error.ParseFailure" xml:space="preserve">
+    <value>Could not read the statement. Check that the file is not corrupted and that it is a statement from a supported bank.</value>
+  </data>
+  <data name="Import.Error.NoAccount" xml:space="preserve">
+    <value>Select an account or create a new one before importing.</value>
+  </data>
+  <data name="Import.Error.NewAccountIncomplete" xml:space="preserve">
+    <value>Provide the name, number and currency of the new account.</value>
+  </data>
+  <data name="Import.Error.Generic" xml:space="preserve">
+    <value>Import failed. Please try again.</value>
+  </data>
+  <data name="Transactions.Title" xml:space="preserve">
+    <value>Transactions</value>
+  </data>
+  <data name="Transactions.Subtitle" xml:space="preserve">
+    <value>A list of transactions from recent months.</value>
+  </data>
+  <data name="Transactions.Recategorize" xml:space="preserve">
+    <value>Categorize existing</value>
+  </data>
+  <data name="Transactions.SearchWatermark" xml:space="preserve">
+    <value>Search by description or merchant…</value>
+  </data>
+  <data name="Transactions.Filter.AllAccounts" xml:space="preserve">
+    <value>All accounts</value>
+  </data>
+  <data name="Transactions.Filter.AllCategories" xml:space="preserve">
+    <value>All categories</value>
+  </data>
+  <data name="Transactions.Empty" xml:space="preserve">
+    <value>No transactions. Change the filters or import a statement to see them here.</value>
+  </data>
+  <data name="Transactions.Column.Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Transactions.Column.Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Transactions.Column.Merchant" xml:space="preserve">
+    <value>Merchant</value>
+  </data>
+  <data name="Transactions.Column.Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Transactions.Column.Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Transactions.Column.Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="Transactions.Uncategorized" xml:space="preserve">
+    <value>Uncategorized</value>
+  </data>
+  <data name="Transactions.Range.Last3Months" xml:space="preserve">
+    <value>Last 3 months</value>
+  </data>
+  <data name="Transactions.Range.Last6Months" xml:space="preserve">
+    <value>Last 6 months</value>
+  </data>
+  <data name="Transactions.Range.Last12Months" xml:space="preserve">
+    <value>Last 12 months</value>
+  </data>
+  <data name="Transactions.Range.All" xml:space="preserve">
+    <value>All time</value>
+  </data>
+  <data name="Transactions.Error.Load" xml:space="preserve">
+    <value>Failed to load transactions. Please try again.</value>
+  </data>
+  <data name="Transactions.Error.Recategorize" xml:space="preserve">
+    <value>Failed to categorize existing transactions.</value>
+  </data>
+  <data name="Transactions.Error.SetCategory" xml:space="preserve">
+    <value>Failed to change the category. Please try again.</value>
+  </data>
+  <data name="Chat.Title" xml:space="preserve">
+    <value>Assistant</value>
+  </data>
+  <data name="Chat.Subtitle" xml:space="preserve">
+    <value>Ask about your finances — answers come from your data.</value>
+  </data>
+  <data name="Chat.EmptyPrompt" xml:space="preserve">
+    <value>Where shall we start?</value>
+  </data>
+  <data name="Chat.ShowTools" xml:space="preserve">
+    <value>Show tools used</value>
+  </data>
+  <data name="Chat.MissingApiKey" xml:space="preserve">
+    <value>No API key configured. Add a key in Settings to use the assistant.</value>
+  </data>
+  <data name="Chat.BudgetExceeded" xml:space="preserve">
+    <value>The monthly AI budget has been used up. Increase the limit in Settings to continue.</value>
+  </data>
+  <data name="Chat.InputWatermark" xml:space="preserve">
+    <value>Write a message…</value>
+  </data>
+  <data name="Chat.Send" xml:space="preserve">
+    <value>Send</value>
+  </data>
+  <data name="Chat.Error" xml:space="preserve">
+    <value>Sorry, an error occurred. Please try again in a moment.</value>
+  </data>
+  <data name="Chat.Prompt.Fuel" xml:space="preserve">
+    <value>How much did I spend on fuel this month?</value>
+  </data>
+  <data name="Chat.Prompt.ByCategory" xml:space="preserve">
+    <value>Show my spending by category in June.</value>
+  </data>
+  <data name="Chat.Prompt.GroceriesTrend" xml:space="preserve">
+    <value>How did my grocery spending change over the last six months?</value>
+  </data>
+  <data name="Chat.Prompt.Last10" xml:space="preserve">
+    <value>Show the last 10 transactions.</value>
+  </data>
+  <data name="Alerts.Title" xml:space="preserve">
+    <value>Alerts</value>
+  </data>
+  <data name="Alerts.Subtitle" xml:space="preserve">
+    <value>Unusual transactions and spending patterns</value>
+  </data>
+  <data name="Alerts.Empty" xml:space="preserve">
+    <value>No alerts. Everything looks normal.</value>
+  </data>
+  <data name="Alerts.Acknowledge" xml:space="preserve">
+    <value>Acknowledge</value>
+  </data>
+  <data name="Alerts.Dismiss" xml:space="preserve">
+    <value>Dismiss</value>
+  </data>
+  <data name="Alerts.Error" xml:space="preserve">
+    <value>Failed to load alerts. Please try again.</value>
+  </data>
+  <data name="Settings.Status.LoadFailed" xml:space="preserve">
+    <value>Failed to load settings.</value>
+  </data>
+  <data name="Settings.Status.Saved" xml:space="preserve">
+    <value>Settings saved.</value>
+  </data>
+  <data name="Settings.Status.SaveFailed" xml:space="preserve">
+    <value>Failed to save settings.</value>
+  </data>
+  <data name="Settings.Status.KeySaved" xml:space="preserve">
+    <value>API key saved.</value>
+  </data>
+  <data name="Settings.Status.KeySaveFailed" xml:space="preserve">
+    <value>Failed to save the API key.</value>
+  </data>
+  <data name="Settings.Status.KeyCleared" xml:space="preserve">
+    <value>API key deleted.</value>
+  </data>
+  <data name="Settings.Status.KeyClearFailed" xml:space="preserve">
+    <value>Failed to delete the API key.</value>
+  </data>
+  <data name="FilePicker.StatementFiles" xml:space="preserve">
+    <value>Bank statements (PDF, CSV)</value>
+  </data>
+  <data name="FilePicker.Title" xml:space="preserve">
+    <value>Choose a bank statement</value>
+  </data>
+  <data name="App.Migration.Message" xml:space="preserve">
+    <value>A database update is required.
+
+A backup will be created automatically before the update. Without the update the application cannot work with the existing data.
+
+Do you want to continue?</value>
+  </data>
+  <data name="App.Migration.Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="App.Migration.Quit" xml:space="preserve">
+    <value>Quit application</value>
+  </data>
+  <data name="App.Migration.Title" xml:space="preserve">
+    <value>Coffer — database update</value>
+  </data>
+  <data name="App.Migration.Progress" xml:space="preserve">
+    <value>Creating backup and updating…</value>
+  </data>
+  <data name="App.Migration.Failed" xml:space="preserve">
+    <value>The database update failed. The backup remains intact. Close the application and try again.</value>
+  </data>
+  <data name="App.PartialVault.Title" xml:space="preserve">
+    <value>Coffer — mismatched vault state</value>
+  </data>
+  <data name="App.PartialVault.Message" xml:space="preserve">
+    <value>A mismatched vault state was detected in {0}: {1} exists, but {2} is missing.
+
+The vault requires both files together. To start over, delete both files (along with coffer.db-wal and coffer.db-shm if they exist) and restart the application. To sign in to an existing vault, restore the missing file from a backup.</value>
+  </data>
+  <data name="Login.WindowTitle" xml:space="preserve">
+    <value>Coffer — Sign in</value>
+  </data>
+  <data name="Login.Title" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Login.Subtitle" xml:space="preserve">
+    <value>Enter your master password to unlock the vault.</value>
+  </data>
+  <data name="Login.Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Login.SignIn" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Login.Error.WrongPassword" xml:space="preserve">
+    <value>Incorrect password.</value>
+  </data>
+  <data name="Login.Error.VaultCorruptedFormat" xml:space="preserve">
+    <value>The vault file is corrupted. Recovery from the BIP39 phrase arrives in Sprint 7.</value>
+  </data>
+  <data name="Login.Error.VaultCorruptedIo" xml:space="preserve">
+    <value>Could not read the vault file. Check that the %LocalAppData%\Coffer\ folder is accessible.</value>
+  </data>
+  <data name="Login.Error.VaultMissing" xml:space="preserve">
+    <value>No vault file found. Restart the application.</value>
+  </data>
+  <data name="Login.Error.Generic" xml:space="preserve">
+    <value>Could not sign in. Please try again.</value>
+  </data>
+  <data name="Setup.WindowTitle" xml:space="preserve">
+    <value>Coffer — Vault setup</value>
+  </data>
+  <data name="Setup.Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Setup.Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Setup.Welcome.Title" xml:space="preserve">
+    <value>Welcome to Coffer</value>
+  </data>
+  <data name="Setup.Welcome.Intro" xml:space="preserve">
+    <value>Coffer is a local, encrypted finance-tracking app. Your data never leaves this device unencrypted.</value>
+  </data>
+  <data name="Setup.Welcome.StepsHeader" xml:space="preserve">
+    <value>We'll now set up a secure vault:</value>
+  </data>
+  <data name="Setup.Welcome.Step1" xml:space="preserve">
+    <value>1. You'll set a master password that protects all data.</value>
+  </data>
+  <data name="Setup.Welcome.Step2" xml:space="preserve">
+    <value>2. You'll receive a 12-word recovery phrase — write it down on paper.</value>
+  </data>
+  <data name="Setup.Welcome.Step3" xml:space="preserve">
+    <value>3. We'll confirm two random words from the phrase to make sure it's written down.</value>
+  </data>
+  <data name="Setup.Password.Title" xml:space="preserve">
+    <value>Master password</value>
+  </data>
+  <data name="Setup.Password.Hint" xml:space="preserve">
+    <value>At least 12 characters. Use at least 3 of 4 classes: lowercase, uppercase, digits, special characters. The password cannot be identical to the recovery phrase.</value>
+  </data>
+  <data name="Setup.Password.Label" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Setup.Password.Confirm" xml:space="preserve">
+    <value>Repeat password</value>
+  </data>
+  <data name="Setup.Password.Strength" xml:space="preserve">
+    <value>Password strength</value>
+  </data>
+  <data name="Setup.SeedDisplay.Title" xml:space="preserve">
+    <value>Recovery phrase</value>
+  </data>
+  <data name="Setup.SeedDisplay.Warning" xml:space="preserve">
+    <value>Write these 12 words down on paper. Without them you won't recover access if you forget your password or after a system reinstall. Don't take a screenshot — this window is protected against screen capture on Windows.</value>
+  </data>
+  <data name="Setup.SeedDisplay.Saved" xml:space="preserve">
+    <value>I've written down the words</value>
+  </data>
+  <data name="Setup.Verification.Title" xml:space="preserve">
+    <value>Phrase check</value>
+  </data>
+  <data name="Setup.Verification.Hint" xml:space="preserve">
+    <value>To make sure you wrote the words down correctly, enter word number 3 and word number 7 from the phrase.</value>
+  </data>
+  <data name="Setup.Verification.Word3" xml:space="preserve">
+    <value>Word #3</value>
+  </data>
+  <data name="Setup.Verification.Word7" xml:space="preserve">
+    <value>Word #7</value>
+  </data>
+  <data name="Setup.Confirm.Title" xml:space="preserve">
+    <value>Creating the vault</value>
+  </data>
+  <data name="Setup.Confirm.Intro" xml:space="preserve">
+    <value>All set. Click "Create vault" to encrypt and save the configuration to disk.</value>
+  </data>
+  <data name="Setup.Confirm.Location" xml:space="preserve">
+    <value>After the vault is created, the file will be saved in the app's local directory.</value>
+  </data>
+  <data name="Setup.Confirm.CreateVault" xml:space="preserve">
+    <value>Create vault</value>
+  </data>
+  <data name="Setup.Confirm.Error.VaultExists" xml:space="preserve">
+    <value>A vault already exists at:
+{0}
+
+To create a new vault, delete the existing files and restart the application.</value>
+  </data>
+  <data name="Setup.Confirm.Error.Generic" xml:space="preserve">
+    <value>Could not create the vault. Please try again.</value>
+  </data>
+  <data name="Goals.Title" xml:space="preserve">
+    <value>Advisor</value>
+  </data>
+  <data name="Goals.Subtitle" xml:space="preserve">
+    <value>Savings goals and simulations</value>
+  </data>
+  <data name="Goals.Empty" xml:space="preserve">
+    <value>You don't have any goals yet. Add your first one below.</value>
+  </data>
+  <data name="Goals.New.Title" xml:space="preserve">
+    <value>New goal</value>
+  </data>
+  <data name="Goals.New.NameWatermark" xml:space="preserve">
+    <value>Name (e.g. Greece holiday)</value>
+  </data>
+  <data name="Goals.New.TargetAmountWatermark" xml:space="preserve">
+    <value>Target amount</value>
+  </data>
+  <data name="Goals.New.Submit" xml:space="preserve">
+    <value>Add goal</value>
+  </data>
+  <data name="Goals.Suggestions.Title" xml:space="preserve">
+    <value>Advisor suggestions — where to cut</value>
+  </data>
+  <data name="Goals.Suggestions.EngineOnly" xml:space="preserve">
+    <value>Generated without AI (engine only).</value>
+  </data>
+  <data name="Goals.Error.Load" xml:space="preserve">
+    <value>Failed to load goals. Please try again.</value>
+  </data>
+  <data name="Goals.Error.Validation" xml:space="preserve">
+    <value>Fill in the goal name, amount and date.</value>
+  </data>
+  <data name="Goals.Error.Create" xml:space="preserve">
+    <value>Failed to create goal. Please try again.</value>
+  </data>
+  <data name="Goals.Error.Archive" xml:space="preserve">
+    <value>Failed to archive goal. Please try again.</value>
+  </data>
+  <data name="Goals.Error.Contribution" xml:space="preserve">
+    <value>Failed to add contribution. Please try again.</value>
+  </data>
+  <data name="Goal.Archive" xml:space="preserve">
+    <value>Archive</value>
+  </data>
+  <data name="Goal.Metric.Target" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="Goal.Metric.Saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="Goal.Metric.Remaining" xml:space="preserve">
+    <value>Remaining</value>
+  </data>
+  <data name="Goal.Metric.Confidence" xml:space="preserve">
+    <value>Confidence</value>
+  </data>
+  <data name="Goal.Metric.Deadline" xml:space="preserve">
+    <value>Deadline</value>
+  </data>
+  <data name="Goal.Metric.Projection" xml:space="preserve">
+    <value>Projection</value>
+  </data>
+  <data name="Goal.Metric.Required" xml:space="preserve">
+    <value>Required</value>
+  </data>
+  <data name="Goal.Metric.CurrentPace" xml:space="preserve">
+    <value>Current pace</value>
+  </data>
+  <data name="Goal.Simulator.Title" xml:space="preserve">
+    <value>Simulator — how much to save monthly</value>
+  </data>
+  <data name="Goal.Simulator.ProjectionLabel" xml:space="preserve">
+    <value>Projection:</value>
+  </data>
+  <data name="Goal.Scenarios.Title" xml:space="preserve">
+    <value>Scenarios</value>
+  </data>
+  <data name="Goal.Risks.Title" xml:space="preserve">
+    <value>Risks</value>
+  </data>
+  <data name="Goal.Contribution.Title" xml:space="preserve">
+    <value>Add contribution</value>
+  </data>
+  <data name="Goal.Contribution.AmountWatermark" xml:space="preserve">
+    <value>Contribution amount</value>
+  </data>
+  <data name="Goal.Contribution.Submit" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Goal.PerMonthSuffix" xml:space="preserve">
+    <value>/mo</value>
+  </data>
+  <data name="Goal.ProjectedDate.Unreachable" xml:space="preserve">
+    <value>unreachable</value>
+  </data>
+  <data name="Goal.Chart.Savings" xml:space="preserve">
+    <value>Savings</value>
+  </data>
+  <data name="Goal.Chart.Target" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="Goal.Status.OnTrack" xml:space="preserve">
+    <value>On track</value>
+  </data>
+  <data name="Goal.Status.NeedsAttention" xml:space="preserve">
+    <value>Needs attention</value>
+  </data>
+  <data name="Goal.Status.AtRisk" xml:space="preserve">
+    <value>At risk</value>
+  </data>
+  <data name="Goal.Status.Late" xml:space="preserve">
+    <value>Late</value>
+  </data>
+  <data name="Goal.Status.Achieved" xml:space="preserve">
+    <value>Achieved</value>
+  </data>
+  <data name="Goal.Status.Paused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="Goal.Type.Purchase" xml:space="preserve">
+    <value>Purchase</value>
+  </data>
+  <data name="Goal.Type.LargeExpense" xml:space="preserve">
+    <value>Large expense</value>
+  </data>
+  <data name="Goal.Type.EmergencyFund" xml:space="preserve">
+    <value>Emergency fund</value>
+  </data>
+  <data name="Goal.Type.MortgagePrepayment" xml:space="preserve">
+    <value>Mortgage prepayment</value>
+  </data>
+  <data name="Goal.Type.Investment" xml:space="preserve">
+    <value>Investment</value>
+  </data>
+  <data name="Goal.Type.LongTerm" xml:space="preserve">
+    <value>Long-term goal</value>
+  </data>
+  <data name="Goal.Priority.Low" xml:space="preserve">
+    <value>Low</value>
+  </data>
+  <data name="Goal.Priority.Medium" xml:space="preserve">
+    <value>Medium</value>
+  </data>
+  <data name="Goal.Priority.High" xml:space="preserve">
+    <value>High</value>
+  </data>
 </root>

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Coffer.Application.Localization;
 using Coffer.Core.Domain;
 using Coffer.Core.Goals;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -31,6 +32,7 @@ public sealed partial class GoalDetailViewModel : ObservableObject
     private readonly Goal _goal;
     private readonly FinancialContext _context;
     private readonly IGoalFeasibilityEngine _engine;
+    private readonly ILocalizer _localizer;
     private readonly decimal _savedAmount;
     private readonly decimal _effectiveTarget;
     private readonly Func<GoalDetailViewModel, Task> _onArchive;
@@ -65,6 +67,7 @@ public sealed partial class GoalDetailViewModel : ObservableObject
         GoalFeasibilityResult result,
         FinancialContext context,
         IGoalFeasibilityEngine engine,
+        ILocalizer localizer,
         Func<GoalDetailViewModel, Task> onArchive,
         Func<GoalDetailViewModel, decimal, DateOnly, Task> onAddContribution)
     {
@@ -72,36 +75,38 @@ public sealed partial class GoalDetailViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(result);
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(onArchive);
         ArgumentNullException.ThrowIfNull(onAddContribution);
 
         _goal = goal;
         _context = context;
         _engine = engine;
+        _localizer = localizer;
         _onArchive = onArchive;
         _onAddContribution = onAddContribution;
 
         Id = goal.Id;
         Name = goal.Name;
-        TypeText = GoalDisplay.TypeToPolish(goal.Type);
-        PriorityText = GoalDisplay.PriorityToPolish(goal.Priority);
+        TypeText = localizer[GoalDisplay.TypeKey(goal.Type)];
+        PriorityText = localizer[GoalDisplay.PriorityKey(goal.Priority)];
 
         _savedAmount = goal.Contributions.Sum(c => c.Amount);
         _effectiveTarget = result.EffectiveTarget > 0m ? result.EffectiveTarget : goal.TargetAmount;
 
-        StatusText = GoalDisplay.StatusToPolish(result.Status);
+        StatusText = localizer[GoalDisplay.StatusKey(result.Status)];
         StatusColor = GoalDisplay.StatusToColor(result.Status);
         TargetText = GoalDisplay.Money(_effectiveTarget);
         SavedText = GoalDisplay.Money(_savedAmount);
         RemainingText = GoalDisplay.Money(Math.Max(0m, _effectiveTarget - _savedAmount));
         TargetDateText = goal.TargetDate.ToString("d MMM yyyy", _polish);
-        ProjectedDateText = GoalDisplay.FormatProjectedDate(result.ProjectedDate);
-        RequiredMonthlyText = GoalDisplay.Money(result.RequiredMonthlySaving) + "/mies.";
-        CurrentMonthlyText = GoalDisplay.Money(result.CurrentMonthlySaving) + "/mies.";
+        ProjectedDateText = FormatProjectedDate(result.ProjectedDate);
+        RequiredMonthlyText = GoalDisplay.Money(result.RequiredMonthlySaving) + localizer["Goal.PerMonthSuffix"];
+        CurrentMonthlyText = GoalDisplay.Money(result.CurrentMonthlySaving) + localizer["Goal.PerMonthSuffix"];
         ConfidenceText = (result.ConfidenceScore * 100m).ToString("0", _polish) + "%";
 
         Scenarios = new ObservableCollection<GoalScenarioViewModel>(
-            result.AlternativeScenarios.Select(s => new GoalScenarioViewModel(s)));
+            result.AlternativeScenarios.Select(s => new GoalScenarioViewModel(s, localizer)));
         Risks = new ObservableCollection<string>(result.Risks.Select(r => r.Description));
 
         MonthlySavingInput = result.RequiredMonthlySaving > 0m
@@ -159,11 +164,16 @@ public sealed partial class GoalDetailViewModel : ObservableObject
 
     partial void OnMonthlySavingInputChanged(decimal value) => Recompute();
 
+    private string FormatProjectedDate(DateOnly date) =>
+        GoalDisplay.IsUnreachable(date)
+            ? _localizer["Goal.ProjectedDate.Unreachable"]
+            : GoalDisplay.FormatProjectedDate(date);
+
     private void Recompute()
     {
         var scenario = _engine.Simulate(_goal, _context, MonthlySavingInput);
-        SimulatedProjectedDateText = GoalDisplay.FormatProjectedDate(scenario.ProjectedDate);
-        SimulatedStatusText = GoalDisplay.StatusToPolish(scenario.Status);
+        SimulatedProjectedDateText = FormatProjectedDate(scenario.ProjectedDate);
+        SimulatedStatusText = _localizer[GoalDisplay.StatusKey(scenario.Status)];
         SimulatedStatusColor = GoalDisplay.StatusToColor(scenario.Status);
         BuildProjection();
     }
@@ -185,7 +195,7 @@ public sealed partial class GoalDetailViewModel : ObservableObject
         [
             new LineSeries<decimal>
             {
-                Name = "Oszczędności",
+                Name = _localizer["Goal.Chart.Savings"],
                 Values = cumulative,
                 Stroke = new SolidColorPaint(_projectionStroke, 2),
                 Fill = new SolidColorPaint(_projectionFill),
@@ -196,7 +206,7 @@ public sealed partial class GoalDetailViewModel : ObservableObject
             },
             new LineSeries<decimal>
             {
-                Name = "Cel",
+                Name = _localizer["Goal.Chart.Target"],
                 Values = target,
                 Stroke = new SolidColorPaint(_targetStroke, 1),
                 Fill = null,

@@ -13,11 +13,11 @@ public class GoalDetailViewModelTests
     {
         var (goal, result, context, engine) = Build();
 
-        var vm = new GoalDetailViewModel(goal, result, context, engine, _ => Task.CompletedTask, (_, _, _) => Task.CompletedTask);
+        var vm = new GoalDetailViewModel(goal, result, context, engine, new FakeLocalizer(), _ => Task.CompletedTask, (_, _, _) => Task.CompletedTask);
 
-        vm.StatusText.Should().Be("Na dobrej drodze");
+        vm.StatusText.Should().Be("Goal.Status.OnTrack");
         vm.TargetText.Should().Contain("zł");
-        vm.TypeText.Should().Be("Zakup");
+        vm.TypeText.Should().Be("Goal.Type.Purchase");
         vm.Scenarios.Should().NotBeEmpty();
     }
 
@@ -26,7 +26,7 @@ public class GoalDetailViewModelTests
     {
         var (goal, result, context, engine) = Build();
 
-        var vm = new GoalDetailViewModel(goal, result, context, engine, _ => Task.CompletedTask, (_, _, _) => Task.CompletedTask);
+        var vm = new GoalDetailViewModel(goal, result, context, engine, new FakeLocalizer(), _ => Task.CompletedTask, (_, _, _) => Task.CompletedTask);
 
         vm.MonthlySavingInput.Should().Be(200m);
         engine.SimulateCalls.Should().BeGreaterThan(0);
@@ -38,7 +38,7 @@ public class GoalDetailViewModelTests
     public void ChangingMonthlySaving_RerunsSimulation()
     {
         var (goal, result, context, engine) = Build();
-        var vm = new GoalDetailViewModel(goal, result, context, engine, _ => Task.CompletedTask, (_, _, _) => Task.CompletedTask);
+        var vm = new GoalDetailViewModel(goal, result, context, engine, new FakeLocalizer(), _ => Task.CompletedTask, (_, _, _) => Task.CompletedTask);
         var before = engine.SimulateCalls;
 
         vm.MonthlySavingInput = 750m;
@@ -51,7 +51,7 @@ public class GoalDetailViewModelTests
     {
         var (goal, result, context, engine) = Build();
         var calls = 0;
-        var vm = new GoalDetailViewModel(goal, result, context, engine, _ => Task.CompletedTask, (_, _, _) =>
+        var vm = new GoalDetailViewModel(goal, result, context, engine, new FakeLocalizer(), _ => Task.CompletedTask, (_, _, _) =>
         {
             calls++;
             return Task.CompletedTask;
@@ -68,7 +68,7 @@ public class GoalDetailViewModelTests
     {
         var (goal, result, context, engine) = Build();
         var captured = 0m;
-        var vm = new GoalDetailViewModel(goal, result, context, engine, _ => Task.CompletedTask, (_, amount, _) =>
+        var vm = new GoalDetailViewModel(goal, result, context, engine, new FakeLocalizer(), _ => Task.CompletedTask, (_, amount, _) =>
         {
             captured = amount;
             return Task.CompletedTask;

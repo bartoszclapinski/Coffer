@@ -178,6 +178,7 @@ public class GoalsViewModelTests
             new FakeFinancialContextBuilder(),
             engine,
             reportQuery,
+            new FakeLocalizer(),
             NullLogger<GoalsViewModel>.Instance);
     }
 

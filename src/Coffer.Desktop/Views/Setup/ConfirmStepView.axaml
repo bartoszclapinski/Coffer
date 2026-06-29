@@ -2,16 +2,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:Coffer.Desktop.Localization"
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
              x:Class="Coffer.Desktop.Views.Setup.ConfirmStepView"
              x:CompileBindings="False">
     <Grid RowDefinitions="Auto,*,Auto,Auto">
         <StackPanel Grid.Row="0" Spacing="8">
-            <TextBlock Text="Tworzenie sejfu"
+            <TextBlock Text="{l:Localize Setup.Confirm.Title}"
                        FontSize="22"
                        FontWeight="Light" />
             <TextBlock TextWrapping="Wrap"
-                       Text="Wszystko gotowe. Kliknij &quot;Utwórz sejf&quot;, aby zaszyfrować i zapisać konfigurację na dysku." />
+                       Text="{l:Localize Setup.Confirm.Intro}" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Spacing="12" VerticalAlignment="Center">
@@ -25,18 +26,18 @@
         </StackPanel>
 
         <StackPanel Grid.Row="2" Spacing="4" Margin="0,16,0,16">
-            <TextBlock Text="Po utworzeniu sejfu plik zostanie zapisany w katalogu lokalnym aplikacji."
+            <TextBlock Text="{l:Localize Setup.Confirm.Location}"
                        Foreground="#999"
                        FontSize="12"
                        TextWrapping="Wrap" />
         </StackPanel>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
-            <Button Content="Wstecz"
+            <Button Content="{l:Localize Setup.Back}"
                     MinWidth="120"
                     IsEnabled="{Binding !IsBusy}"
                     Command="{Binding $parent[Window].DataContext.BackCommand}" />
-            <Button Content="Utwórz sejf"
+            <Button Content="{l:Localize Setup.Confirm.CreateVault}"
                     MinWidth="160"
                     IsEnabled="{Binding !IsBusy}"
                     Command="{Binding CreateVaultCommand}" />

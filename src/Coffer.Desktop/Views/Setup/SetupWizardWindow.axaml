@@ -4,10 +4,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Setup;assembly=Coffer.Application"
         xmlns:views="clr-namespace:Coffer.Desktop.Views.Setup"
+        xmlns:l="clr-namespace:Coffer.Desktop.Localization"
         mc:Ignorable="d" d:DesignWidth="640" d:DesignHeight="520"
         x:Class="Coffer.Desktop.Views.Setup.SetupWizardWindow"
         x:DataType="vm:SetupWizardViewModel"
-        Title="Coffer — konfiguracja sejfu"
+        Title="{l:Localize Setup.WindowTitle}"
         Width="640" Height="520"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
@@ -31,7 +32,7 @@
 
     <Grid RowDefinitions="Auto,*" Margin="24">
         <TextBlock Grid.Row="0"
-                   Text="Coffer — konfiguracja sejfu"
+                   Text="{l:Localize Setup.WindowTitle}"
                    FontSize="22"
                    FontWeight="Light"
                    Margin="0,0,0,16" />

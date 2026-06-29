@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Coffer.Application.Localization;
 using Coffer.Core.Categorization;
 using Coffer.Core.Transactions;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -19,13 +20,14 @@ public sealed partial class TransactionsViewModel : ObservableObject
     /// Sentinel row letting the user clear the account filter (a placeholder only shows
     /// while nothing is selected, so without this there is no way back to "all accounts").
     /// </summary>
-    public static readonly AccountListItem AllAccounts = new(Guid.Empty, "Wszystkie konta", "");
+    public static readonly AccountListItem AllAccounts = new(Guid.Empty, "Transactions.Filter.AllAccounts", "");
 
     /// <summary>Sentinel letting the user clear the category filter (see <see cref="AllAccounts"/>).</summary>
-    public static readonly CategoryListItem AllCategories = new(Guid.Empty, "Wszystkie kategorie", "");
+    public static readonly CategoryListItem AllCategories = new(Guid.Empty, "Transactions.Filter.AllCategories", "");
 
     private readonly IGetTransactionsQuery _query;
     private readonly ICategoryService _categoryService;
+    private readonly ILocalizer _localizer;
     private readonly ILogger<TransactionsViewModel> _logger;
 
     private bool _reloadRequested;
@@ -51,14 +53,17 @@ public sealed partial class TransactionsViewModel : ObservableObject
     public TransactionsViewModel(
         IGetTransactionsQuery query,
         ICategoryService categoryService,
+        ILocalizer localizer,
         ILogger<TransactionsViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(categoryService);
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
 
         _query = query;
         _categoryService = categoryService;
+        _localizer = localizer;
         _logger = logger;
 
         // Assign the backing field directly so the generated setter's OnSelectedRangeChanged
@@ -129,7 +134,7 @@ public sealed partial class TransactionsViewModel : ObservableObject
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to load transactions");
-                    ErrorMessage = "Nie udało się wczytać transakcji. Spróbuj ponownie.";
+                    ErrorMessage = _localizer["Transactions.Error.Load"];
                 }
             }
             while (_reloadRequested);
@@ -158,7 +163,7 @@ public sealed partial class TransactionsViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to recategorise existing transactions");
-            ErrorMessage = "Nie udało się skategoryzować istniejących transakcji.";
+            ErrorMessage = _localizer["Transactions.Error.Recategorize"];
             return;
         }
 
@@ -176,7 +181,7 @@ public sealed partial class TransactionsViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to set category for transaction {TransactionId}", row.Id);
-            ErrorMessage = "Nie udało się zmienić kategorii. Spróbuj ponownie.";
+            ErrorMessage = _localizer["Transactions.Error.SetCategory"];
         }
     }
 

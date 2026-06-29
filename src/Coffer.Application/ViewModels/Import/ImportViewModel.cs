@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Coffer.Application.Localization;
 using Coffer.Core.Accounts;
 using Coffer.Core.Domain;
 using Coffer.Core.Import;
@@ -20,22 +21,10 @@ namespace Coffer.Application.ViewModels.Import;
 /// </summary>
 public sealed partial class ImportViewModel : ObservableObject
 {
-    private const string _unsupportedBankMessage =
-        "Nie rozpoznano banku tego wyciągu. Obsługiwany jest obecnie PKO BP (CSV „Historia rachunku”).";
-    private const string _unsupportedFormatMessage =
-        "Nieobsługiwany format pliku. Wybierz plik PDF lub CSV.";
-    private const string _parseFailureMessage =
-        "Nie udało się odczytać wyciągu. Sprawdź, czy plik nie jest uszkodzony i czy to wyciąg z obsługiwanego banku.";
-    private const string _noAccountMessage =
-        "Wybierz konto lub utwórz nowe przed importem.";
-    private const string _newAccountIncompleteMessage =
-        "Podaj nazwę, numer i walutę nowego konta.";
-    private const string _genericFailureMessage =
-        "Import nie powiódł się. Spróbuj ponownie.";
-
     private readonly IFilePicker _filePicker;
     private readonly IImportStatementUseCase _importUseCase;
     private readonly IAccountService _accountService;
+    private readonly ILocalizer _localizer;
     private readonly ILogger<ImportViewModel> _logger;
 
     private PickedFile? _pickedFile;
@@ -84,9 +73,11 @@ public sealed partial class ImportViewModel : ObservableObject
     private bool _hasSummary;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SummaryAddedText))]
     private int _summaryAdded;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SummarySkippedText))]
     private int _summarySkipped;
 
     [ObservableProperty]
@@ -99,16 +90,19 @@ public sealed partial class ImportViewModel : ObservableObject
         IFilePicker filePicker,
         IImportStatementUseCase importUseCase,
         IAccountService accountService,
+        ILocalizer localizer,
         ILogger<ImportViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(filePicker);
         ArgumentNullException.ThrowIfNull(importUseCase);
         ArgumentNullException.ThrowIfNull(accountService);
+        ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
 
         _filePicker = filePicker;
         _importUseCase = importUseCase;
         _accountService = accountService;
+        _localizer = localizer;
         _logger = logger;
     }
 
@@ -120,14 +114,18 @@ public sealed partial class ImportViewModel : ObservableObject
 
     public bool HasPickedFile => !string.IsNullOrEmpty(PickedFileName);
 
+    public string SummaryAddedText => _localizer.Format("Import.Summary.Added", SummaryAdded);
+
+    public string SummarySkippedText => _localizer.Format("Import.Summary.Skipped", SummarySkipped);
+
     public string StageLabel => CurrentStage switch
     {
-        ImportStage.ReadingFile => "Odczytywanie pliku…",
-        ImportStage.DetectingBank => "Rozpoznawanie banku…",
-        ImportStage.Parsing => "Przetwarzanie wyciągu…",
-        ImportStage.Deduplicating => "Sprawdzanie duplikatów…",
-        ImportStage.Categorizing => "Kategoryzowanie transakcji…",
-        ImportStage.Saving => "Zapisywanie transakcji…",
+        ImportStage.ReadingFile => _localizer["Import.Stage.Reading"],
+        ImportStage.DetectingBank => _localizer["Import.Stage.DetectingBank"],
+        ImportStage.Parsing => _localizer["Import.Stage.Parsing"],
+        ImportStage.Deduplicating => _localizer["Import.Stage.Deduplicating"],
+        ImportStage.Categorizing => _localizer["Import.Stage.Categorizing"],
+        ImportStage.Saving => _localizer["Import.Stage.Saving"],
         _ => "",
     };
 
@@ -158,7 +156,7 @@ public sealed partial class ImportViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load accounts for the import screen");
-            ErrorMessage = _genericFailureMessage;
+            ErrorMessage = _localizer["Import.Error.Generic"];
         }
     }
 
@@ -182,7 +180,7 @@ public sealed partial class ImportViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "File picker failed");
-            ErrorMessage = _genericFailureMessage;
+            ErrorMessage = _localizer["Import.Error.Generic"];
         }
     }
 
@@ -196,7 +194,7 @@ public sealed partial class ImportViewModel : ObservableObject
 
         if (!TryResolveFormat(_pickedFile.FileName, out var format))
         {
-            ErrorMessage = _unsupportedFormatMessage;
+            ErrorMessage = _localizer["Import.Error.UnsupportedFormat"];
             return;
         }
 
@@ -212,7 +210,7 @@ public sealed partial class ImportViewModel : ObservableObject
                     || string.IsNullOrWhiteSpace(NewAccountNumber)
                     || string.IsNullOrWhiteSpace(NewAccountCurrency))
                 {
-                    ErrorMessage = _newAccountIncompleteMessage;
+                    ErrorMessage = _localizer["Import.Error.NewAccountIncomplete"];
                     return;
                 }
 
@@ -235,7 +233,7 @@ public sealed partial class ImportViewModel : ObservableObject
             }
             else
             {
-                ErrorMessage = _noAccountMessage;
+                ErrorMessage = _localizer["Import.Error.NoAccount"];
                 return;
             }
 
@@ -263,7 +261,7 @@ public sealed partial class ImportViewModel : ObservableObject
         catch (UnsupportedBankException ex)
         {
             _logger.LogWarning(ex, "Import rejected — unsupported bank {BankCode}", ex.BankCode);
-            ErrorMessage = _unsupportedBankMessage;
+            ErrorMessage = _localizer["Import.Error.UnsupportedBank"];
         }
         catch (OperationCanceledException)
         {
@@ -280,8 +278,8 @@ public sealed partial class ImportViewModel : ObservableObject
                 ex.GetType().FullName,
                 ex.StackTrace);
             ErrorMessage = ex is FormatException or InvalidDataException
-                ? _parseFailureMessage
-                : _genericFailureMessage;
+                ? _localizer["Import.Error.ParseFailure"]
+                : _localizer["Import.Error.Generic"];
         }
         finally
         {
