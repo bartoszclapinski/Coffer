@@ -29,6 +29,7 @@ public partial class App : Avalonia.Application
 
     private IAutoLockMonitor? _autoLockMonitor;
     private IClassicDesktopStyleApplicationLifetime? _desktop;
+    private bool _logoutInFlight;
 
     public override void Initialize()
     {
@@ -329,23 +330,48 @@ public partial class App : Avalonia.Application
     private void HandleLogout(IClassicDesktopStyleApplicationLifetime desktop, Window currentWindow)
     {
         // Single source of truth for both manual logout (Wyloguj) and auto-lock —
-        // every path goes through here so the two cannot drift apart.
-        if (_autoLockMonitor is not null)
+        // every path goes through here so the two cannot drift apart. Guard against
+        // concurrent invocation: a Wyloguj click landing in the same dispatcher tick
+        // as an auto-lock fire would otherwise build two LoginWindows. Both paths run
+        // only on the UI thread, so a plain flag suffices — no lock needed.
+        if (_logoutInFlight)
         {
-            _autoLockMonitor.AutoLockTriggered -= OnAutoLockTriggered;
-            _autoLockMonitor.Stop();
+            return;
         }
 
-        var loginService = Services.GetRequiredService<ILoginService>();
-        // Fire-and-forget: LoginService.LogoutAsync is internally defensive; the
-        // window swap should not wait on it because cache invalidation can block
-        // briefly on disk I/O. Errors are logged inside the service.
-        _ = loginService.LogoutAsync(CancellationToken.None);
+        _logoutInFlight = true;
+        try
+        {
+            if (_autoLockMonitor is not null)
+            {
+                _autoLockMonitor.AutoLockTriggered -= OnAutoLockTriggered;
+                _autoLockMonitor.Stop();
+            }
 
-        var loginWindow = BuildLoginWindow(desktop);
-        desktop.MainWindow = loginWindow;
-        loginWindow.Show();
-        currentWindow.Close();
+            var loginService = Services.GetRequiredService<ILoginService>();
+            // Invalidate the cache synchronously (same pattern as ResolveStartupWindow's
+            // cached-login call): a fire-and-forget can be killed by an immediate app exit,
+            // leaving the DPAPI cache on disk after an explicit logout. The invalidation is
+            // sub-millisecond local I/O, so blocking the UI thread is imperceptible.
+            try
+            {
+                loginService.LogoutAsync(CancellationToken.None).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                // Never trap the user on a locked screen because logout I/O failed.
+                Log.Warning(ex, "LogoutAsync failed; navigating to the login window anyway");
+            }
+
+            var loginWindow = BuildLoginWindow(desktop);
+            desktop.MainWindow = loginWindow;
+            loginWindow.Show();
+            currentWindow.Close();
+        }
+        finally
+        {
+            _logoutInFlight = false;
+        }
     }
 
     private void OnSetupCompleted(

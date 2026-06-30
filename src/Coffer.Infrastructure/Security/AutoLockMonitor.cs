@@ -21,6 +21,7 @@ public sealed class AutoLockMonitor : IAutoLockMonitor
     private Timer? _timer;
     private TimeSpan _idleTimeout;
     private bool _disposed;
+    private int _runId;
 
     public AutoLockMonitor(
         ILastActivityTracker activityTracker,
@@ -52,7 +53,10 @@ public sealed class AutoLockMonitor : IAutoLockMonitor
             _idleTimeout = idleTimeout;
             if (_timer is null)
             {
-                _timer = new Timer(OnTick, state: null, _pollPeriod, _pollPeriod);
+                // Stamp this run with a fresh generation so a callback from a prior,
+                // already-disposed timer can recognise itself as stale and bail out.
+                _runId++;
+                _timer = new Timer(OnTick, state: _runId, _pollPeriod, _pollPeriod);
                 _logger.LogInformation(
                     "Auto-lock monitor started with idle timeout {Timeout}", idleTimeout);
             }
@@ -90,10 +94,15 @@ public sealed class AutoLockMonitor : IAutoLockMonitor
 
     private void OnTick(object? state)
     {
+        var tickRunId = (int)state!;
         TimeSpan idleTimeout;
         lock (_sync)
         {
-            if (_timer is null)
+            // Bail if this callback belongs to a timer that has since been stopped or
+            // replaced by a later Start: the singleton is reused across login cycles and
+            // Timer.Dispose does not cancel a callback already in flight, so an old tick
+            // could otherwise stop the new timer and log the user out right after login.
+            if (_timer is null || _runId != tickRunId)
             {
                 return;
             }
@@ -104,6 +113,15 @@ public sealed class AutoLockMonitor : IAutoLockMonitor
         if (idle < idleTimeout)
         {
             return;
+        }
+
+        lock (_sync)
+        {
+            // Re-check the generation: a Stop()/Start() may have run while we read the clock.
+            if (_timer is null || _runId != tickRunId)
+            {
+                return;
+            }
         }
 
         // Stop before raising so re-entry through the handler (e.g. Dispose during
