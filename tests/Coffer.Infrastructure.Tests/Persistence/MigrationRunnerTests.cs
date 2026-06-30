@@ -17,7 +17,8 @@ public class MigrationRunnerTests : IDisposable
     private const string _expectedAnomalyMigration = "20260623063443_AddAnomalyAlerts";
     private const string _expectedGoalsMigration = "20260625104507_AddGoals";
     private const string _expectedAdvisorReportsMigration = "20260625144724_AddAdvisorReports";
-    private const string _expectedLatestMigration = "20260630100120_AddRecurringFlows";
+    private const string _expectedRecurringFlowsMigration = "20260630100120_AddRecurringFlows";
+    private const string _expectedLatestMigration = "20260630135239_AddSchemaInfoMaxLength";
 
     private readonly string _tempDir;
     private readonly string _dbPath;
@@ -105,23 +106,51 @@ public class MigrationRunnerTests : IDisposable
     }
 
     [Fact]
-    public async Task Run_AfterSuccessfulMigration_AppendsSchemaInfoEntryWithExactVersion()
+    public async Task Run_AfterSuccessfulMigration_AppendsOneSchemaInfoEntryPerMigration()
     {
+        IReadOnlyList<string> applied;
         await using (var db = CreateContext())
         {
             var runner = new MigrationRunner(db, NullLogger<MigrationRunner>.Instance);
-            await runner.RunPendingMigrationsAsync(CancellationToken.None);
+            var result = await runner.RunPendingMigrationsAsync(CancellationToken.None);
+            applied = result.AppliedMigrations;
         }
 
         SqliteConnection.ClearAllPools();
 
         await using (var db = CreateContext())
         {
-            var entries = await db.SchemaInfo.ToListAsync();
-            entries.Should().HaveCount(1);
-            // A single run records one entry: the last migration it applied.
-            entries[0].Version.Should().Be(_expectedLatestMigration);
-            entries[0].MigratedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+            var entries = await db.SchemaInfo.OrderBy(e => e.Id).ToListAsync();
+            // Append-only history: one row per migration applied, in order.
+            entries.Select(e => e.Version).Should().Equal(applied);
+            entries[^1].Version.Should().Be(_expectedLatestMigration);
+            entries.Should().OnlyContain(e =>
+                e.MigratedAt > DateTime.UtcNow.AddMinutes(-1) && e.MigratedAt <= DateTime.UtcNow);
+        }
+    }
+
+    [Fact]
+    public async Task Run_OnSecondRun_WithNoNewMigrations_DoesNotAppendEntries()
+    {
+        int countAfterFirstRun;
+        await using (var db = CreateContext())
+        {
+            var runner = new MigrationRunner(db, NullLogger<MigrationRunner>.Instance);
+            await runner.RunPendingMigrationsAsync(CancellationToken.None);
+            countAfterFirstRun = await db.SchemaInfo.CountAsync();
+        }
+
+        SqliteConnection.ClearAllPools();
+
+        await using (var db = CreateContext())
+        {
+            var runner = new MigrationRunner(db, NullLogger<MigrationRunner>.Instance);
+            var result = await runner.RunPendingMigrationsAsync(CancellationToken.None);
+
+            result.Status.Should().Be(MigrationStatus.UpToDate);
+            var count = await db.SchemaInfo.CountAsync();
+            count.Should().Be(countAfterFirstRun,
+                "an up-to-date run applies nothing and must not append to the history");
         }
     }
 
@@ -142,6 +171,7 @@ public class MigrationRunnerTests : IDisposable
             _expectedAnomalyMigration,
             _expectedGoalsMigration,
             _expectedAdvisorReportsMigration,
+            _expectedRecurringFlowsMigration,
             _expectedLatestMigration);
     }
 
@@ -157,8 +187,9 @@ public class MigrationRunnerTests : IDisposable
 
         await runner.RunPendingMigrationsAsync(CancellationToken.None);
 
-        var entry = await db.SchemaInfo.SingleAsync();
-        entry.AppVersion.Should().Be("1.2.3-test");
+        var entries = await db.SchemaInfo.ToListAsync();
+        entries.Should().NotBeEmpty();
+        entries.Should().OnlyContain(e => e.AppVersion == "1.2.3-test");
     }
 
     [Fact]
