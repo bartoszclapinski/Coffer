@@ -1,7 +1,7 @@
 # Sprint 16 — Cash-flow planning (timing-aware) + AI assistant
 
 **Phase:** — (beyond roadmap — "Forecasting next month's expenses based on recurring patterns" + "What-if scenarios", `docs/architecture/10-roadmap.md`)
-**Status:** Planned
+**Status:** Closed (2026-06-30)
 **Depends on:** sprint-9 (transactions), sprint-11 (dashboard + LiveCharts2), sprint-13 (recurrence-detection logic to recycle), sprint-14 (the "engine calculates, AI explains" pattern + Doradca page shape), sprint-15 (i18n — every new string is a resource key)
 
 ## Goal

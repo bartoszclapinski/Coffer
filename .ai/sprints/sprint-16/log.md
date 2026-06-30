@@ -12,3 +12,4 @@
 - `decision` (owner): **discrete recurring flows only in v1** — variable-spend daily-burn overlay deferred.
 - `decision` (owner): nav label **"Plan przepływów" / "Cash flow"** (`Nav.CashFlow`).
 - `decision` (owner): **per-event accrual-period badge in v1**; monthly "true cost" accrual rollup deferred.
+- `close` sprint-16 — all three code PRs merged with CI green: #134 (16-A: domain + detection + projection engine + persistence), #136 (16-B: planning UI — timeline + running-balance chart), #138 (16-C: `GetCashFlowProjection` chat tool + `CashFlowExplainer`, metered once as `cashflow-explain`, engine-only fallback). 489 tests passing, format-check clean. Status flipped to Closed in the index and the plan header; closing narrative added to the index. Deferred to follow-ups: variable-spend daily-burn overlay, monthly accrual rollup, per-account reconciled-balance anchoring.
