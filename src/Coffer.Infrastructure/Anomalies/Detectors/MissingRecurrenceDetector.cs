@@ -1,5 +1,6 @@
 using System.Globalization;
 using Coffer.Core.Anomalies;
+using Coffer.Infrastructure.Analysis;
 
 namespace Coffer.Infrastructure.Anomalies.Detectors;
 
@@ -37,10 +38,7 @@ public sealed class MissingRecurrenceDetector : IAnomalyDetector
             }
 
             var items = group.ToList();
-            var distinctMonths = items
-                .Select(t => (t.Date.Year, t.Date.Month))
-                .Distinct()
-                .Count();
+            var distinctMonths = RecurrenceStatistics.DistinctMonths(items.Select(t => t.Date));
 
             if (distinctMonths < AnomalyThresholds.MinRecurrenceMonths)
             {

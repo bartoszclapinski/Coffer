@@ -8,6 +8,7 @@ using Coffer.Core.Goals;
 using Coffer.Core.Import;
 using Coffer.Core.Localization;
 using Coffer.Core.Parsing;
+using Coffer.Core.Planning;
 using Coffer.Core.Security;
 using Coffer.Core.Transactions;
 using Coffer.Infrastructure.Accounts;
@@ -26,6 +27,7 @@ using Coffer.Infrastructure.Parsing;
 using Coffer.Infrastructure.Parsing.Pko;
 using Coffer.Infrastructure.Persistence;
 using Coffer.Infrastructure.Persistence.Encryption;
+using Coffer.Infrastructure.Planning;
 using Coffer.Infrastructure.Security;
 using Coffer.Infrastructure.Transactions;
 using Microsoft.EntityFrameworkCore;
@@ -51,7 +53,25 @@ public static class ServiceRegistration
             .AddCofferChat()
             .AddCofferImport()
             .AddCofferAnomalies()
-            .AddCofferGoals();
+            .AddCofferGoals()
+            .AddCofferPlanning();
+
+    /// <summary>
+    /// Registers the Sprint-16 cash-flow planning spine (beyond roadmap): the persisted
+    /// <see cref="IRecurringFlowRepository"/>, the <see cref="IRecurringFlowDetector"/> that proposes
+    /// flows from history, the <see cref="IRunningBalanceQuery"/> opening balance and its
+    /// <see cref="IStatementContinuityChecker"/> guard, and the deterministic
+    /// <see cref="CashFlowProjectionEngine"/>. The engine calculates; the 16-C AI only explains.
+    /// </summary>
+    public static IServiceCollection AddCofferPlanning(this IServiceCollection services)
+    {
+        services.AddSingleton<CashFlowProjectionEngine>();
+        services.AddTransient<IRecurringFlowRepository, RecurringFlowRepository>();
+        services.AddTransient<IRecurringFlowDetector, RecurringFlowDetector>();
+        services.AddTransient<IRunningBalanceQuery, RunningBalanceQuery>();
+        services.AddTransient<IStatementContinuityChecker, StatementContinuityChecker>();
+        return services;
+    }
 
     /// <summary>
     /// Registers the Phase 9 financial advisor engine (doc 07): one <see cref="GoalStrategy"/> per
