@@ -5,7 +5,7 @@ namespace Coffer.Infrastructure.Security;
 
 public sealed class Bip39SeedManager : ISeedManager
 {
-    private const int _recoveryKeyBytes = 32;
+    private const int RecoveryKeyBytes = 32;
 
     public string GenerateMnemonic() =>
         new Mnemonic(Wordlist.English, WordCount.Twelve).ToString();
@@ -47,8 +47,8 @@ public sealed class Bip39SeedManager : ISeedManager
                 var seed = bip39.DeriveSeed(passphrase);
                 try
                 {
-                    var recoveryKey = new byte[_recoveryKeyBytes];
-                    Buffer.BlockCopy(seed, 0, recoveryKey, 0, _recoveryKeyBytes);
+                    var recoveryKey = new byte[RecoveryKeyBytes];
+                    Buffer.BlockCopy(seed, 0, recoveryKey, 0, RecoveryKeyBytes);
                     return recoveryKey;
                 }
                 finally

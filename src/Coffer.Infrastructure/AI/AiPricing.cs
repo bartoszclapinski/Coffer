@@ -22,8 +22,8 @@ public sealed class AiPricing : IAiPricing
 
     private static readonly (decimal Input, decimal Output) _fallback = (3.00m, 15.00m);
 
-    private const decimal _usdToPln = 4.00m;
-    private const decimal _perMillion = 1_000_000m;
+    private const decimal UsdToPln = 4.00m;
+    private const decimal PerMillion = 1_000_000m;
 
     public AiCost Estimate(string model, int inputTokens, int outputTokens)
     {
@@ -31,8 +31,8 @@ public sealed class AiPricing : IAiPricing
 
         var (inputRate, outputRate) = _rates.TryGetValue(model, out var r) ? r : _fallback;
 
-        var usd = ((inputTokens * inputRate) + (outputTokens * outputRate)) / _perMillion;
-        var pln = usd * _usdToPln;
+        var usd = ((inputTokens * inputRate) + (outputTokens * outputRate)) / PerMillion;
+        var pln = usd * UsdToPln;
         return new AiCost(usd, pln);
     }
 }

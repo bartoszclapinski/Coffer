@@ -19,12 +19,12 @@ namespace Coffer.Infrastructure.AI;
 /// </summary>
 public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
 {
-    private const int _charsPerToken = 4;
-    private const int _outputTokensPerGoal = 70;
-    private const int _outputTokensForSuggestions = 240;
-    private const int _topCategoryCount = 3;
+    private const int CharsPerToken = 4;
+    private const int OutputTokensPerGoal = 70;
+    private const int OutputTokensForSuggestions = 240;
+    private const int TopCategoryCount = 3;
 
-    private const string _systemPrompt =
+    private const string SystemPrompt =
         "You are a financial advisor for a Polish user. You receive deterministic engine calculations "
         + "for the user's savings goals plus recent spending context. Your job: (1) for each goal, "
         + "write 0-2 specific risks as one short Polish sentence each; (2) propose 0-3 actionable "
@@ -85,14 +85,14 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
         var topCategories = categorySpending
             .Where(c => c.Delta > 0m)
             .OrderByDescending(c => c.Delta)
-            .Take(_topCategoryCount)
+            .Take(TopCategoryCount)
             .ToList();
 
         var prompt = BuildPrompt(results, context, topCategories);
         var model = AiDefaults.ChatModel;
 
-        var estInputTokens = (_systemPrompt.Length + prompt.Length) / _charsPerToken;
-        var estOutputTokens = (results.Count * _outputTokensPerGoal) + _outputTokensForSuggestions;
+        var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
+        var estOutputTokens = (results.Count * OutputTokensPerGoal) + OutputTokensForSuggestions;
         var estimate = _pricing.Estimate(model, estInputTokens, estOutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
         {
@@ -108,7 +108,7 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
             {
                 Prompt = prompt,
                 Model = model,
-                SystemPrompt = _systemPrompt,
+                SystemPrompt = SystemPrompt,
                 MaxTokens = estOutputTokens + 256,
                 Temperature = 0.4,
             };

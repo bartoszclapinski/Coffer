@@ -109,6 +109,9 @@ public partial class App : Avalonia.Application
         var wizardWindow = Services.GetRequiredService<SetupWizardWindow>();
         var wizardVm = Services.GetRequiredService<SetupWizardViewModel>();
         wizardWindow.DataContext = wizardVm;
+        // The seed-display step view raises a bubbling event when it is shown; resolve the
+        // platform blocker here (composition root) so the view stays free of DI lookups.
+        wizardWindow.AddHandler(BipSeedDisplayStepView.SeedDisplayReadyEvent, OnSeedDisplayReady);
         wizardVm.SetupCompleted += (_, args) => OnSetupCompleted(desktop, wizardWindow, args);
         return wizardWindow;
     }
@@ -372,6 +375,14 @@ public partial class App : Avalonia.Application
         {
             _logoutInFlight = false;
         }
+    }
+
+    private static void OnSeedDisplayReady(object? sender, SeedDisplayReadyEventArgs e)
+    {
+        // Best-effort: a missing blocker (non-Windows no-op) or an Apply failure must never
+        // block the setup wizard — screen-capture protection is a hardening nicety, not a gate.
+        var blocker = Services.GetService<IScreenCaptureBlocker>();
+        blocker?.Apply(e.WindowHandle);
     }
 
     private void OnSetupCompleted(

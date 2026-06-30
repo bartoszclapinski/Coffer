@@ -7,28 +7,28 @@ namespace Coffer.Application.Tests.ViewModels.Setup;
 
 public class SetupWizardViewModelTests
 {
-    private const string _fakeMnemonic =
+    private const string FakeMnemonic =
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
     [Fact]
     public void Next_FromWelcome_GeneratesMnemonicAndAdvancesToPassword()
     {
         var setup = new FakeSetupService();
-        var seedManager = new FakeSeedManager(_fakeMnemonic);
+        var seedManager = new FakeSeedManager(FakeMnemonic);
         var checker = new FakePasswordStrengthChecker(4);
         var vm = new SetupWizardViewModel(setup, seedManager, checker, new FakeLocalizer());
 
         vm.NextCommand.Execute(null);
 
         vm.CurrentStep.Should().Be(SetupStep.Password);
-        vm.Mnemonic.Should().Be(_fakeMnemonic);
+        vm.Mnemonic.Should().Be(FakeMnemonic);
     }
 
     [Fact]
     public void Next_FromPasswordWithInvalidPassword_DoesNotAdvance()
     {
         var setup = new FakeSetupService();
-        var seedManager = new FakeSeedManager(_fakeMnemonic);
+        var seedManager = new FakeSeedManager(FakeMnemonic);
         var checker = new FakePasswordStrengthChecker(4);
         var vm = new SetupWizardViewModel(setup, seedManager, checker, new FakeLocalizer());
         vm.NextCommand.Execute(null); // Welcome → Password
@@ -43,7 +43,7 @@ public class SetupWizardViewModelTests
     public async Task Complete_OnSuccess_RaisesSetupCompletedWithSuccess()
     {
         var setup = new FakeSetupService();
-        var seedManager = new FakeSeedManager(_fakeMnemonic);
+        var seedManager = new FakeSeedManager(FakeMnemonic);
         var checker = new FakePasswordStrengthChecker(4);
         var vm = new SetupWizardViewModel(setup, seedManager, checker, new FakeLocalizer());
 
@@ -62,7 +62,7 @@ public class SetupWizardViewModelTests
     {
         var failure = new InvalidOperationException("setup failed");
         var setup = new FakeSetupService(throwOnComplete: failure);
-        var seedManager = new FakeSeedManager(_fakeMnemonic);
+        var seedManager = new FakeSeedManager(FakeMnemonic);
         var checker = new FakePasswordStrengthChecker(4);
         var vm = new SetupWizardViewModel(setup, seedManager, checker, new FakeLocalizer());
 

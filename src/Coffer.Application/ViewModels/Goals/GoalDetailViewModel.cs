@@ -27,7 +27,7 @@ public sealed partial class GoalDetailViewModel : ObservableObject
     private static readonly SKColor _projectionFill = SKColor.Parse("#1D4ED8").WithAlpha(40);
     private static readonly SKColor _targetStroke = SKColor.Parse("#8E8E93");
 
-    private const int _projectionMonths = 12;
+    private const int ProjectionMonths = 12;
 
     private readonly Goal _goal;
     private readonly FinancialContext _context;
@@ -181,11 +181,11 @@ public sealed partial class GoalDetailViewModel : ObservableObject
 
     private void BuildProjection()
     {
-        var cumulative = new decimal[_projectionMonths + 1];
-        var target = new decimal[_projectionMonths + 1];
-        var labels = new string[_projectionMonths + 1];
+        var cumulative = new decimal[ProjectionMonths + 1];
+        var target = new decimal[ProjectionMonths + 1];
+        var labels = new string[ProjectionMonths + 1];
 
-        for (var month = 0; month <= _projectionMonths; month++)
+        for (var month = 0; month <= ProjectionMonths; month++)
         {
             cumulative[month] = Math.Min(_effectiveTarget, _savedAmount + (MonthlySavingInput * month));
             target[month] = _effectiveTarget;

@@ -48,7 +48,7 @@ public sealed class PkoHistoriaCsvParser : IStatementParser
         "Opis transakcji",
     };
 
-    private const int _descriptionStartColumn = 6;
+    private const int DescriptionStartColumn = 6;
 
     /// <summary>
     /// Emitted on every parse because the "Historia rachunku" CSV body carries no
@@ -208,7 +208,7 @@ public sealed class PkoHistoriaCsvParser : IStatementParser
         var parts = new List<string>();
         string? merchant = null;
 
-        for (var i = _descriptionStartColumn; i < csv.Parser.Count; i++)
+        for (var i = DescriptionStartColumn; i < csv.Parser.Count; i++)
         {
             var value = Field(csv, i);
             if (value.Length == 0)

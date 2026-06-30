@@ -5,14 +5,14 @@ namespace Coffer.Application.Tests.ViewModels.Setup;
 
 public class BipSeedVerificationStepViewModelTests
 {
-    private const string _mnemonic =
+    private const string Mnemonic =
         "abandon abandon ability abandon abandon abandon ability abandon abandon abandon abandon about";
 
     [Fact]
     public void IsValid_CorrectWords_ReturnsTrue()
     {
         // Word #3 (1-indexed → array[2]) = "ability"; word #7 → array[6] = "ability".
-        var vm = new BipSeedVerificationStepViewModel(() => _mnemonic);
+        var vm = new BipSeedVerificationStepViewModel(() => Mnemonic);
         vm.Word3 = "ability";
         vm.Word7 = "ability";
 
@@ -22,7 +22,7 @@ public class BipSeedVerificationStepViewModelTests
     [Fact]
     public void IsValid_CaseInsensitive_ReturnsTrue()
     {
-        var vm = new BipSeedVerificationStepViewModel(() => _mnemonic);
+        var vm = new BipSeedVerificationStepViewModel(() => Mnemonic);
         vm.Word3 = "ABILITY";
         vm.Word7 = "Ability";
 
@@ -32,7 +32,7 @@ public class BipSeedVerificationStepViewModelTests
     [Fact]
     public void IsValid_TrimsWhitespace_ReturnsTrue()
     {
-        var vm = new BipSeedVerificationStepViewModel(() => _mnemonic);
+        var vm = new BipSeedVerificationStepViewModel(() => Mnemonic);
         vm.Word3 = "  ability  ";
         vm.Word7 = " ability ";
 
@@ -42,7 +42,7 @@ public class BipSeedVerificationStepViewModelTests
     [Fact]
     public void IsValid_WrongWord3_ReturnsFalse()
     {
-        var vm = new BipSeedVerificationStepViewModel(() => _mnemonic);
+        var vm = new BipSeedVerificationStepViewModel(() => Mnemonic);
         vm.Word3 = "wrong";
         vm.Word7 = "ability";
 

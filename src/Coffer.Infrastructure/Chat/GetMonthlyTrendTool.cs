@@ -11,8 +11,8 @@ namespace Coffer.Infrastructure.Chat;
 /// </summary>
 public sealed class GetMonthlyTrendTool : ChatTool
 {
-    private const int _defaultMonths = 12;
-    private const int _maxMonths = 24;
+    private const int DefaultMonths = 12;
+    private const int MaxMonths = 24;
 
     public GetMonthlyTrendTool(IDbContextFactory<CofferDbContext> contextFactory)
         : base(contextFactory)
@@ -44,7 +44,7 @@ public sealed class GetMonthlyTrendTool : ChatTool
             return ErrorObject("'category' is required.");
         }
 
-        var months = Math.Clamp(GetInt(args, "months", _defaultMonths), 1, _maxMonths);
+        var months = Math.Clamp(GetInt(args, "months", DefaultMonths), 1, MaxMonths);
         var category = await ResolveCategoryAsync(db, categoryName, ct).ConfigureAwait(false);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -56,7 +56,7 @@ public sealed class GetMonthlyTrendTool : ChatTool
         if (category.Kind != CategoryMatchKind.Unknown)
         {
             var query = db.Transactions.AsNoTracking()
-                .Where(t => t.Currency == _displayCurrency && t.Amount < 0 && t.Date >= windowStart && t.Date < windowEnd);
+                .Where(t => t.Currency == DisplayCurrency && t.Amount < 0 && t.Date >= windowStart && t.Date < windowEnd);
             query = ApplyCategory(query, category);
 
             var byMonth = await query
@@ -76,6 +76,6 @@ public sealed class GetMonthlyTrendTool : ChatTool
             series.Add(new { month = bucket.ToString("yyyy-MM"), total });
         }
 
-        return new { category = categoryName, currency = _displayCurrency, months = series };
+        return new { category = categoryName, currency = DisplayCurrency, months = series };
     }
 }

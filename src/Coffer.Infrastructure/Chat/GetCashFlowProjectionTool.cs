@@ -16,8 +16,8 @@ namespace Coffer.Infrastructure.Chat;
 /// </summary>
 public sealed class GetCashFlowProjectionTool : ChatTool
 {
-    private const int _defaultHorizonDays = 60;
-    private const int _maxHorizonDays = 365;
+    private const int DefaultHorizonDays = 60;
+    private const int MaxHorizonDays = 365;
 
     private readonly IRecurringFlowRepository _flows;
     private readonly IRunningBalanceQuery _balance;
@@ -60,7 +60,7 @@ public sealed class GetCashFlowProjectionTool : ChatTool
 
     private protected override async Task<object> RunAsync(JsonElement args, CofferDbContext db, CancellationToken ct)
     {
-        var horizonDays = Math.Clamp(GetInt(args, "horizonDays", _defaultHorizonDays), 1, _maxHorizonDays);
+        var horizonDays = Math.Clamp(GetInt(args, "horizonDays", DefaultHorizonDays), 1, MaxHorizonDays);
 
         var flows = await _flows.GetActiveAsync(ct).ConfigureAwait(false);
         var today = DateOnly.FromDateTime(DateTime.Now);
@@ -72,7 +72,7 @@ public sealed class GetCashFlowProjectionTool : ChatTool
             {
                 horizonDays,
                 openingBalance = opening,
-                currency = _displayCurrency,
+                currency = DisplayCurrency,
                 eventCount = 0,
                 events = Array.Empty<object>(),
             };
@@ -98,7 +98,7 @@ public sealed class GetCashFlowProjectionTool : ChatTool
             from = Iso(projection.From),
             to = Iso(projection.To),
             horizonDays,
-            currency = _displayCurrency,
+            currency = DisplayCurrency,
             openingBalance = projection.OpeningBalance,
             closingBalance = projection.ClosingBalance,
             lowestBalance = projection.LowestBalance,

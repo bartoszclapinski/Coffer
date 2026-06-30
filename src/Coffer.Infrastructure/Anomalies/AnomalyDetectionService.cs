@@ -16,9 +16,9 @@ namespace Coffer.Infrastructure.Anomalies;
 /// </summary>
 public sealed class AnomalyDetectionService : IDetectAnomaliesUseCase
 {
-    private const int _recentWindowDays = 30;
-    private const int _baselineMonths = 6;
-    private const int _commentaryTopN = 10;
+    private const int RecentWindowDays = 30;
+    private const int BaselineMonths = 6;
+    private const int CommentaryTopN = 10;
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
     private readonly IReadOnlyList<IAnomalyDetector> _detectors;
@@ -53,8 +53,8 @@ public sealed class AnomalyDetectionService : IDetectAnomaliesUseCase
 
         var latest = await scope.MaxAsync(t => t.Date, ct).ConfigureAwait(false);
         var recentTo = latest;
-        var recentFrom = latest.AddDays(-(_recentWindowDays - 1));
-        var baselineFrom = recentFrom.AddMonths(-_baselineMonths);
+        var recentFrom = latest.AddDays(-(RecentWindowDays - 1));
+        var baselineFrom = recentFrom.AddMonths(-BaselineMonths);
 
         var snapshots = await scope
             .Where(t => t.Date >= baselineFrom && t.Date <= recentTo)
@@ -105,7 +105,7 @@ public sealed class AnomalyDetectionService : IDetectAnomaliesUseCase
         }
 
         // The highest-ranked findings get LLM-written text; the rest keep their templated text.
-        var topN = fresh.OrderByDescending(c => c.Score).Take(_commentaryTopN).ToList();
+        var topN = fresh.OrderByDescending(c => c.Score).Take(CommentaryTopN).ToList();
         var commented = await _commentator.CommentAsync(topN, ct).ConfigureAwait(false);
         var textBySignature = commented.ToDictionary(c => c.Signature, StringComparer.Ordinal);
 

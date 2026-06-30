@@ -16,23 +16,23 @@ namespace Coffer.Infrastructure.Chat;
 /// </summary>
 public sealed class ChatService : IChatService
 {
-    private const int _maxIterations = 5;
-    private const int _charsPerToken = 4;
-    private const int _estimatedOutputTokens = 600;
-    private const int _providerAttempts = 2;
+    private const int MaxIterations = 5;
+    private const int CharsPerToken = 4;
+    private const int EstimatedOutputTokens = 600;
+    private const int ProviderAttempts = 2;
     private static readonly TimeSpan _retryBackoff = TimeSpan.FromMilliseconds(250);
 
-    private const string _budgetMessage =
+    private const string BudgetMessage =
         "Budżet AI na ten miesiąc został wyczerpany, więc nie zadałem pytania modelowi. "
         + "Zwiększ limit w ustawieniach, aby kontynuować.";
 
-    private const string _missingKeyMessage =
+    private const string MissingKeyMessage =
         "Brak skonfigurowanego klucza API. Dodaj klucz w ustawieniach, aby korzystać z asystenta.";
 
-    private const string _errorMessage =
+    private const string ErrorMessage =
         "Przepraszam, wystąpił błąd podczas przetwarzania zapytania. Spróbuj ponownie za chwilę.";
 
-    private const string _incompleteMessage =
+    private const string IncompleteMessage =
         "Nie udało mi się dokończyć odpowiedzi. Spróbuj zadać pytanie inaczej.";
 
     private readonly IAiProvider _provider;
@@ -90,7 +90,7 @@ public sealed class ChatService : IChatService
 
         var traces = new List<ChatToolTrace>();
 
-        for (var iteration = 0; iteration < _maxIterations; iteration++)
+        for (var iteration = 0; iteration < MaxIterations; iteration++)
         {
             var request = new AiToolRequest
             {
@@ -103,7 +103,7 @@ public sealed class ChatService : IChatService
             if (!await CanProceedAsync(systemPrompt, messages, ct).ConfigureAwait(false))
             {
                 _logger.LogInformation("Budget gate blocked a chat turn; no API call made.");
-                return new ChatTurn(_budgetMessage, [], BudgetExceeded: true);
+                return new ChatTurn(BudgetMessage, [], BudgetExceeded: true);
             }
 
             AiResult<AiToolTurn> result;
@@ -113,7 +113,7 @@ public sealed class ChatService : IChatService
             }
             catch (MissingAiKeyException)
             {
-                return new ChatTurn(_missingKeyMessage, [], MissingApiKey: true);
+                return new ChatTurn(MissingKeyMessage, [], MissingApiKey: true);
             }
             catch (OperationCanceledException)
             {
@@ -121,8 +121,8 @@ public sealed class ChatService : IChatService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Chat provider call failed after {Attempts} attempt(s).", _providerAttempts);
-                return new ChatTurn(_errorMessage, traces);
+                _logger.LogError(ex, "Chat provider call failed after {Attempts} attempt(s).", ProviderAttempts);
+                return new ChatTurn(ErrorMessage, traces);
             }
 
             await _ledger.RecordAsync(result.Usage, AiPurpose.Chat, ct).ConfigureAwait(false);
@@ -138,8 +138,8 @@ public sealed class ChatService : IChatService
             messages.Add(AiChatMessage.ToolOutputs(toolResults));
         }
 
-        _logger.LogWarning("Chat tool-call loop hit the {Max}-iteration cap without a final answer.", _maxIterations);
-        return new ChatTurn(_incompleteMessage, traces);
+        _logger.LogWarning("Chat tool-call loop hit the {Max}-iteration cap without a final answer.", MaxIterations);
+        return new ChatTurn(IncompleteMessage, traces);
     }
 
     private async Task<IReadOnlyList<AiToolResult>> ExecuteToolsAsync(
@@ -186,7 +186,7 @@ public sealed class ChatService : IChatService
         string systemPrompt, IReadOnlyList<AiChatMessage> messages, CancellationToken ct)
     {
         var estimatedInputTokens = EstimateInputTokens(systemPrompt, messages);
-        var estimate = _pricing.Estimate(AiDefaults.ChatModel, estimatedInputTokens, _estimatedOutputTokens);
+        var estimate = _pricing.Estimate(AiDefaults.ChatModel, estimatedInputTokens, EstimatedOutputTokens);
         return await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false);
     }
 
@@ -201,7 +201,7 @@ public sealed class ChatService : IChatService
             chars += message.ToolResults.Sum(r => r.ResultJson.Length);
         }
 
-        return Math.Max(1, chars / _charsPerToken);
+        return Math.Max(1, chars / CharsPerToken);
     }
 
     private async Task<AiResult<AiToolTurn>> CallProviderAsync(AiToolRequest request, CancellationToken ct)
@@ -220,9 +220,9 @@ public sealed class ChatService : IChatService
             {
                 throw;
             }
-            catch (Exception ex) when (attempt < _providerAttempts)
+            catch (Exception ex) when (attempt < ProviderAttempts)
             {
-                _logger.LogWarning(ex, "Chat provider call failed (attempt {Attempt}/{Max}); retrying.", attempt, _providerAttempts);
+                _logger.LogWarning(ex, "Chat provider call failed (attempt {Attempt}/{Max}); retrying.", attempt, ProviderAttempts);
                 await Task.Delay(_retryBackoff, ct).ConfigureAwait(false);
             }
         }

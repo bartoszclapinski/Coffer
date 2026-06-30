@@ -11,7 +11,7 @@ namespace Coffer.Infrastructure.Goals;
 /// </summary>
 public sealed class MortgagePrepaymentCalculator : IMortgagePrepaymentCalculator
 {
-    private const int _maxMonths = 1200;
+    private const int MaxMonths = 1200;
 
     public PrepaymentEffect Calculate(
         decimal principalRemaining,
@@ -92,7 +92,7 @@ public sealed class MortgagePrepaymentCalculator : IMortgagePrepaymentCalculator
         var interest = 0m;
         var months = 0;
 
-        while (balance > 0m && months < _maxMonths)
+        while (balance > 0m && months < MaxMonths)
         {
             var monthInterest = balance * monthlyRate;
             interest += monthInterest;

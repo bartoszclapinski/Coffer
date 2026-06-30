@@ -48,11 +48,11 @@ public sealed class GetTotalSpentTool : ChatTool
         var category = await ResolveCategoryAsync(db, GetString(args, "category"), ct).ConfigureAwait(false);
         if (category.Kind == CategoryMatchKind.Unknown)
         {
-            return new { from = Iso(from), to = Iso(to), category = GetString(args, "category"), currency = _displayCurrency, totalSpent = 0m };
+            return new { from = Iso(from), to = Iso(to), category = GetString(args, "category"), currency = DisplayCurrency, totalSpent = 0m };
         }
 
         var query = db.Transactions.AsNoTracking()
-            .Where(t => t.Currency == _displayCurrency && t.Date >= from && t.Date <= to && t.Amount < 0);
+            .Where(t => t.Currency == DisplayCurrency && t.Date >= from && t.Date <= to && t.Amount < 0);
         query = ApplyCategory(query, category);
 
         var sum = await query.SumAsync(t => (decimal?)t.Amount, ct).ConfigureAwait(false) ?? 0m;
@@ -62,7 +62,7 @@ public sealed class GetTotalSpentTool : ChatTool
             from = Iso(from),
             to = Iso(to),
             category = GetString(args, "category"),
-            currency = _displayCurrency,
+            currency = DisplayCurrency,
             totalSpent = -sum,
         };
     }

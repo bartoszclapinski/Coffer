@@ -11,7 +11,7 @@ namespace Coffer.Infrastructure.Planning;
 /// </summary>
 public sealed class RunningBalanceQuery : IRunningBalanceQuery
 {
-    private const string _currency = "PLN";
+    private const string Currency = "PLN";
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
 
@@ -25,7 +25,7 @@ public sealed class RunningBalanceQuery : IRunningBalanceQuery
     {
         await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
         return await db.Transactions.AsNoTracking()
-            .Where(t => t.Currency == _currency && t.Date <= asOf)
+            .Where(t => t.Currency == Currency && t.Date <= asOf)
             .SumAsync(t => (decimal?)t.Amount, ct)
             .ConfigureAwait(false) ?? 0m;
     }

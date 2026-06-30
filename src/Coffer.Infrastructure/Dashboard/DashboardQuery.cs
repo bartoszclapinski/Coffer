@@ -16,15 +16,15 @@ namespace Coffer.Infrastructure.Dashboard;
 /// </summary>
 public sealed class DashboardQuery : IDashboardQuery
 {
-    private const int _trendDays = 30;
-    private const int _trendMonths = 12;
-    private const int _topCategories = 6;
-    private const int _recentCount = 8;
+    private const int TrendDays = 30;
+    private const int TrendMonths = 12;
+    private const int TopCategories = 6;
+    private const int RecentCount = 8;
 
-    private const string _uncategorizedName = "Bez kategorii";
-    private const string _uncategorizedColor = "#8E8E93";
-    private const string _remainderName = "Pozostałe";
-    private const string _remainderColor = "#C7C7CC";
+    private const string UncategorizedName = "Bez kategorii";
+    private const string UncategorizedColor = "#8E8E93";
+    private const string RemainderName = "Pozostałe";
+    private const string RemainderColor = "#C7C7CC";
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
 
@@ -126,21 +126,21 @@ public sealed class DashboardQuery : IDashboardQuery
                 var magnitude = -t.Total;
                 var (name, color) = t.CategoryId is { } id && names.TryGetValue(id, out var meta)
                     ? meta
-                    : (_uncategorizedName, _uncategorizedColor);
+                    : (UncategorizedName, UncategorizedColor);
                 return new CategorySlice(t.CategoryId, name, color, magnitude, (double)(magnitude / grandTotal));
             })
             .OrderByDescending(s => s.Total)
             .ToList();
 
-        if (ranked.Count <= _topCategories)
+        if (ranked.Count <= TopCategories)
         {
             return ranked;
         }
 
-        var top = ranked.Take(_topCategories).ToList();
-        var remainderTotal = ranked.Skip(_topCategories).Sum(s => s.Total);
+        var top = ranked.Take(TopCategories).ToList();
+        var remainderTotal = ranked.Skip(TopCategories).Sum(s => s.Total);
         top.Add(new CategorySlice(
-            null, _remainderName, _remainderColor, remainderTotal, (double)(remainderTotal / grandTotal)));
+            null, RemainderName, RemainderColor, remainderTotal, (double)(remainderTotal / grandTotal)));
         return top;
     }
 
@@ -149,7 +149,7 @@ public sealed class DashboardQuery : IDashboardQuery
         DateOnly today,
         CancellationToken ct)
     {
-        var start = today.AddDays(-(_trendDays - 1));
+        var start = today.AddDays(-(TrendDays - 1));
 
         var byDay = await scope
             .Where(t => t.Amount < 0 && t.Date >= start && t.Date <= today)
@@ -159,8 +159,8 @@ public sealed class DashboardQuery : IDashboardQuery
             .ConfigureAwait(false);
 
         var lookup = byDay.ToDictionary(d => d.Date, d => -d.Total);
-        var points = new List<TrendPoint>(_trendDays);
-        for (var i = 0; i < _trendDays; i++)
+        var points = new List<TrendPoint>(TrendDays);
+        for (var i = 0; i < TrendDays; i++)
         {
             var day = start.AddDays(i);
             points.Add(new TrendPoint(day, lookup.TryGetValue(day, out var total) ? total : 0m));
@@ -175,7 +175,7 @@ public sealed class DashboardQuery : IDashboardQuery
         DateOnly nextMonthStart,
         CancellationToken ct)
     {
-        var start = monthStart.AddMonths(-(_trendMonths - 1));
+        var start = monthStart.AddMonths(-(TrendMonths - 1));
 
         var byMonth = await scope
             .Where(t => t.Amount < 0 && t.Date >= start && t.Date < nextMonthStart)
@@ -185,8 +185,8 @@ public sealed class DashboardQuery : IDashboardQuery
             .ConfigureAwait(false);
 
         var lookup = byMonth.ToDictionary(m => (m.Year, m.Month), m => -m.Total);
-        var points = new List<TrendPoint>(_trendMonths);
-        for (var i = 0; i < _trendMonths; i++)
+        var points = new List<TrendPoint>(TrendMonths);
+        for (var i = 0; i < TrendMonths; i++)
         {
             var bucket = start.AddMonths(i);
             points.Add(new TrendPoint(
@@ -202,7 +202,7 @@ public sealed class DashboardQuery : IDashboardQuery
         await scope
             .OrderByDescending(t => t.Date)
             .ThenByDescending(t => t.CreatedAt)
-            .Take(_recentCount)
+            .Take(RecentCount)
             .Select(t => new TransactionListItem(
                 t.Id,
                 t.Date,

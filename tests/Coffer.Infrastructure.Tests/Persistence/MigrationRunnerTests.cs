@@ -10,15 +10,15 @@ namespace Coffer.Infrastructure.Tests.Persistence;
 
 public class MigrationRunnerTests : IDisposable
 {
-    private const string _expectedInitialMigration = "20260516142523_InitialCreate";
-    private const string _expectedTransactionsMigration = "20260602091757_AddTransactionsSchema";
-    private const string _expectedCategorizationMigration = "20260605120600_AddCategorizationSchema";
-    private const string _expectedAiUsageLedgerMigration = "20260605205525_AddAiUsageLedger";
-    private const string _expectedAnomalyMigration = "20260623063443_AddAnomalyAlerts";
-    private const string _expectedGoalsMigration = "20260625104507_AddGoals";
-    private const string _expectedAdvisorReportsMigration = "20260625144724_AddAdvisorReports";
-    private const string _expectedRecurringFlowsMigration = "20260630100120_AddRecurringFlows";
-    private const string _expectedLatestMigration = "20260630135239_AddSchemaInfoMaxLength";
+    private const string ExpectedInitialMigration = "20260516142523_InitialCreate";
+    private const string ExpectedTransactionsMigration = "20260602091757_AddTransactionsSchema";
+    private const string ExpectedCategorizationMigration = "20260605120600_AddCategorizationSchema";
+    private const string ExpectedAiUsageLedgerMigration = "20260605205525_AddAiUsageLedger";
+    private const string ExpectedAnomalyMigration = "20260623063443_AddAnomalyAlerts";
+    private const string ExpectedGoalsMigration = "20260625104507_AddGoals";
+    private const string ExpectedAdvisorReportsMigration = "20260625144724_AddAdvisorReports";
+    private const string ExpectedRecurringFlowsMigration = "20260630100120_AddRecurringFlows";
+    private const string ExpectedLatestMigration = "20260630135239_AddSchemaInfoMaxLength";
 
     private readonly string _tempDir;
     private readonly string _dbPath;
@@ -123,7 +123,7 @@ public class MigrationRunnerTests : IDisposable
             var entries = await db.SchemaInfo.OrderBy(e => e.Id).ToListAsync();
             // Append-only history: one row per migration applied, in order.
             entries.Select(e => e.Version).Should().Equal(applied);
-            entries[^1].Version.Should().Be(_expectedLatestMigration);
+            entries[^1].Version.Should().Be(ExpectedLatestMigration);
             entries.Should().OnlyContain(e =>
                 e.MigratedAt > DateTime.UtcNow.AddMinutes(-1) && e.MigratedAt <= DateTime.UtcNow);
         }
@@ -164,15 +164,15 @@ public class MigrationRunnerTests : IDisposable
 
         result.Status.Should().Be(MigrationStatus.Migrated);
         result.AppliedMigrations.Should().Equal(
-            _expectedInitialMigration,
-            _expectedTransactionsMigration,
-            _expectedCategorizationMigration,
-            _expectedAiUsageLedgerMigration,
-            _expectedAnomalyMigration,
-            _expectedGoalsMigration,
-            _expectedAdvisorReportsMigration,
-            _expectedRecurringFlowsMigration,
-            _expectedLatestMigration);
+            ExpectedInitialMigration,
+            ExpectedTransactionsMigration,
+            ExpectedCategorizationMigration,
+            ExpectedAiUsageLedgerMigration,
+            ExpectedAnomalyMigration,
+            ExpectedGoalsMigration,
+            ExpectedAdvisorReportsMigration,
+            ExpectedRecurringFlowsMigration,
+            ExpectedLatestMigration);
     }
 
     [Fact]

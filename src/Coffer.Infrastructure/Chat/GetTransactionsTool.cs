@@ -6,13 +6,13 @@ namespace Coffer.Infrastructure.Chat;
 
 /// <summary>
 /// Returns individual transactions in a date range, optionally filtered by a merchant/description
-/// substring and/or category, newest first and capped at <see cref="_maxLimit"/>. Read-only
+/// substring and/or category, newest first and capped at <see cref="MaxLimit"/>. Read-only
 /// projection (no entities materialised); amounts are signed (negative = wydatek).
 /// </summary>
 public sealed class GetTransactionsTool : ChatTool
 {
-    private const int _defaultLimit = 20;
-    private const int _maxLimit = 50;
+    private const int DefaultLimit = 20;
+    private const int MaxLimit = 50;
 
     public GetTransactionsTool(IDbContextFactory<CofferDbContext> contextFactory)
         : base(contextFactory)
@@ -52,15 +52,15 @@ public sealed class GetTransactionsTool : ChatTool
             return ErrorObject("'from' must be on or before 'to'.");
         }
 
-        var limit = Math.Clamp(GetInt(args, "limit", _defaultLimit), 1, _maxLimit);
+        var limit = Math.Clamp(GetInt(args, "limit", DefaultLimit), 1, MaxLimit);
         var category = await ResolveCategoryAsync(db, GetString(args, "category"), ct).ConfigureAwait(false);
         if (category.Kind == CategoryMatchKind.Unknown)
         {
-            return new { from = Iso(from), to = Iso(to), currency = _displayCurrency, count = 0, transactions = Array.Empty<object>() };
+            return new { from = Iso(from), to = Iso(to), currency = DisplayCurrency, count = 0, transactions = Array.Empty<object>() };
         }
 
         var query = db.Transactions.AsNoTracking()
-            .Where(t => t.Currency == _displayCurrency && t.Date >= from && t.Date <= to);
+            .Where(t => t.Currency == DisplayCurrency && t.Date >= from && t.Date <= to);
         query = ApplyCategory(query, category);
 
         var pattern = GetString(args, "merchantPattern");
@@ -81,7 +81,7 @@ public sealed class GetTransactionsTool : ChatTool
                 merchant = t.Merchant,
                 amount = t.Amount,
                 currency = t.Currency,
-                category = t.Category != null ? t.Category.Name : _uncategorizedLabel,
+                category = t.Category != null ? t.Category.Name : UncategorizedLabel,
             })
             .ToListAsync(ct)
             .ConfigureAwait(false);
@@ -98,7 +98,7 @@ public sealed class GetTransactionsTool : ChatTool
             })
             .ToList();
 
-        return new { from = Iso(from), to = Iso(to), currency = _displayCurrency, count = transactions.Count, transactions };
+        return new { from = Iso(from), to = Iso(to), currency = DisplayCurrency, count = transactions.Count, transactions };
     }
 
     private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd");

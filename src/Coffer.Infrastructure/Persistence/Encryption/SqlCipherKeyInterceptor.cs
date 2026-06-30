@@ -24,9 +24,9 @@ namespace Coffer.Infrastructure.Persistence.Encryption;
 /// </remarks>
 public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposable
 {
-    private const string _commandPrefix = "PRAGMA key = \"x'";
-    private const string _commandSuffix = "'\";";
-    private const string _hexChars = "0123456789ABCDEF";
+    private const string CommandPrefix = "PRAGMA key = \"x'";
+    private const string CommandSuffix = "'\";";
+    private const string HexChars = "0123456789ABCDEF";
 
     private byte[]? _dek;
 
@@ -76,10 +76,10 @@ public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposab
     {
         var dek = _dek ?? throw new ObjectDisposedException(nameof(SqlCipherKeyInterceptor));
 
-        Span<char> buffer = stackalloc char[_commandPrefix.Length + (dek.Length * 2) + _commandSuffix.Length];
-        _commandPrefix.CopyTo(buffer);
-        WriteHexUpper(dek, buffer.Slice(_commandPrefix.Length, dek.Length * 2));
-        _commandSuffix.CopyTo(buffer[(_commandPrefix.Length + (dek.Length * 2))..]);
+        Span<char> buffer = stackalloc char[CommandPrefix.Length + (dek.Length * 2) + CommandSuffix.Length];
+        CommandPrefix.CopyTo(buffer);
+        WriteHexUpper(dek, buffer.Slice(CommandPrefix.Length, dek.Length * 2));
+        CommandSuffix.CopyTo(buffer[(CommandPrefix.Length + (dek.Length * 2))..]);
 
         var command = new string(buffer);
         buffer.Clear();
@@ -90,8 +90,8 @@ public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposab
     {
         for (var i = 0; i < bytes.Length; i++)
         {
-            destination[i * 2] = _hexChars[bytes[i] >> 4];
-            destination[(i * 2) + 1] = _hexChars[bytes[i] & 0xF];
+            destination[i * 2] = HexChars[bytes[i] >> 4];
+            destination[(i * 2) + 1] = HexChars[bytes[i] & 0xF];
         }
     }
 }

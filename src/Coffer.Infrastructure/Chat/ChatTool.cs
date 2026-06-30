@@ -15,10 +15,10 @@ namespace Coffer.Infrastructure.Chat;
 public abstract class ChatTool : IChatTool
 {
     /// <summary>Single display currency for v1 (doc 04 / dashboard parity).</summary>
-    private protected const string _displayCurrency = "PLN";
+    private protected const string DisplayCurrency = "PLN";
 
     /// <summary>Label for transactions with no category (matches the dashboard).</summary>
-    private protected const string _uncategorizedLabel = "Bez kategorii";
+    private protected const string UncategorizedLabel = "Bez kategorii";
 
     private protected static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -93,7 +93,7 @@ public abstract class ChatTool : IChatTool
         }
 
         var trimmed = name.Trim();
-        if (string.Equals(trimmed, _uncategorizedLabel, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(trimmed, UncategorizedLabel, StringComparison.OrdinalIgnoreCase))
         {
             return new CategoryMatch(CategoryMatchKind.Uncategorized, null);
         }
