@@ -8,4 +8,14 @@ namespace Coffer.Core.Ai;
 public interface IPromptAnonymizer
 {
     string Anonymize(string text);
+
+    /// <summary>
+    /// Same as <see cref="Anonymize(string)"/> but first redacts the supplied owner-identity
+    /// names (the account holder's name as printed on a statement header), which the standard
+    /// account/IBAN/NIP rules do not cover. Used by the AI fallback parser, whose prompt is the
+    /// whole statement. An empty <paramref name="ownerNames"/> list leaves the standard pipeline
+    /// unchanged — the caller is responsible for warning that the header may be un-redacted. The
+    /// default implementation skips name redaction; the production anonymiser overrides it.
+    /// </summary>
+    string Anonymize(string text, IReadOnlyList<string> ownerNames) => Anonymize(text);
 }

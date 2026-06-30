@@ -266,5 +266,9 @@ public class HybridCategorizerTests : CategorizationDbTest
         public Task SetActiveProviderAsync(string provider, CancellationToken ct) => Task.CompletedTask;
         public Task<string> GetCategorizationModelAsync(CancellationToken ct) => Task.FromResult(AiDefaults.CategorizationModel);
         public Task SetCategorizationModelAsync(string model, CancellationToken ct) => Task.CompletedTask;
+        public Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct) => Task.FromResult(AiDefaults.AiFallbackParsingEnabled);
+        public Task SetAiFallbackParsingEnabledAsync(bool enabled, CancellationToken ct) => Task.CompletedTask;
+        public Task<string?> GetOwnerIdentityNamesAsync(CancellationToken ct) => Task.FromResult<string?>(null);
+        public Task SetOwnerIdentityNamesAsync(string? names, CancellationToken ct) => Task.CompletedTask;
     }
 }

@@ -18,4 +18,23 @@ public interface IAiSettings
     Task<string> GetCategorizationModelAsync(CancellationToken ct);
 
     Task SetCategorizationModelAsync(string model, CancellationToken ct);
+
+    /// <summary>
+    /// Whether the AI-assisted fallback parser may run for statements from banks with no
+    /// deterministic parser. Off by default: it sends statement text to the AI provider, the
+    /// most data-exposing AI feature in the app, so the owner must opt in explicitly.
+    /// </summary>
+    Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct);
+
+    Task SetAiFallbackParsingEnabledAsync(bool enabled, CancellationToken ct);
+
+    /// <summary>
+    /// The account-holder name(s) to redact from a statement before it is sent to the AI
+    /// fallback parser (the header carries the owner's name/address, which the account/IBAN/NIP
+    /// rules do not cover). Stored as a single raw string (the owner may list several spellings or
+    /// aliases separated by commas/newlines); <c>null</c> when the owner has not set it.
+    /// </summary>
+    Task<string?> GetOwnerIdentityNamesAsync(CancellationToken ct);
+
+    Task SetOwnerIdentityNamesAsync(string? names, CancellationToken ct);
 }

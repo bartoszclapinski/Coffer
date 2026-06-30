@@ -52,4 +52,37 @@ public class PromptAnonymizerTests
     {
         _anonymizer.Anonymize(text!).Should().Be(text);
     }
+
+    [Fact]
+    public void Anonymize_WithOwnerNames_RedactsName()
+    {
+        var result = _anonymizer.Anonymize("Posiadacz: Jan Kowalski, ul. Przykładowa 1", ["Jan Kowalski"]);
+
+        result.Should().Contain("[NAME]");
+        result.Should().NotContain("Jan Kowalski");
+    }
+
+    [Fact]
+    public void Anonymize_WithOwnerNames_StillRedactsAccountAndKeepsMerchant()
+    {
+        var result = _anonymizer.Anonymize(
+            "Jan Kowalski PL61 1090 1014 0000 0712 1981 2874 BIEDRONKA 1234",
+            ["Jan Kowalski"]);
+
+        result.Should().Contain("[NAME]");
+        result.Should().Contain("[IBAN]");
+        result.Should().Contain("BIEDRONKA");
+    }
+
+    [Fact]
+    public void Anonymize_EmptyOwnerNames_BehavesLikeSingleArgument()
+    {
+        const string text = "Jan Kowalski PL61 1090 1014 0000 0712 1981 2874";
+
+        var withEmpty = _anonymizer.Anonymize(text, []);
+        var singleArg = _anonymizer.Anonymize(text);
+
+        withEmpty.Should().Be(singleArg);
+        withEmpty.Should().Contain("Jan Kowalski");
+    }
 }

@@ -24,6 +24,7 @@ using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Localization;
 using Coffer.Infrastructure.Logging;
 using Coffer.Infrastructure.Parsing;
+using Coffer.Infrastructure.Parsing.Ai;
 using Coffer.Infrastructure.Parsing.Pko;
 using Coffer.Infrastructure.Persistence;
 using Coffer.Infrastructure.Persistence.Encryption;
@@ -207,15 +208,20 @@ public static class ServiceRegistration
 
     /// <summary>
     /// Registers the parsing primitives: the format-aware bank detector, every
-    /// concrete <see cref="IStatementParser"/>, and the registry that resolves
-    /// one parser per (detected bank, format). A later sprint swaps the registry's
-    /// "unknown bank → throw" path for an AI-assisted parser without callsite changes.
+    /// concrete deterministic <see cref="IStatementParser"/>, the AI-assisted fallback
+    /// parser, and the registry that resolves one parser per (detected bank, format) and
+    /// falls back to the AI parser for unknown banks (Sprint 17). The fallback is injected
+    /// explicitly — registered by its own type, not as an <see cref="IStatementParser"/> — so a
+    /// deterministic parser always wins for a known bank+format.
     /// </summary>
     public static IServiceCollection AddCofferParsing(this IServiceCollection services)
     {
         services.AddSingleton<IBankDetector, FingerprintBankDetector>();
         services.AddSingleton<IStatementParser, PkoHistoriaCsvParser>();
-        services.AddSingleton<StatementParserRegistry>();
+        services.AddSingleton<AiAssistedParser>();
+        services.AddSingleton(sp => new StatementParserRegistry(
+            sp.GetServices<IStatementParser>(),
+            sp.GetRequiredService<AiAssistedParser>()));
         return services;
     }
 

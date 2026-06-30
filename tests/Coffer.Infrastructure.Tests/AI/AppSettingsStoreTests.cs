@@ -19,6 +19,8 @@ public class AppSettingsStoreTests : CategorizationDbTest
         (await store.GetMonthlyCapPlnAsync(CancellationToken.None)).Should().Be(AiDefaults.MonthlyCapPln);
         (await store.GetActiveProviderAsync(CancellationToken.None)).Should().Be(AiDefaults.ClaudeProvider);
         (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be(AiDefaults.CategorizationModel);
+        (await store.GetAiFallbackParsingEnabledAsync(CancellationToken.None)).Should().Be(AiDefaults.AiFallbackParsingEnabled);
+        (await store.GetOwnerIdentityNamesAsync(CancellationToken.None)).Should().BeNull();
     }
 
     [Fact]
@@ -37,6 +39,36 @@ public class AppSettingsStoreTests : CategorizationDbTest
         (await store.GetMonthlyCapPlnAsync(CancellationToken.None)).Should().Be(35.50m);
         (await store.GetActiveProviderAsync(CancellationToken.None)).Should().Be(AiDefaults.OpenAiProvider);
         (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be("gpt-4o-mini");
+    }
+
+    [Fact]
+    public async Task SetThenGet_AiFallbackParsingAndOwnerName_RoundTrips()
+    {
+        await using (await MigratedContextAsync())
+        {
+        }
+
+        var store = new AppSettingsStore(Factory);
+
+        await store.SetAiFallbackParsingEnabledAsync(true, CancellationToken.None);
+        await store.SetOwnerIdentityNamesAsync("Jan Kowalski", CancellationToken.None);
+
+        (await store.GetAiFallbackParsingEnabledAsync(CancellationToken.None)).Should().BeTrue();
+        (await store.GetOwnerIdentityNamesAsync(CancellationToken.None)).Should().Be("Jan Kowalski");
+    }
+
+    [Fact]
+    public async Task SetOwnerName_Blank_ReadsBackAsNull()
+    {
+        await using (await MigratedContextAsync())
+        {
+        }
+
+        var store = new AppSettingsStore(Factory);
+
+        await store.SetOwnerIdentityNamesAsync("   ", CancellationToken.None);
+
+        (await store.GetOwnerIdentityNamesAsync(CancellationToken.None)).Should().BeNull();
     }
 
     [Fact]

@@ -66,4 +66,52 @@ public class StatementParserRegistryTests
 
         act.Should().Throw<UnsupportedBankException>();
     }
+
+    [Fact]
+    public void Resolve_UnknownBank_WithFallback_ReturnsFallback()
+    {
+        var fallback = new StubFallbackParser();
+        var registry = new StatementParserRegistry(new IStatementParser[] { new PkoHistoriaCsvParser() }, fallback);
+        var fingerprint = new BankFingerprint("MBANK", "mBank S.A.", 1);
+
+        var parser = registry.Resolve(fingerprint, StatementFormat.Csv);
+
+        parser.Should().BeSameAs(fallback);
+    }
+
+    [Fact]
+    public void Resolve_NullFingerprint_WithFallback_ReturnsFallback()
+    {
+        var fallback = new StubFallbackParser();
+        var registry = new StatementParserRegistry(new IStatementParser[] { new PkoHistoriaCsvParser() }, fallback);
+
+        var parser = registry.Resolve(null, StatementFormat.Pdf);
+
+        parser.Should().BeSameAs(fallback);
+    }
+
+    [Fact]
+    public void Resolve_KnownBank_WithFallback_PrefersDeterministicParser()
+    {
+        var fallback = new StubFallbackParser();
+        var registry = new StatementParserRegistry(new IStatementParser[] { new PkoHistoriaCsvParser() }, fallback);
+        var fingerprint = new BankFingerprint("PKO_BP", "PKO Bank Polski", 1);
+
+        var parser = registry.Resolve(fingerprint, StatementFormat.Csv);
+
+        parser.BankCode.Should().Be("PKO_BP");
+        parser.Should().NotBeSameAs(fallback);
+    }
+
+    private sealed class StubFallbackParser : IStatementParser
+    {
+        public string BankCode => "AI_FALLBACK";
+
+        public StatementFormat Format => StatementFormat.Pdf;
+
+        public bool CanHandle(BankFingerprint fingerprint) => true;
+
+        public Task<ParseResult> ParseAsync(StatementInput input, CancellationToken ct) =>
+            throw new NotSupportedException();
+    }
 }
