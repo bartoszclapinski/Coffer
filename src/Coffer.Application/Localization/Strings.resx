@@ -859,4 +859,22 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="CashFlow.Error.Confirm" xml:space="preserve">
     <value>Could not confirm the suggestion.</value>
   </data>
+  <data name="CashFlow.Error.Explain" xml:space="preserve">
+    <value>Could not generate the explanation.</value>
+  </data>
+  <data name="CashFlow.Section.Narrative" xml:space="preserve">
+    <value>Explanation</value>
+  </data>
+  <data name="CashFlow.Narrative.Hint" xml:space="preserve">
+    <value>Ask the assistant to explain the timing of this projection in plain language.</value>
+  </data>
+  <data name="CashFlow.Narrative.AiBadge" xml:space="preserve">
+    <value>AI</value>
+  </data>
+  <data name="CashFlow.Narrative.EngineBadge" xml:space="preserve">
+    <value>Summary</value>
+  </data>
+  <data name="CashFlow.Action.Explain" xml:space="preserve">
+    <value>Explain</value>
+  </data>
 </root>

@@ -70,6 +70,7 @@ public static class ServiceRegistration
         services.AddTransient<IRecurringFlowDetector, RecurringFlowDetector>();
         services.AddTransient<IRunningBalanceQuery, RunningBalanceQuery>();
         services.AddTransient<IStatementContinuityChecker, StatementContinuityChecker>();
+        services.AddTransient<ICashFlowExplainer, CashFlowExplainer>();
         return services;
     }
 
@@ -167,6 +168,7 @@ public static class ServiceRegistration
         services.AddTransient<IChatTool, GetMonthlyTrendTool>();
         services.AddTransient<IChatTool, FindAnomaliesTool>();
         services.AddTransient<IChatTool, GetGoalsTool>();
+        services.AddTransient<IChatTool, GetCashFlowProjectionTool>();
         services.AddTransient<IChatService, ChatService>();
         return services;
     }

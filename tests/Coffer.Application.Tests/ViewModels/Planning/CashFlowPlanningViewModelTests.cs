@@ -187,6 +187,41 @@ public class CashFlowPlanningViewModelTests
         vm.HasTightWindow.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task Explain_SurfacesNarrativeForCurrentProjection()
+    {
+        var repo = new FakeRecurringFlowRepository(MonthlyOutflow("Rata", 500m, day: 10));
+        var explainer = new FakeCashFlowExplainer
+        {
+            Result = new CashFlowExplanation("Rata wychodzi 10-tego.", GeneratedByAi: true),
+        };
+        var vm = CreateViewModel(repo, explainer);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        await vm.ExplainCommand.ExecuteAsync(null);
+
+        vm.HasNarrative.Should().BeTrue();
+        vm.NarrativeIsAi.Should().BeTrue();
+        vm.Narrative.Should().Be("Rata wychodzi 10-tego.");
+        explainer.LastProjection.Should().NotBeNull();
+        explainer.LastProjection!.Events.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task ChangingHorizon_ClearsStaleNarrative()
+    {
+        var repo = new FakeRecurringFlowRepository(MonthlyOutflow("Rata", 500m, day: 10));
+        var vm = CreateViewModel(repo, new FakeCashFlowExplainer());
+        await vm.LoadCommand.ExecuteAsync(null);
+        await vm.ExplainCommand.ExecuteAsync(null);
+        vm.HasNarrative.Should().BeTrue();
+
+        vm.SelectedHorizon = vm.HorizonOptions[3];
+
+        vm.HasNarrative.Should().BeFalse("re-projecting invalidates the prior narration");
+        vm.Narrative.Should().BeEmpty();
+    }
+
     private static CashFlowPlanningViewModel CreateViewModel(
         FakeRecurringFlowRepository repo,
         out FakeRecurringFlowDetector detector,
@@ -203,6 +238,22 @@ public class CashFlowPlanningViewModelTests
             balance,
             continuity,
             new CashFlowProjectionEngine(),
+            new FakeCashFlowExplainer(),
+            new FakeLocalizer(),
+            NullLogger<CashFlowPlanningViewModel>.Instance);
+    }
+
+    private static CashFlowPlanningViewModel CreateViewModel(
+        FakeRecurringFlowRepository repo,
+        FakeCashFlowExplainer explainer)
+    {
+        return new CashFlowPlanningViewModel(
+            repo,
+            new FakeRecurringFlowDetector(),
+            new FakeRunningBalanceQuery(),
+            new FakeStatementContinuityChecker(),
+            new CashFlowProjectionEngine(),
+            explainer,
             new FakeLocalizer(),
             NullLogger<CashFlowPlanningViewModel>.Instance);
     }

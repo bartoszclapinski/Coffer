@@ -35,4 +35,5 @@ public static class AiPurpose
     public const string ParserFallback = "parser-fallback";
     public const string AnomalyComment = "anomaly-comment";
     public const string AdvisorReport = "advisor-report";
+    public const string CashFlowExplain = "cashflow-explain";
 }

@@ -93,6 +93,7 @@ public class GetGoalsToolTests : IDisposable
         services.AddSingleton<IDbContextFactory<CofferDbContext>>(_factory);
         services.AddCofferChat();
         services.AddCofferGoals();
+        services.AddCofferPlanning(); // GetCashFlowProjectionTool depends on the planning spine.
 
         using var provider = services.BuildServiceProvider();
         var toolNames = provider.GetServices<IChatTool>().Select(t => t.Name).ToList();

@@ -183,6 +183,7 @@ public class MainViewModelTests
             new FakeRunningBalanceQuery(),
             new FakeStatementContinuityChecker(),
             new CashFlowProjectionEngine(),
+            new FakeCashFlowExplainer(),
             new FakeLocalizer(),
             NullLogger<CashFlowPlanningViewModel>.Instance);
 

@@ -71,3 +71,20 @@ internal sealed class FakeStatementContinuityChecker : IStatementContinuityCheck
     public Task<IReadOnlyList<StatementGap>> FindGapsAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<StatementGap>>(Gaps.ToList());
 }
+
+/// <summary>
+/// In-memory <see cref="ICashFlowExplainer"/> returning a scripted explanation and recording the
+/// projection it was handed, so VM tests can assert the narrative is surfaced without any AI.
+/// </summary>
+internal sealed class FakeCashFlowExplainer : ICashFlowExplainer
+{
+    public CashFlowExplanation Result { get; set; } = new("explanation", GeneratedByAi: true);
+
+    public CashFlowProjection? LastProjection { get; private set; }
+
+    public Task<CashFlowExplanation> ExplainAsync(CashFlowProjection projection, CancellationToken ct)
+    {
+        LastProjection = projection;
+        return Task.FromResult(Result);
+    }
+}

@@ -117,6 +117,7 @@ public class FindAnomaliesToolTests : IDisposable
         services.AddSingleton<IDbContextFactory<CofferDbContext>>(_factory);
         services.AddCofferChat();
         services.AddCofferGoals(); // GetGoalsTool (also in the chat menu) depends on the goals engine.
+        services.AddCofferPlanning(); // GetCashFlowProjectionTool depends on the planning spine.
 
         using var provider = services.BuildServiceProvider();
         var toolNames = provider.GetServices<IChatTool>().Select(t => t.Name).ToList();

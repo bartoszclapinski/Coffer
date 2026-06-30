@@ -290,6 +290,36 @@
                 </Border>
 
                 <Border Classes="card" IsVisible="{Binding HasData}">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Classes="sectionTitle" Margin="0"
+                                       VerticalAlignment="Center"
+                                       Text="{l:Localize CashFlow.Section.Narrative}" />
+                            <Border Grid.Column="1" Classes="badge" Margin="0,0,8,0"
+                                    Background="#1D4ED8"
+                                    IsVisible="{Binding NarrativeIsAi}">
+                                <TextBlock Classes="badgeText" Text="{l:Localize CashFlow.Narrative.AiBadge}" />
+                            </Border>
+                            <Button Grid.Column="2"
+                                    Content="{l:Localize CashFlow.Action.Explain}"
+                                    IsEnabled="{Binding !IsExplaining}"
+                                    Command="{Binding ExplainCommand}" />
+                        </Grid>
+                        <ProgressBar IsIndeterminate="True" Height="4"
+                                     IsVisible="{Binding IsExplaining}" />
+                        <TextBlock Text="{l:Localize CashFlow.Narrative.Hint}"
+                                   Foreground="#8E8E93"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding !HasNarrative}" />
+                        <TextBlock Text="{Binding Narrative}"
+                                   Foreground="#1D1D1F"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding HasNarrative}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="card" IsVisible="{Binding HasData}">
                     <StackPanel Spacing="8">
                         <TextBlock Classes="sectionTitle" Text="{l:Localize CashFlow.Section.Timeline}" />
                         <ItemsControl ItemsSource="{Binding Timeline}">

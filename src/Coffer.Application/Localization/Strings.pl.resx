@@ -859,4 +859,22 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="CashFlow.Error.Confirm" xml:space="preserve">
     <value>Nie udało się potwierdzić sugestii.</value>
   </data>
+  <data name="CashFlow.Error.Explain" xml:space="preserve">
+    <value>Nie udało się wygenerować wyjaśnienia.</value>
+  </data>
+  <data name="CashFlow.Section.Narrative" xml:space="preserve">
+    <value>Wyjaśnienie</value>
+  </data>
+  <data name="CashFlow.Narrative.Hint" xml:space="preserve">
+    <value>Poproś asystenta o wyjaśnienie harmonogramu tej prognozy prostym językiem.</value>
+  </data>
+  <data name="CashFlow.Narrative.AiBadge" xml:space="preserve">
+    <value>AI</value>
+  </data>
+  <data name="CashFlow.Narrative.EngineBadge" xml:space="preserve">
+    <value>Podsumowanie</value>
+  </data>
+  <data name="CashFlow.Action.Explain" xml:space="preserve">
+    <value>Wyjaśnij</value>
+  </data>
 </root>
