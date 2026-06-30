@@ -17,6 +17,8 @@ public sealed class AppSettingsStore : IAiSettings
     private const string MonthlyCapKey = "ai.monthlyCapPln";
     private const string ActiveProviderKey = "ai.activeProvider";
     private const string CategorizationModelKey = "ai.categorizationModel";
+    private const string AiFallbackParsingEnabledKey = "ai.fallbackParsingEnabled";
+    private const string OwnerIdentityNamesKey = "privacy.ownerIdentityNames";
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
 
@@ -54,6 +56,26 @@ public sealed class AppSettingsStore : IAiSettings
         ArgumentException.ThrowIfNullOrEmpty(model);
         return SetValueAsync(CategorizationModelKey, model, ct);
     }
+
+    public async Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct)
+    {
+        var raw = await GetValueAsync(AiFallbackParsingEnabledKey, ct).ConfigureAwait(false);
+        return raw is not null && bool.TryParse(raw, out var enabled)
+            ? enabled
+            : AiDefaults.AiFallbackParsingEnabled;
+    }
+
+    public Task SetAiFallbackParsingEnabledAsync(bool enabled, CancellationToken ct) =>
+        SetValueAsync(AiFallbackParsingEnabledKey, enabled ? "true" : "false", ct);
+
+    public async Task<string?> GetOwnerIdentityNamesAsync(CancellationToken ct)
+    {
+        var raw = await GetValueAsync(OwnerIdentityNamesKey, ct).ConfigureAwait(false);
+        return string.IsNullOrWhiteSpace(raw) ? null : raw;
+    }
+
+    public Task SetOwnerIdentityNamesAsync(string? names, CancellationToken ct) =>
+        SetValueAsync(OwnerIdentityNamesKey, names?.Trim() ?? string.Empty, ct);
 
     private async Task<string?> GetValueAsync(string key, CancellationToken ct)
     {

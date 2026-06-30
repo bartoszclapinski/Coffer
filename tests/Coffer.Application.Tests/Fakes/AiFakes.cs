@@ -36,6 +36,28 @@ internal sealed class FakeAiSettings : IAiSettings
         CategorizationModel = model;
         return Task.CompletedTask;
     }
+
+    public bool AiFallbackParsingEnabled { get; set; } = AiDefaults.AiFallbackParsingEnabled;
+
+    public string? OwnerIdentityNames { get; set; }
+
+    public Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct) =>
+        Task.FromResult(AiFallbackParsingEnabled);
+
+    public Task SetAiFallbackParsingEnabledAsync(bool enabled, CancellationToken ct)
+    {
+        AiFallbackParsingEnabled = enabled;
+        return Task.CompletedTask;
+    }
+
+    public Task<string?> GetOwnerIdentityNamesAsync(CancellationToken ct) =>
+        Task.FromResult(OwnerIdentityNames);
+
+    public Task SetOwnerIdentityNamesAsync(string? names, CancellationToken ct)
+    {
+        OwnerIdentityNames = names;
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>In-memory <see cref="ISecretStore"/> for view-model tests.</summary>

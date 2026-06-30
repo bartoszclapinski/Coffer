@@ -25,6 +25,34 @@ public sealed partial class PromptAnonymizer : IPromptAnonymizer
         return result;
     }
 
+    public string Anonymize(string text, IReadOnlyList<string> ownerNames)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return text;
+        }
+
+        var result = text;
+        if (ownerNames is { Count: > 0 })
+        {
+            foreach (var name in ownerNames)
+            {
+                var trimmed = name?.Trim();
+                if (string.IsNullOrEmpty(trimmed))
+                {
+                    continue;
+                }
+
+                // Whole-word, case-insensitive so "Jan Kowalski" on the header is redacted
+                // without clipping unrelated substrings. Diacritics count as word characters.
+                var pattern = $@"\b{Regex.Escape(trimmed)}\b";
+                result = Regex.Replace(result, pattern, "[NAME]", RegexOptions.IgnoreCase);
+            }
+        }
+
+        return Anonymize(result);
+    }
+
     // Polish IBAN: "PL" + 26 digits, optionally grouped in spaces (as bank exports show it).
     [GeneratedRegex(@"\bPL[\s]?(?:\d[\s]?){26}", RegexOptions.IgnoreCase)]
     private static partial Regex IbanRegex();

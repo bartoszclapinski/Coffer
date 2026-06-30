@@ -19,6 +19,12 @@ public static class AiDefaults
     /// <summary>Default monthly budget cap in PLN (doc 04).</summary>
     public const decimal MonthlyCapPln = 20m;
 
+    /// <summary>
+    /// AI-assisted fallback parsing is off until the owner opts in — it sends statement text to
+    /// the AI provider (the most data-exposing AI feature), so it needs explicit consent.
+    /// </summary>
+    public const bool AiFallbackParsingEnabled = false;
+
     /// <summary><c>ISecretStore</c> key for the Claude API key.</summary>
     public const string ClaudeApiKeySecret = "ai.claude.apiKey";
 
