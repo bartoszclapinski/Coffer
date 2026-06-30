@@ -52,8 +52,8 @@ public sealed class CofferDbContext : DbContext
             entity.ToTable("_SchemaInfo");
             entity.HasKey(x => x.Id);
             entity.HasIndex(x => x.Version).IsUnique();
-            entity.Property(x => x.Version).IsRequired();
-            entity.Property(x => x.AppVersion).IsRequired();
+            entity.Property(x => x.Version).IsRequired().HasMaxLength(128);
+            entity.Property(x => x.AppVersion).IsRequired().HasMaxLength(64);
         });
 
         modelBuilder.ApplyConfiguration(new AccountConfiguration());

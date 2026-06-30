@@ -86,12 +86,22 @@ public sealed class MigrationRunner
             return MigrationResult.UpToDate();
         }
 
-        _db.SchemaInfo.Add(new SchemaInfoEntry
+        // Append-only history: one row per migration this run applied, in order, so a
+        // vault that survives many migrations keeps a full audit trail (who/when applied
+        // each) rather than collapsing to a single "current version" row. EF's own
+        // __EFMigrationsHistory tracks the names but neither the timestamp nor the app
+        // version. The unique index on Version fails loudly on a duplicate.
+        var migratedAt = DateTime.UtcNow;
+        var appVersion = _appVersionProvider();
+        foreach (var migration in newlyApplied)
         {
-            Version = newlyApplied[^1],
-            MigratedAt = DateTime.UtcNow,
-            AppVersion = _appVersionProvider(),
-        });
+            _db.SchemaInfo.Add(new SchemaInfoEntry
+            {
+                Version = migration,
+                MigratedAt = migratedAt,
+                AppVersion = appVersion,
+            });
+        }
         await _db.SaveChangesAsync(ct).ConfigureAwait(false);
 
         return MigrationResult.Migrated(newlyApplied);
