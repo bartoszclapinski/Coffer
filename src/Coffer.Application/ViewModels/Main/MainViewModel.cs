@@ -5,6 +5,7 @@ using Coffer.Application.ViewModels.Chat;
 using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Goals;
 using Coffer.Application.ViewModels.Import;
+using Coffer.Application.ViewModels.Planning;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Security;
@@ -37,6 +38,7 @@ public sealed partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsChatActive))]
     [NotifyPropertyChangedFor(nameof(IsAlertsActive))]
     [NotifyPropertyChangedFor(nameof(IsAdvisorActive))]
+    [NotifyPropertyChangedFor(nameof(IsPlanningActive))]
     [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     private ObservableObject? _currentPage;
 
@@ -47,6 +49,7 @@ public sealed partial class MainViewModel : ObservableObject
         ChatViewModel chatViewModel,
         AlertsViewModel alertsViewModel,
         GoalsViewModel goalsViewModel,
+        CashFlowPlanningViewModel planningViewModel,
         SettingsViewModel settingsViewModel,
         ILoginService loginService,
         ILocalizer localizer,
@@ -58,6 +61,7 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(chatViewModel);
         ArgumentNullException.ThrowIfNull(alertsViewModel);
         ArgumentNullException.ThrowIfNull(goalsViewModel);
+        ArgumentNullException.ThrowIfNull(planningViewModel);
         ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
         ArgumentNullException.ThrowIfNull(localizer);
@@ -69,6 +73,7 @@ public sealed partial class MainViewModel : ObservableObject
         Chat = chatViewModel;
         Alerts = alertsViewModel;
         Advisor = goalsViewModel;
+        Planning = planningViewModel;
         Settings = settingsViewModel;
         _loginService = loginService;
         _localizer = localizer;
@@ -95,6 +100,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     public GoalsViewModel Advisor { get; }
 
+    public CashFlowPlanningViewModel Planning { get; }
+
     public SettingsViewModel Settings { get; }
 
     public bool IsDashboardActive => ReferenceEquals(CurrentPage, Dashboard);
@@ -108,6 +115,8 @@ public sealed partial class MainViewModel : ObservableObject
     public bool IsAlertsActive => ReferenceEquals(CurrentPage, Alerts);
 
     public bool IsAdvisorActive => ReferenceEquals(CurrentPage, Advisor);
+
+    public bool IsPlanningActive => ReferenceEquals(CurrentPage, Planning);
 
     public bool IsSettingsActive => ReferenceEquals(CurrentPage, Settings);
 
@@ -182,6 +191,18 @@ public sealed partial class MainViewModel : ObservableObject
 
         CurrentPage = Advisor;
         Advisor.LoadCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private void ShowPlanning()
+    {
+        if (IsPlanningActive)
+        {
+            return;
+        }
+
+        CurrentPage = Planning;
+        Planning.LoadCommand.Execute(null);
     }
 
     [RelayCommand]
