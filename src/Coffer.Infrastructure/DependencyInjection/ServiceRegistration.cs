@@ -321,9 +321,13 @@ public static class ServiceRegistration
         var effectiveProvider = dekProvider
             ?? (sp => sp.GetRequiredService<IDekHolder>().Get());
 
+        // Singleton so the DI container disposes it at shutdown, zeroing the DEK copy
+        // the interceptor holds. The DEK is resolved lazily on first context creation,
+        // when the options below first resolve this service.
+        services.AddSingleton(sp => new SqlCipherKeyInterceptor(effectiveProvider(sp)));
+
         services.AddDbContextFactory<CofferDbContext>((sp, opts) =>
         {
-            var dek = effectiveProvider(sp);
             var dbPath = sp.GetRequiredService<IVaultPaths>().DatabaseFile;
             var directory = Path.GetDirectoryName(dbPath);
             if (!string.IsNullOrEmpty(directory))
@@ -332,7 +336,7 @@ public static class ServiceRegistration
             }
 
             opts.UseSqlite($"Data Source={dbPath};")
-                .AddInterceptors(new SqlCipherKeyInterceptor(dek));
+                .AddInterceptors(sp.GetRequiredService<SqlCipherKeyInterceptor>());
         });
 
         services.AddTransient<MigrationRunner>();

@@ -53,6 +53,25 @@ public class DekFileTests : IDisposable
     }
 
     [Fact]
+    public async Task WriteAsync_WhenFileExists_Throws()
+    {
+        var file = new DekFile(
+            Version: DekFile.CurrentVersion,
+            ArgonParameters: Argon2Parameters.Default,
+            Salt: new byte[Argon2Parameters.Default.SaltBytes],
+            Iv: new byte[12],
+            Tag: new byte[16],
+            Ciphertext: new byte[32]);
+
+        await DekFile.WriteAsync(file, _filePath, CancellationToken.None);
+
+        // CreateNew must refuse to clobber an existing DEK file (TOCTOU guard).
+        var act = async () => await DekFile.WriteAsync(file, _filePath, CancellationToken.None);
+
+        await act.Should().ThrowAsync<IOException>();
+    }
+
+    [Fact]
     public async Task ReadAsync_FromMissingFile_ThrowsFileNotFoundException()
     {
         var act = async () => await DekFile.ReadAsync(_filePath, CancellationToken.None);

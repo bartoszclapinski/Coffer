@@ -8,18 +8,27 @@ namespace Coffer.Infrastructure.Persistence.Encryption;
 /// database file.
 /// </summary>
 /// <remarks>
-/// Memory hygiene caveat: the DEK is held as a <see cref="byte"/>[] field for the
-/// interceptor's lifetime, but <see cref="Convert.ToHexString(byte[])"/> produces an
-/// immutable .NET string that lives in the managed heap until GC. The string is
-/// rebuilt on every opened connection. This trades a known surface area for the
-/// simplicity of using the standard ADO.NET command text path. See
-/// <c>docs/architecture/09-security-key-management.md</c> §"Memory hygiene" and the
-/// Sprint-4 code review for the rationale; a follow-up sprint may switch to a
-/// <see cref="Span{T}"/>-based hex path that can be zeroed explicitly.
+/// Memory hygiene: the DEK is held as a <see cref="byte"/>[] field for the
+/// interceptor's lifetime and zeroed on <see cref="Dispose"/>. The PRAGMA command
+/// is built into a stack-allocated <see cref="Span{T}"/> that is cleared right
+/// after the command string is materialised, so no intermediate hex
+/// <see cref="string"/> (as <see cref="Convert.ToHexString(byte[])"/> would
+/// produce) ever lands on the managed heap. One residual leak remains and cannot
+/// be avoided with the current Microsoft.Data.Sqlite surface: the
+/// <see cref="DbCommand.CommandText"/> setter takes an immutable <see cref="string"/>,
+/// so the final command lives on the heap until GC. We null it out after execution
+/// to drop the reference as early as possible. SqlCipher does not accept the key as
+/// a bound parameter (PRAGMA statements cannot be parameterised in SQLite), so a
+/// parameterised path is not an option. See
+/// <c>docs/architecture/09-security-key-management.md</c> §"Memory hygiene".
 /// </remarks>
-public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor
+public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposable
 {
-    private readonly byte[] _dek;
+    private const string _commandPrefix = "PRAGMA key = \"x'";
+    private const string _commandSuffix = "'\";";
+    private const string _hexChars = "0123456789ABCDEF";
+
+    private byte[]? _dek;
 
     public SqlCipherKeyInterceptor(byte[] dek)
     {
@@ -34,6 +43,7 @@ public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor
         using var cmd = connection.CreateCommand();
         cmd.CommandText = BuildPragmaKeyCommand();
         cmd.ExecuteNonQuery();
+        cmd.CommandText = string.Empty;
 
         base.ConnectionOpened(connection, eventData);
     }
@@ -48,10 +58,40 @@ public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor
         using var cmd = connection.CreateCommand();
         cmd.CommandText = BuildPragmaKeyCommand();
         await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        cmd.CommandText = string.Empty;
 
         await base.ConnectionOpenedAsync(connection, eventData, cancellationToken).ConfigureAwait(false);
     }
 
-    private string BuildPragmaKeyCommand() =>
-        $"PRAGMA key = \"x'{Convert.ToHexString(_dek)}'\";";
+    public void Dispose()
+    {
+        if (_dek is not null)
+        {
+            Array.Clear(_dek, 0, _dek.Length);
+            _dek = null;
+        }
+    }
+
+    private string BuildPragmaKeyCommand()
+    {
+        var dek = _dek ?? throw new ObjectDisposedException(nameof(SqlCipherKeyInterceptor));
+
+        Span<char> buffer = stackalloc char[_commandPrefix.Length + (dek.Length * 2) + _commandSuffix.Length];
+        _commandPrefix.CopyTo(buffer);
+        WriteHexUpper(dek, buffer.Slice(_commandPrefix.Length, dek.Length * 2));
+        _commandSuffix.CopyTo(buffer[(_commandPrefix.Length + (dek.Length * 2))..]);
+
+        var command = new string(buffer);
+        buffer.Clear();
+        return command;
+    }
+
+    private static void WriteHexUpper(ReadOnlySpan<byte> bytes, Span<char> destination)
+    {
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            destination[i * 2] = _hexChars[bytes[i] >> 4];
+            destination[(i * 2) + 1] = _hexChars[bytes[i] & 0xF];
+        }
+    }
 }
