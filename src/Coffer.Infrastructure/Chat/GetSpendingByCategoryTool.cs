@@ -46,7 +46,7 @@ public sealed class GetSpendingByCategoryTool : ChatTool
         }
 
         var totals = await db.Transactions.AsNoTracking()
-            .Where(t => t.Currency == _displayCurrency && t.Date >= from && t.Date <= to && t.Amount < 0)
+            .Where(t => t.Currency == DisplayCurrency && t.Date >= from && t.Date <= to && t.Amount < 0)
             .GroupBy(t => t.CategoryId)
             .Select(g => new { CategoryId = g.Key, Total = g.Sum(t => t.Amount) })
             .ToListAsync(ct)
@@ -61,13 +61,13 @@ public sealed class GetSpendingByCategoryTool : ChatTool
         var categories = totals
             .Select(t => new
             {
-                category = t.CategoryId is { } id && names.TryGetValue(id, out var name) ? name : _uncategorizedLabel,
+                category = t.CategoryId is { } id && names.TryGetValue(id, out var name) ? name : UncategorizedLabel,
                 total = -t.Total,
             })
             .OrderByDescending(c => c.total)
             .ToList();
 
-        return new { from = Iso(from), to = Iso(to), currency = _displayCurrency, categories };
+        return new { from = Iso(from), to = Iso(to), currency = DisplayCurrency, categories };
     }
 
     private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd");

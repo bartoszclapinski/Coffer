@@ -14,9 +14,9 @@ namespace Coffer.Infrastructure.AI;
 /// </summary>
 public sealed class AppSettingsStore : IAiSettings
 {
-    private const string _monthlyCapKey = "ai.monthlyCapPln";
-    private const string _activeProviderKey = "ai.activeProvider";
-    private const string _categorizationModelKey = "ai.categorizationModel";
+    private const string MonthlyCapKey = "ai.monthlyCapPln";
+    private const string ActiveProviderKey = "ai.activeProvider";
+    private const string CategorizationModelKey = "ai.categorizationModel";
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
 
@@ -28,31 +28,31 @@ public sealed class AppSettingsStore : IAiSettings
 
     public async Task<decimal> GetMonthlyCapPlnAsync(CancellationToken ct)
     {
-        var raw = await GetValueAsync(_monthlyCapKey, ct).ConfigureAwait(false);
+        var raw = await GetValueAsync(MonthlyCapKey, ct).ConfigureAwait(false);
         return raw is not null && decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var cap)
             ? cap
             : AiDefaults.MonthlyCapPln;
     }
 
     public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct) =>
-        SetValueAsync(_monthlyCapKey, capPln.ToString(CultureInfo.InvariantCulture), ct);
+        SetValueAsync(MonthlyCapKey, capPln.ToString(CultureInfo.InvariantCulture), ct);
 
     public async Task<string> GetActiveProviderAsync(CancellationToken ct) =>
-        await GetValueAsync(_activeProviderKey, ct).ConfigureAwait(false) ?? AiDefaults.ClaudeProvider;
+        await GetValueAsync(ActiveProviderKey, ct).ConfigureAwait(false) ?? AiDefaults.ClaudeProvider;
 
     public Task SetActiveProviderAsync(string provider, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrEmpty(provider);
-        return SetValueAsync(_activeProviderKey, provider, ct);
+        return SetValueAsync(ActiveProviderKey, provider, ct);
     }
 
     public async Task<string> GetCategorizationModelAsync(CancellationToken ct) =>
-        await GetValueAsync(_categorizationModelKey, ct).ConfigureAwait(false) ?? AiDefaults.CategorizationModel;
+        await GetValueAsync(CategorizationModelKey, ct).ConfigureAwait(false) ?? AiDefaults.CategorizationModel;
 
     public Task SetCategorizationModelAsync(string model, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrEmpty(model);
-        return SetValueAsync(_categorizationModelKey, model, ct);
+        return SetValueAsync(CategorizationModelKey, model, ct);
     }
 
     private async Task<string?> GetValueAsync(string key, CancellationToken ct)

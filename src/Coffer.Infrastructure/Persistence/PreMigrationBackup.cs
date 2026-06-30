@@ -13,8 +13,8 @@ namespace Coffer.Infrastructure.Persistence;
 /// </summary>
 public sealed class PreMigrationBackup : IPreMigrationBackup
 {
-    private const string _backupFolderName = "backups";
-    private const string _preMigrationFolderName = "pre-migration";
+    private const string BackupFolderName = "backups";
+    private const string PreMigrationFolderName = "pre-migration";
 
     private readonly IVaultPaths _vaultPaths;
     private readonly ILogger<PreMigrationBackup> _logger;
@@ -44,7 +44,7 @@ public sealed class PreMigrationBackup : IPreMigrationBackup
         // possible; the -wal/-shm copies below cover anything still outstanding.
         SqliteConnection.ClearAllPools();
 
-        var backupDir = Path.Combine(_vaultPaths.LocalAppDataFolder, _backupFolderName, _preMigrationFolderName);
+        var backupDir = Path.Combine(_vaultPaths.LocalAppDataFolder, BackupFolderName, PreMigrationFolderName);
         Directory.CreateDirectory(backupDir);
 
         var stamp = DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);

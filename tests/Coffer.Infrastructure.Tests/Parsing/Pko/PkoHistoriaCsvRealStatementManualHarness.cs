@@ -14,7 +14,7 @@ namespace Coffer.Infrastructure.Tests.Parsing.Pko;
 /// </summary>
 public class PkoHistoriaCsvRealStatementManualHarness
 {
-    private const string _realFileName = "Zestawienie operacji za 01.01.2026 - 31.01.2026.csv";
+    private const string RealFileName = "Zestawienie operacji za 01.01.2026 - 31.01.2026.csv";
 
     private readonly ITestOutputHelper _output;
 
@@ -27,8 +27,8 @@ public class PkoHistoriaCsvRealStatementManualHarness
     [SkippableFact]
     public async Task Parse_RealPkoHistoriaCsv_PrintsSummary()
     {
-        var path = FindLocalFixture(_realFileName);
-        Skip.If(path is null, $"Real CSV not present at tests/.local-fixtures/{_realFileName}; skipping.");
+        var path = FindLocalFixture(RealFileName);
+        Skip.If(path is null, $"Real CSV not present at tests/.local-fixtures/{RealFileName}; skipping.");
 
         await using var stream = File.OpenRead(path!);
         var input = new StatementInput(stream, StatementFormat.Csv, Path.GetFileName(path));

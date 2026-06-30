@@ -11,7 +11,7 @@ namespace Coffer.Infrastructure.Transactions;
 /// </summary>
 public sealed class GetTransactionsQuery : IGetTransactionsQuery
 {
-    private const int _defaultWindowMonths = 6;
+    private const int DefaultWindowMonths = 6;
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
 
@@ -29,7 +29,7 @@ public sealed class GetTransactionsQuery : IGetTransactionsQuery
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
 
-        var from = filter.From ?? DateOnly.FromDateTime(DateTime.UtcNow).AddMonths(-_defaultWindowMonths);
+        var from = filter.From ?? DateOnly.FromDateTime(DateTime.UtcNow).AddMonths(-DefaultWindowMonths);
 
         var query = db.Transactions.AsNoTracking().Where(t => t.Date >= from);
 

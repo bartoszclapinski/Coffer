@@ -17,8 +17,8 @@ namespace Coffer.Infrastructure.Planning;
 /// </summary>
 public sealed class RecurringFlowDetector : IRecurringFlowDetector
 {
-    private const string _currency = "PLN";
-    private const int _historyMonths = 12;
+    private const string Currency = "PLN";
+    private const int HistoryMonths = 12;
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
 
@@ -33,14 +33,14 @@ public sealed class RecurringFlowDetector : IRecurringFlowDetector
         await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
 
         var scope = db.Transactions.AsNoTracking()
-            .Where(t => t.Currency == _currency && t.Merchant != null && t.Merchant != "");
+            .Where(t => t.Currency == Currency && t.Merchant != null && t.Merchant != "");
         if (!await scope.AnyAsync(ct).ConfigureAwait(false))
         {
             return [];
         }
 
         var latest = await scope.MaxAsync(t => t.Date, ct).ConfigureAwait(false);
-        var from = new DateOnly(latest.Year, latest.Month, 1).AddMonths(-_historyMonths);
+        var from = new DateOnly(latest.Year, latest.Month, 1).AddMonths(-HistoryMonths);
 
         var rows = await scope
             .Where(t => t.Date >= from)

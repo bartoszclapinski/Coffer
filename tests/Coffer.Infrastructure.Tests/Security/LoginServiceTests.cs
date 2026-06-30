@@ -15,19 +15,19 @@ namespace Coffer.Infrastructure.Tests.Security;
 /// </summary>
 public class LoginServiceTests
 {
-    private const string _correctPassword = "StrongTestPassword123!";
-    private const string _wrongPassword = "_wrongPassword456!";
+    private const string CorrectPassword = "StrongTestPassword123!";
+    private const string WrongPassword = "_wrongPassword456!";
 
     [Fact]
     public async Task LoginWithPasswordAsync_With_correctPassword_PublishesDekAndRefreshesCache()
     {
         using var paths = new TestVaultPaths();
-        var (originalDek, _) = await WriteValidDekFileAsync(paths, _correctPassword);
+        var (originalDek, _) = await WriteValidDekFileAsync(paths, CorrectPassword);
         var holder = new DekHolder();
         var keyVault = new InMemoryKeyVault();
         var service = CreateService(paths, holder, keyVault);
 
-        await service.LoginWithPasswordAsync(_correctPassword, CancellationToken.None);
+        await service.LoginWithPasswordAsync(CorrectPassword, CancellationToken.None);
 
         holder.IsAvailable.Should().BeTrue();
         holder.Get().Should().BeEquivalentTo(originalDek);
@@ -39,11 +39,11 @@ public class LoginServiceTests
     public async Task LoginWithPasswordAsync_With_wrongPassword_ThrowsInvalidMasterPasswordException()
     {
         using var paths = new TestVaultPaths();
-        await WriteValidDekFileAsync(paths, _correctPassword);
+        await WriteValidDekFileAsync(paths, CorrectPassword);
         var holder = new DekHolder();
         var service = CreateService(paths, holder, new InMemoryKeyVault());
 
-        var act = async () => await service.LoginWithPasswordAsync(_wrongPassword, CancellationToken.None);
+        var act = async () => await service.LoginWithPasswordAsync(WrongPassword, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidMasterPasswordException>();
         holder.IsAvailable.Should().BeFalse(
@@ -57,7 +57,7 @@ public class LoginServiceTests
         // No DEK file written — temp dir is empty.
         var service = CreateService(paths, new DekHolder(), new InMemoryKeyVault());
 
-        var act = async () => await service.LoginWithPasswordAsync(_correctPassword, CancellationToken.None);
+        var act = async () => await service.LoginWithPasswordAsync(CorrectPassword, CancellationToken.None);
 
         var thrown = await act.Should().ThrowAsync<VaultMissingException>();
         thrown.Which.FilePath.Should().Be(paths.EncryptedDekFilePath);
@@ -71,7 +71,7 @@ public class LoginServiceTests
         await File.WriteAllBytesAsync(paths.EncryptedDekFilePath, new byte[] { 0xFF, 0xFF, 0xFF });
         var service = CreateService(paths, new DekHolder(), new InMemoryKeyVault());
 
-        var act = async () => await service.LoginWithPasswordAsync(_correctPassword, CancellationToken.None);
+        var act = async () => await service.LoginWithPasswordAsync(CorrectPassword, CancellationToken.None);
 
         var thrown = await act.Should().ThrowAsync<VaultCorruptedException>();
         thrown.Which.Reason.Should().Be(VaultCorruptionReason.DekFileFormat);
@@ -81,7 +81,7 @@ public class LoginServiceTests
     public async Task TryLoginFromCachedKeyAsync_WithValidCache_ReturnsTrueAndPublishesDek()
     {
         using var paths = new TestVaultPaths();
-        var (originalDek, masterKey) = await WriteValidDekFileAsync(paths, _correctPassword);
+        var (originalDek, masterKey) = await WriteValidDekFileAsync(paths, CorrectPassword);
         var holder = new DekHolder();
         var keyVault = new InMemoryKeyVault();
         await keyVault.SetCachedMasterKeyAsync(masterKey, TimeSpan.FromDays(7), CancellationToken.None);
@@ -98,7 +98,7 @@ public class LoginServiceTests
     public async Task TryLoginFromCachedKeyAsync_WhenCacheReturnsNull_ReturnsFalse()
     {
         using var paths = new TestVaultPaths();
-        await WriteValidDekFileAsync(paths, _correctPassword);
+        await WriteValidDekFileAsync(paths, CorrectPassword);
         var holder = new DekHolder();
         var service = CreateService(paths, holder, new InMemoryKeyVault()); // empty cache
 
@@ -112,7 +112,7 @@ public class LoginServiceTests
     public async Task TryLoginFromCachedKeyAsync_WhenCachedKeyDoesNotDecryptDek_ReturnsFalseAndInvalidatesCache()
     {
         using var paths = new TestVaultPaths();
-        await WriteValidDekFileAsync(paths, _correctPassword);
+        await WriteValidDekFileAsync(paths, CorrectPassword);
         var holder = new DekHolder();
         var keyVault = new InMemoryKeyVault();
         var wrongMasterKey = new byte[32];

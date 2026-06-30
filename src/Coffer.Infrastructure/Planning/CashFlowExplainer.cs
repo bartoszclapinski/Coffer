@@ -19,11 +19,11 @@ namespace Coffer.Infrastructure.Planning;
 /// </summary>
 public sealed class CashFlowExplainer : ICashFlowExplainer
 {
-    private const int _charsPerToken = 4;
-    private const int _outputTokens = 320;
-    private const int _maxPromptEvents = 40;
+    private const int CharsPerToken = 4;
+    private const int OutputTokens = 320;
+    private const int MaxPromptEvents = 40;
 
-    private const string _systemPrompt =
+    private const string SystemPrompt =
         "You are a cash-flow planning assistant for a Polish user. You receive a deterministic forward "
         + "projection: an opening balance, a dated timeline of recurring inflows and outflows with the "
         + "running balance after each, and the lowest point the balance reaches. Your job: explain the "
@@ -74,8 +74,8 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
         var prompt = BuildPrompt(projection);
         var model = AiDefaults.ChatModel;
 
-        var estInputTokens = (_systemPrompt.Length + prompt.Length) / _charsPerToken;
-        var estimate = _pricing.Estimate(model, estInputTokens, _outputTokens);
+        var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
+        var estimate = _pricing.Estimate(model, estInputTokens, OutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
         {
             _logger.LogInformation(
@@ -90,8 +90,8 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
             {
                 Prompt = prompt,
                 Model = model,
-                SystemPrompt = _systemPrompt,
-                MaxTokens = _outputTokens + 128,
+                SystemPrompt = SystemPrompt,
+                MaxTokens = OutputTokens + 128,
                 Temperature = 0.4,
             };
 
@@ -137,7 +137,7 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
             $"Tight window: {(projection.HasTightWindow ? "yes" : "no")}\n");
 
         sb.Append("Events (date, direction, amount PLN, balanceAfter PLN, accrualPeriod, tight):\n");
-        foreach (var e in projection.Events.Take(_maxPromptEvents))
+        foreach (var e in projection.Events.Take(MaxPromptEvents))
         {
             sb.Append(CultureInfo.InvariantCulture,
                 $"- {Iso(e.Date)} {e.Direction} {e.Name}: {Money(e.Amount)}, balance {Money(e.BalanceAfter)}, "

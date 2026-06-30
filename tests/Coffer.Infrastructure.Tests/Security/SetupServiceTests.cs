@@ -14,7 +14,7 @@ namespace Coffer.Infrastructure.Tests.Security;
 /// </summary>
 public class SetupServiceTests
 {
-    private const string _validMnemonic =
+    private const string ValidMnemonic =
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
     [Fact]
@@ -36,7 +36,7 @@ public class SetupServiceTests
 
         await setupService.CompleteSetupAsync(
             "StrongTestPassword123!",
-            _validMnemonic,
+            ValidMnemonic,
             CancellationToken.None);
 
         File.Exists(paths.EncryptedDekFilePath).Should().BeTrue(
@@ -73,7 +73,7 @@ public class SetupServiceTests
 
         var act = async () => await setupService.CompleteSetupAsync(
             "StrongTestPassword123!",
-            _validMnemonic,
+            ValidMnemonic,
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
@@ -103,7 +103,7 @@ public class SetupServiceTests
 
         var act = async () => await setupService.CompleteSetupAsync(
             "StrongTestPassword123!",
-            _validMnemonic,
+            ValidMnemonic,
             CancellationToken.None);
 
         await act.Should().ThrowAsync<Coffer.Core.Security.VaultAlreadyExistsException>();

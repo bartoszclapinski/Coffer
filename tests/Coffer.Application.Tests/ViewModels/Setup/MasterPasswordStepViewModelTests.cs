@@ -6,7 +6,7 @@ namespace Coffer.Application.Tests.ViewModels.Setup;
 
 public class MasterPasswordStepViewModelTests
 {
-    private const string _validMnemonic =
+    private const string ValidMnemonic =
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
     [Fact]
@@ -22,7 +22,7 @@ public class MasterPasswordStepViewModelTests
     [Fact]
     public void IsValid_PasswordBelow12Chars_ReturnsFalse()
     {
-        var vm = CreateViewModel("Abc!12Xy9z", () => _validMnemonic);
+        var vm = CreateViewModel("Abc!12Xy9z", () => ValidMnemonic);
         // 10 chars with 4 classes — but length rule rejects.
         vm.Password = "Abc!12Xy9z";
         vm.Confirmation = "Abc!12Xy9z";
@@ -34,7 +34,7 @@ public class MasterPasswordStepViewModelTests
     public void IsValid_LessThanThreeCharClasses_ReturnsFalse()
     {
         // 12+ chars, but only lowercase + digit = 2 classes.
-        var vm = CreateViewModel("aaaaaaaaaaaa1234", () => _validMnemonic, fakeScore: 3);
+        var vm = CreateViewModel("aaaaaaaaaaaa1234", () => ValidMnemonic, fakeScore: 3);
         vm.Password = "aaaaaaaaaaaa1234";
         vm.Confirmation = "aaaaaaaaaaaa1234";
 
@@ -45,7 +45,7 @@ public class MasterPasswordStepViewModelTests
     public void IsValid_WeakScoreEvenWithAllStructuralRulesMet_ReturnsFalse()
     {
         // 12+ chars, 4 classes — but injected fake checker says score = 1.
-        var vm = CreateViewModel("Aaaa!12345aa", () => _validMnemonic, fakeScore: 1);
+        var vm = CreateViewModel("Aaaa!12345aa", () => ValidMnemonic, fakeScore: 1);
         vm.Password = "Aaaa!12345aa";
         vm.Confirmation = "Aaaa!12345aa";
 
@@ -55,7 +55,7 @@ public class MasterPasswordStepViewModelTests
     [Fact]
     public void IsValid_MismatchedConfirmation_ReturnsFalse()
     {
-        var vm = CreateViewModel("StrongPassword!12", () => _validMnemonic, fakeScore: 4);
+        var vm = CreateViewModel("StrongPassword!12", () => ValidMnemonic, fakeScore: 4);
         vm.Password = "StrongPassword!12";
         vm.Confirmation = "DifferentValue!34";
 
@@ -67,9 +67,9 @@ public class MasterPasswordStepViewModelTests
     {
         // Password text equals the BIP39 mnemonic — explicit security rule
         // from docs/architecture/09-security-key-management.md §"Master password".
-        var vm = CreateViewModel(_validMnemonic, () => _validMnemonic, fakeScore: 4);
-        vm.Password = _validMnemonic;
-        vm.Confirmation = _validMnemonic;
+        var vm = CreateViewModel(ValidMnemonic, () => ValidMnemonic, fakeScore: 4);
+        vm.Password = ValidMnemonic;
+        vm.Confirmation = ValidMnemonic;
 
         vm.IsValid.Should().BeFalse();
     }
@@ -77,7 +77,7 @@ public class MasterPasswordStepViewModelTests
     [Fact]
     public void IsValid_AllRulesMet_ReturnsTrue()
     {
-        var vm = CreateViewModel("StrongPassword!12", () => _validMnemonic, fakeScore: 4);
+        var vm = CreateViewModel("StrongPassword!12", () => ValidMnemonic, fakeScore: 4);
         vm.Password = "StrongPassword!12";
         vm.Confirmation = "StrongPassword!12";
 
@@ -87,7 +87,7 @@ public class MasterPasswordStepViewModelTests
     [Fact]
     public void ClearSensitive_ResetsPasswordAndConfirmation()
     {
-        var vm = CreateViewModel("AnyStrongValue!12", () => _validMnemonic, fakeScore: 4);
+        var vm = CreateViewModel("AnyStrongValue!12", () => ValidMnemonic, fakeScore: 4);
         vm.Password = "AnyStrongValue!12";
         vm.Confirmation = "AnyStrongValue!12";
 

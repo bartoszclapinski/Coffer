@@ -16,8 +16,8 @@ namespace Coffer.Infrastructure.Goals;
 /// </summary>
 public sealed class GoalSnapshotJob : IGoalSnapshotJob
 {
-    private const string _currency = "PLN";
-    private const string _uncategorizedName = "Bez kategorii";
+    private const string Currency = "PLN";
+    private const string UncategorizedName = "Bez kategorii";
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
     private readonly IGoalsQuery _goals;
@@ -116,7 +116,7 @@ public sealed class GoalSnapshotJob : IGoalSnapshotJob
         FinancialContext context,
         CancellationToken ct)
     {
-        var scope = db.Transactions.AsNoTracking().Where(t => t.Currency == _currency);
+        var scope = db.Transactions.AsNoTracking().Where(t => t.Currency == Currency);
         if (!await scope.AnyAsync(ct).ConfigureAwait(false))
         {
             return [];
@@ -140,7 +140,7 @@ public sealed class GoalSnapshotJob : IGoalSnapshotJob
         var spending = new List<CategorySpending>();
         foreach (var row in currentDebits)
         {
-            var name = row.Key is { } id && categoryNames.TryGetValue(id, out var n) ? n : _uncategorizedName;
+            var name = row.Key is { } id && categoryNames.TryGetValue(id, out var n) ? n : UncategorizedName;
             var current = -row.Total;
             var average = context.CategoryAverages6m.GetValueOrDefault(name);
             spending.Add(new CategorySpending(name, current, average));

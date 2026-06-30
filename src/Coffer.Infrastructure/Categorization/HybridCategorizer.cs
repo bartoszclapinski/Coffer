@@ -26,9 +26,9 @@ namespace Coffer.Infrastructure.Categorization;
 /// </summary>
 public sealed class HybridCategorizer : ICategorizer
 {
-    private const int _batchSize = 30;
-    private const int _charsPerToken = 4;
-    private const int _outputTokensPerItem = 4;
+    private const int BatchSize = 30;
+    private const int CharsPerToken = 4;
+    private const int OutputTokensPerItem = 4;
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
     private readonly ICategoryRuleEngine _ruleEngine;
@@ -177,9 +177,9 @@ public sealed class HybridCategorizer : ICategorizer
         var model = await _settings.GetCategorizationModelAsync(ct).ConfigureAwait(false);
         var categoryList = string.Join(", ", categories.Select(c => c.Name));
 
-        for (var offset = 0; offset < unknowns.Count; offset += _batchSize)
+        for (var offset = 0; offset < unknowns.Count; offset += BatchSize)
         {
-            var batch = unknowns.Skip(offset).Take(_batchSize).ToList();
+            var batch = unknowns.Skip(offset).Take(BatchSize).ToList();
             var indexes = await CategorizeBatchAsync(batch, categories, categoryList, model, ct)
                 .ConfigureAwait(false);
             if (indexes is null)
@@ -212,8 +212,8 @@ public sealed class HybridCategorizer : ICategorizer
     {
         var prompt = BuildPrompt(batch, categoryList);
 
-        var estInputTokens = (_systemPrompt.Length + prompt.Length) / _charsPerToken;
-        var estOutputTokens = batch.Count * _outputTokensPerItem;
+        var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
+        var estOutputTokens = batch.Count * OutputTokensPerItem;
         var estimate = _pricing.Estimate(model, estInputTokens, estOutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Critical, ct).ConfigureAwait(false))
         {
@@ -229,7 +229,7 @@ public sealed class HybridCategorizer : ICategorizer
             {
                 Prompt = attempt == 1 ? prompt : prompt + RetryAddendum(batch.Count, categories.Count),
                 Model = model,
-                SystemPrompt = _systemPrompt,
+                SystemPrompt = SystemPrompt,
                 MaxTokens = 512,
                 Temperature = 0.0,
             };
@@ -315,7 +315,7 @@ public sealed class HybridCategorizer : ICategorizer
         && indexes.Length == expectedCount
         && indexes.All(i => i >= 0 && i < categoryCount);
 
-    private const string _systemPrompt =
+    private const string SystemPrompt =
         "You are a Polish personal finance categorizer. Assign each transaction to exactly one "
         + "category from the supplied list. Respond with ONLY a JSON array of 0-based integer "
         + "indexes into the categories array, in the same order as the transactions. No prose.";

@@ -5,11 +5,11 @@ namespace Coffer.Infrastructure.Tests.Security;
 
 public class Bip39SeedManagerTests
 {
-    private const string _trezorVector1Mnemonic =
+    private const string TrezorVector1Mnemonic =
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-    private const string _trezorVector2Mnemonic =
+    private const string TrezorVector2Mnemonic =
         "legal winner thank year wave sausage worth useful legal winner thank yellow";
-    private const string _trezorVector3Mnemonic =
+    private const string TrezorVector3Mnemonic =
         "letter advice cage absurd amount doctor acoustic avoid letter advice cage above";
 
     [Fact]
@@ -25,9 +25,9 @@ public class Bip39SeedManagerTests
     }
 
     [Theory]
-    [InlineData(_trezorVector1Mnemonic)]
-    [InlineData(_trezorVector2Mnemonic)]
-    [InlineData(_trezorVector3Mnemonic)]
+    [InlineData(TrezorVector1Mnemonic)]
+    [InlineData(TrezorVector2Mnemonic)]
+    [InlineData(TrezorVector3Mnemonic)]
     public void IsValid_OfficialBip39Vector_ReturnsTrue(string mnemonic)
     {
         var manager = new Bip39SeedManager();
@@ -58,15 +58,15 @@ public class Bip39SeedManagerTests
 
     [Theory]
     [InlineData(
-        _trezorVector1Mnemonic,
+        TrezorVector1Mnemonic,
         "TREZOR",
         "C55257C360C07C72029AEBC1B53C05ED0362ADA38EAD3E3E9EFA3708E5349553")]
     [InlineData(
-        _trezorVector2Mnemonic,
+        TrezorVector2Mnemonic,
         "TREZOR",
         "2E8905819B8723FE2C1D161860E5EE1830318DBF49A83BD451CFB8440C28BD6F")]
     [InlineData(
-        _trezorVector3Mnemonic,
+        TrezorVector3Mnemonic,
         "TREZOR",
         "D71DE856F81A8ACC65E6FC851A38D4D7EC216FD0796D0A6827A3AD6ED5511A30")]
     public async Task DeriveRecoveryKey_OfficialBip39Vector_ProducesExpectedSeed(
@@ -86,8 +86,8 @@ public class Bip39SeedManagerTests
     {
         var manager = new Bip39SeedManager();
 
-        var withoutPassphrase = await manager.DeriveRecoveryKeyAsync(_trezorVector1Mnemonic, "", CancellationToken.None);
-        var withPassphrase = await manager.DeriveRecoveryKeyAsync(_trezorVector1Mnemonic, "TREZOR", CancellationToken.None);
+        var withoutPassphrase = await manager.DeriveRecoveryKeyAsync(TrezorVector1Mnemonic, "", CancellationToken.None);
+        var withPassphrase = await manager.DeriveRecoveryKeyAsync(TrezorVector1Mnemonic, "TREZOR", CancellationToken.None);
 
         withoutPassphrase.Should().NotEqual(withPassphrase);
     }

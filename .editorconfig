@@ -122,6 +122,19 @@ dotnet_naming_symbols.interface_symbols.applicable_accessibilities = *
 dotnet_naming_style.i_prefix_pascal.required_prefix = I
 dotnet_naming_style.i_prefix_pascal.capitalization = pascal_case
 
+# Constants are PascalCase, with no underscore prefix. This rule is listed before the
+# private-field rule below so it wins the tie-break for const fields (the first matching
+# naming rule in document order is the one applied).
+dotnet_naming_rule.constants_should_be_pascal_case.severity = warning
+dotnet_naming_rule.constants_should_be_pascal_case.symbols = constant_field_symbols
+dotnet_naming_rule.constants_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_symbols.constant_field_symbols.applicable_kinds = field
+dotnet_naming_symbols.constant_field_symbols.applicable_accessibilities = *
+dotnet_naming_symbols.constant_field_symbols.required_modifiers = const
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
 dotnet_naming_rule.private_fields_should_have_underscore_prefix.severity = warning
 dotnet_naming_rule.private_fields_should_have_underscore_prefix.symbols = private_field_symbols
 dotnet_naming_rule.private_fields_should_have_underscore_prefix.style = underscore_camel

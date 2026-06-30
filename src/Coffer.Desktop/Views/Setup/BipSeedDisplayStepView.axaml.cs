@@ -1,30 +1,40 @@
+using Avalonia;
 using Avalonia.Controls;
-using Coffer.Core.Security;
-using Microsoft.Extensions.DependencyInjection;
+using Avalonia.Interactivity;
 
 namespace Coffer.Desktop.Views.Setup;
 
 public partial class BipSeedDisplayStepView : UserControl
 {
+    public static readonly RoutedEvent<SeedDisplayReadyEventArgs> SeedDisplayReadyEvent =
+        RoutedEvent.Register<BipSeedDisplayStepView, SeedDisplayReadyEventArgs>(
+            nameof(SeedDisplayReady), RoutingStrategies.Bubble);
+
     public BipSeedDisplayStepView()
     {
         InitializeComponent();
-        AttachedToVisualTree += OnAttachedToVisualTree;
     }
 
-    private void OnAttachedToVisualTree(object? sender, Avalonia.VisualTreeAttachmentEventArgs e)
+    public event EventHandler<SeedDisplayReadyEventArgs>? SeedDisplayReady
     {
-        // Apply screen-capture protection to the parent window when the seed-display
-        // step is shown. The blocker is resolved through App.Services because Views are
-        // constructed by the XAML loader (no constructor-injection path).
-        var topLevel = TopLevel.GetTopLevel(this);
-        var hwnd = topLevel?.TryGetPlatformHandle()?.Handle ?? nint.Zero;
+        add => AddHandler(SeedDisplayReadyEvent, value);
+        remove => RemoveHandler(SeedDisplayReadyEvent, value);
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+
+        // Raise a bubbling event so an ancestor (the App-level handler on the wizard window)
+        // can apply screen-capture protection to the host window. The view deliberately does
+        // not resolve IScreenCaptureBlocker itself — DI lives at the composition root, not in
+        // the view layer.
+        var hwnd = TopLevel.GetTopLevel(this)?.TryGetPlatformHandle()?.Handle ?? nint.Zero;
         if (hwnd == nint.Zero)
         {
             return;
         }
 
-        var blocker = App.Services?.GetService<IScreenCaptureBlocker>();
-        blocker?.Apply(hwnd);
+        RaiseEvent(new SeedDisplayReadyEventArgs(SeedDisplayReadyEvent, hwnd));
     }
 }

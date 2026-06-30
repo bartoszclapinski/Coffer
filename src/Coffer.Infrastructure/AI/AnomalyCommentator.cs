@@ -16,10 +16,10 @@ namespace Coffer.Infrastructure.AI;
 /// </summary>
 public sealed class AnomalyCommentator : IAnomalyCommentator
 {
-    private const int _charsPerToken = 4;
-    private const int _outputTokensPerItem = 80;
+    private const int CharsPerToken = 4;
+    private const int OutputTokensPerItem = 80;
 
-    private const string _systemPrompt =
+    private const string SystemPrompt =
         "You are a Polish personal-finance assistant. You receive detected spending anomalies with "
         + "raw numbers. For each one, write a short, calm, plain-Polish title (max 8 words) and a "
         + "one- or two-sentence description that explains what stands out and why it may be worth a "
@@ -71,8 +71,8 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
         var prompt = BuildPrompt(candidates);
         var model = AiDefaults.ChatModel;
 
-        var estInputTokens = (_systemPrompt.Length + prompt.Length) / _charsPerToken;
-        var estOutputTokens = candidates.Count * _outputTokensPerItem;
+        var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
+        var estOutputTokens = candidates.Count * OutputTokensPerItem;
         var estimate = _pricing.Estimate(model, estInputTokens, estOutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
         {
@@ -88,8 +88,8 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
             {
                 Prompt = prompt,
                 Model = model,
-                SystemPrompt = _systemPrompt,
-                MaxTokens = candidates.Count * _outputTokensPerItem + 128,
+                SystemPrompt = SystemPrompt,
+                MaxTokens = candidates.Count * OutputTokensPerItem + 128,
                 Temperature = 0.4,
             };
 
