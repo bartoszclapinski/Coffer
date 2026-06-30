@@ -1,3 +1,4 @@
+using System.Reflection;
 using Coffer.Infrastructure.Security;
 using FluentAssertions;
 
@@ -34,16 +35,30 @@ public class DekHolderTests
         var first = new byte[] { 0xAA, 0xBB, 0xCC, 0xDD };
         holder.Set(first);
 
-        // Get the holder's internal reference path: another Set should zero the prior bytes.
-        // We cannot observe the internal buffer directly, but we can verify the second Set
-        // returns the new bytes and the holder doesn't retain the old buffer (proxy: re-Get
-        // after second Set returns ONLY the second buffer's content).
+        // Capture the holder's own buffer (a defensive clone of `first`) before the
+        // second Set. Asserting THIS array is zeroed in place proves hygiene, not just
+        // behaviour: a refactor that swaps Array.Clear for a plain reassignment would
+        // leave the old DEK in memory and fail this test.
+        var bufferBefore = ReadInternalBuffer(holder);
+        bufferBefore.Should().Equal(first);
+
         var second = new byte[] { 0x11, 0x22, 0x33, 0x44 };
         holder.Set(second);
+
+        bufferBefore.Should().OnlyContain(b => b == 0,
+            "the previous DEK buffer must be zeroed in place, not abandoned to GC");
 
         var retrieved = holder.Get();
         retrieved.Should().Equal(second);
         retrieved.Should().NotEqual(first);
+    }
+
+    private static byte[] ReadInternalBuffer(DekHolder holder)
+    {
+        var field = typeof(DekHolder)
+            .GetField("_dek", BindingFlags.NonPublic | BindingFlags.Instance);
+        field.Should().NotBeNull("the in-place zeroing assertion needs the backing buffer");
+        return (byte[])field!.GetValue(holder)!;
     }
 
     [Fact]
