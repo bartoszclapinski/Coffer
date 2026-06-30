@@ -47,7 +47,16 @@ public sealed record DekFile(
             payload = ms.ToArray();
         }
 
-        await File.WriteAllBytesAsync(path, payload, ct);
+        // CreateNew is atomic create-or-fail: it closes the TOCTOU window between the
+        // caller's File.Exists pre-flight and this write, so a second process that
+        // created the DEK file in the gap gets an IOException instead of a silent
+        // overwrite of someone else's vault key.
+        await using var stream = new FileStream(
+            path,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None);
+        await stream.WriteAsync(payload, ct);
     }
 
     public static async Task<DekFile> ReadAsync(string path, CancellationToken ct)
