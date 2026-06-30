@@ -9,6 +9,7 @@
         xmlns:chatVm="clr-namespace:Coffer.Application.ViewModels.Chat;assembly=Coffer.Application"
         xmlns:alertsVm="clr-namespace:Coffer.Application.ViewModels.Alerts;assembly=Coffer.Application"
         xmlns:goalsVm="clr-namespace:Coffer.Application.ViewModels.Goals;assembly=Coffer.Application"
+        xmlns:planningVm="clr-namespace:Coffer.Application.ViewModels.Planning;assembly=Coffer.Application"
         xmlns:settingsVm="clr-namespace:Coffer.Application.ViewModels.Settings;assembly=Coffer.Application"
         xmlns:views="clr-namespace:Coffer.Desktop.Views"
         xmlns:l="clr-namespace:Coffer.Desktop.Localization"
@@ -38,6 +39,9 @@
         </DataTemplate>
         <DataTemplate DataType="goalsVm:GoalsViewModel">
             <views:GoalsView />
+        </DataTemplate>
+        <DataTemplate DataType="planningVm:CashFlowPlanningViewModel">
+            <views:CashFlowPlanningView />
         </DataTemplate>
         <DataTemplate DataType="settingsVm:SettingsViewModel">
             <views:SettingsView />
@@ -93,6 +97,12 @@
                             Classes.active="{Binding IsAdvisorActive}"
                             Content="{l:Localize Nav.Advisor}"
                             Command="{Binding ShowAdvisorCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left" />
+                    <Button Classes="nav"
+                            Classes.active="{Binding IsPlanningActive}"
+                            Content="{l:Localize Nav.CashFlow}"
+                            Command="{Binding ShowPlanningCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"

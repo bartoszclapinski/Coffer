@@ -1,0 +1,332 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Planning;assembly=Coffer.Application"
+             xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:l="clr-namespace:Coffer.Desktop.Localization"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
+             x:Class="Coffer.Desktop.Views.CashFlowPlanningView"
+             x:DataType="vm:CashFlowPlanningViewModel"
+             x:CompileBindings="False">
+    <UserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="20,16" />
+        </Style>
+        <Style Selector="Border.badge">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.badgeText">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style Selector="TextBlock.metricLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8E8E93" />
+        </Style>
+        <Style Selector="TextBlock.metricValue">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ColumnDefinitions="360,*">
+        <!-- Left: suggestions, flows, new-flow form -->
+        <ScrollViewer Grid.Column="0">
+            <StackPanel Margin="32,32,16,32" Spacing="16">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{l:Localize CashFlow.Title}"
+                               FontSize="26"
+                               FontWeight="Light"
+                               Foreground="#1D1D1F" />
+                    <TextBlock Text="{l:Localize CashFlow.Subtitle}"
+                               Foreground="#8E8E93"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <ProgressBar IsIndeterminate="True" Height="4"
+                             IsVisible="{Binding IsLoading}" />
+
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#D14"
+                           TextWrapping="Wrap"
+                           IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                <TextBlock Text="{l:Localize CashFlow.Empty}"
+                           Foreground="#8E8E93"
+                           TextWrapping="Wrap"
+                           IsVisible="{Binding IsEmpty}" />
+
+                <Border Classes="card" IsVisible="{Binding HasSuggestions}">
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="sectionTitle" Margin="0"
+                                   Text="{l:Localize CashFlow.Section.Suggestions}" />
+                        <ItemsControl ItemsSource="{Binding Suggestions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FlowCandidateViewModel">
+                                    <Border Background="#F5F5F7" CornerRadius="8"
+                                            Padding="14,12" Margin="0,0,0,8">
+                                        <StackPanel Spacing="6">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding Name}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#1D1D1F"
+                                                           TextWrapping="Wrap" />
+                                                <Border Grid.Column="1" Classes="badge"
+                                                        Background="{Binding DirectionColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}">
+                                                    <TextBlock Classes="badgeText" Text="{Binding DirectionText}" />
+                                                </Border>
+                                            </Grid>
+                                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                                <TextBlock Classes="metricValue" Text="{Binding AmountText}" />
+                                                <TextBlock Classes="metricLabel" Text="{Binding IntervalText}" VerticalAlignment="Center" />
+                                                <TextBlock Classes="metricLabel" Text="{Binding DayText}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <Button Content="{l:Localize CashFlow.Action.Confirm}"
+                                                    HorizontalAlignment="Left"
+                                                    IsEnabled="{Binding !IsBusy}"
+                                                    Command="{Binding ConfirmCommand}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="card" IsVisible="{Binding HasData}">
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="sectionTitle" Margin="0"
+                                   Text="{l:Localize CashFlow.Section.Flows}" />
+                        <ItemsControl ItemsSource="{Binding Flows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:RecurringFlowViewModel">
+                                    <Border Background="#F5F5F7" CornerRadius="8"
+                                            Padding="14,12" Margin="0,0,0,8">
+                                        <StackPanel Spacing="8">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBox Grid.Column="0" Text="{Binding Name}" />
+                                                <Border Grid.Column="1" Classes="badge" Margin="8,0,0,0"
+                                                        Background="{Binding DirectionColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}">
+                                                    <TextBlock Classes="badgeText" Text="{Binding DirectionText}" />
+                                                </Border>
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" >
+                                                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,6,6">
+                                                    <TextBlock Classes="metricLabel" Text="{l:Localize CashFlow.Field.Amount}" />
+                                                    <NumericUpDown Minimum="0" Increment="50" FormatString="N2"
+                                                                   Value="{Binding Amount}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="6,0,0,6">
+                                                    <TextBlock Classes="metricLabel" Text="{l:Localize CashFlow.Field.Day}" />
+                                                    <NumericUpDown Minimum="1" Maximum="31" Increment="1"
+                                                                   Value="{Binding AnchorDayOfMonth}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,0,6,0">
+                                                    <TextBlock Classes="metricLabel" Text="{l:Localize CashFlow.Field.Interval}" />
+                                                    <ComboBox HorizontalAlignment="Stretch"
+                                                              ItemsSource="{Binding IntervalOptions}"
+                                                              SelectedItem="{Binding SelectedInterval}">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:CashFlowIntervalOption">
+                                                                <TextBlock Text="{Binding Label}" />
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="6,0,0,0">
+                                                    <TextBlock Classes="metricLabel" Text="{l:Localize CashFlow.Field.AccrualOffset}" />
+                                                    <NumericUpDown Minimum="0" Maximum="12" Increment="1"
+                                                                   Value="{Binding AccrualOffsetMonths}" />
+                                                </StackPanel>
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                                <CheckBox Grid.Column="0"
+                                                          Content="{l:Localize CashFlow.Field.Active}"
+                                                          IsChecked="{Binding IsActive}" />
+                                                <Button Grid.Column="1"
+                                                        Content="{l:Localize CashFlow.Action.Save}"
+                                                        Margin="0,0,8,0"
+                                                        IsEnabled="{Binding !IsBusy}"
+                                                        Command="{Binding SaveCommand}" />
+                                                <Button Grid.Column="2"
+                                                        Content="{l:Localize CashFlow.Action.Delete}"
+                                                        IsEnabled="{Binding !IsBusy}"
+                                                        Command="{Binding DeleteCommand}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="card">
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="sectionTitle" Text="{l:Localize CashFlow.Section.NewFlow}" />
+                        <TextBox Watermark="{l:Localize CashFlow.Field.Name}"
+                                 Text="{Binding NewFlowName}" />
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding DirectionOptions}"
+                                  SelectedItem="{Binding NewFlowDirection}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:CashFlowDirectionOption">
+                                    <TextBlock Text="{Binding Label}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <NumericUpDown Watermark="{l:Localize CashFlow.Field.Amount}"
+                                       Minimum="0" Increment="50" FormatString="N2"
+                                       Value="{Binding NewFlowAmount}" />
+                        <NumericUpDown Watermark="{l:Localize CashFlow.Field.Day}"
+                                       Minimum="1" Maximum="31" Increment="1"
+                                       Value="{Binding NewFlowAnchorDay}" />
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding IntervalOptions}"
+                                  SelectedItem="{Binding NewFlowInterval}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:CashFlowIntervalOption">
+                                    <TextBlock Text="{Binding Label}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <NumericUpDown Watermark="{l:Localize CashFlow.Field.AccrualOffset}"
+                                       Minimum="0" Maximum="12" Increment="1"
+                                       Value="{Binding NewFlowAccrualOffsetMonths}" />
+                        <Button Content="{l:Localize CashFlow.Action.Add}"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding AddFlowCommand}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Right: horizon, summary, chart, gaps, timeline -->
+        <ScrollViewer Grid.Column="1">
+            <StackPanel Margin="16,32,32,32" Spacing="16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0"
+                               Classes="sectionTitle" Margin="0"
+                               VerticalAlignment="Center"
+                               Text="{l:Localize CashFlow.Horizon.Label}" />
+                    <ComboBox Grid.Column="1"
+                              Width="160"
+                              ItemsSource="{Binding HorizonOptions}"
+                              SelectedItem="{Binding SelectedHorizon}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:HorizonOption">
+                                <TextBlock Text="{Binding Label}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <Border Classes="card" Background="#FDECEA" BorderBrush="#F5C2BC"
+                        IsVisible="{Binding HasGaps}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="{l:Localize CashFlow.Gap.Warning}"
+                                   Foreground="#B42318"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap" />
+                        <ItemsControl ItemsSource="{Binding StatementGaps}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}"
+                                               Foreground="#B42318"
+                                               TextWrapping="Wrap"
+                                               Margin="0,2,0,0" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="card" IsVisible="{Binding HasData}">
+                    <StackPanel Spacing="12">
+                        <Grid ColumnDefinitions="*,*,*,*">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Classes="metricLabel" Text="{l:Localize CashFlow.Summary.Opening}" />
+                                <TextBlock Classes="metricValue" Text="{Binding OpeningBalanceText}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Classes="metricLabel" Text="{l:Localize CashFlow.Summary.Closing}" />
+                                <TextBlock Classes="metricValue" Text="{Binding ClosingBalanceText}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="2">
+                                <TextBlock Classes="metricLabel" Text="{l:Localize CashFlow.Summary.Lowest}" />
+                                <TextBlock Classes="metricValue" Text="{Binding LowestBalanceText}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" Spacing="2">
+                                <TextBlock Classes="metricLabel" Text="{l:Localize CashFlow.Summary.LowestDate}" />
+                                <TextBlock Classes="metricValue" Text="{Binding LowestBalanceDateText}" />
+                            </StackPanel>
+                        </Grid>
+                        <Border Classes="badge" HorizontalAlignment="Left"
+                                Background="#FF3B30"
+                                IsVisible="{Binding HasTightWindow}">
+                            <TextBlock Classes="badgeText" Text="{l:Localize CashFlow.Tight.Warning}" />
+                        </Border>
+                        <lvc:CartesianChart Height="260"
+                                            Series="{Binding BalanceSeries}"
+                                            XAxes="{Binding BalanceXAxes}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="card" IsVisible="{Binding HasData}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="sectionTitle" Text="{l:Localize CashFlow.Section.Timeline}" />
+                        <ItemsControl ItemsSource="{Binding Timeline}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:CashFlowEventViewModel">
+                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,8">
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding DateText}"
+                                                   Classes="metricLabel"
+                                                   Width="90"
+                                                   VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}"
+                                                       Foreground="#1D1D1F"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding AccrualText}"
+                                                       Classes="metricLabel" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding AmountText}"
+                                                   FontWeight="SemiBold"
+                                                   Margin="12,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{Binding DirectionColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                        <TextBlock Grid.Column="3"
+                                                   Text="{Binding BalanceText}"
+                                                   Classes="metricValue"
+                                                   Width="120"
+                                                   TextAlignment="Right"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

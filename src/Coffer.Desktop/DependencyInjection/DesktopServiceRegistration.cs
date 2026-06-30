@@ -5,6 +5,7 @@ using Coffer.Application.ViewModels.Goals;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
+using Coffer.Application.ViewModels.Planning;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Setup;
 using Coffer.Application.ViewModels.Transactions;
@@ -33,6 +34,7 @@ public static class DesktopServiceRegistration
         services.AddTransient<ChatViewModel>();
         services.AddTransient<AlertsViewModel>();
         services.AddTransient<GoalsViewModel>();
+        services.AddTransient<CashFlowPlanningViewModel>();
         services.AddTransient<SettingsViewModel>();
 
         // The OS file-open dialog sits behind IFilePicker so the import VM (in

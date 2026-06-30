@@ -5,10 +5,12 @@ using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Goals;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Main;
+using Coffer.Application.ViewModels.Planning;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Anomalies;
 using Coffer.Core.Chat;
+using Coffer.Core.Planning;
 using Coffer.Core.Security;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -122,6 +124,17 @@ public class MainViewModelTests
         vm.CurrentPage.Should().BeSameAs(vm.Advisor);
     }
 
+    [Fact]
+    public void ShowPlanning_SwitchesActivePage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.ShowPlanningCommand.Execute(null);
+
+        vm.IsPlanningActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Planning);
+    }
+
     private static MainViewModel CreateViewModel(ILoginService loginService)
     {
         var dashboard = new DashboardViewModel(
@@ -164,9 +177,17 @@ public class MainViewModelTests
             new FakeLocalizer(),
             new FakeLanguageStore(),
             NullLogger<SettingsViewModel>.Instance);
+        var planning = new CashFlowPlanningViewModel(
+            new FakeRecurringFlowRepository(),
+            new FakeRecurringFlowDetector(),
+            new FakeRunningBalanceQuery(),
+            new FakeStatementContinuityChecker(),
+            new CashFlowProjectionEngine(),
+            new FakeLocalizer(),
+            NullLogger<CashFlowPlanningViewModel>.Instance);
 
         return new MainViewModel(
-            dashboard, import, transactions, chat, alerts, advisor, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
+            dashboard, import, transactions, chat, alerts, advisor, planning, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class StubChatService : IChatService

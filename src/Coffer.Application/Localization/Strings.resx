@@ -730,4 +730,133 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="Goal.Risk.VolatileSpending" xml:space="preserve">
     <value>Variable spending swings widely month to month, so free cash is unpredictable.</value>
   </data>
+  <data name="Nav.CashFlow" xml:space="preserve">
+    <value>Cash flow</value>
+  </data>
+  <data name="CashFlow.Title" xml:space="preserve">
+    <value>Cash flow</value>
+  </data>
+  <data name="CashFlow.Subtitle" xml:space="preserve">
+    <value>Project your balance forward from recurring flows.</value>
+  </data>
+  <data name="CashFlow.Horizon.Label" xml:space="preserve">
+    <value>Horizon</value>
+  </data>
+  <data name="CashFlow.Horizon.Days" xml:space="preserve">
+    <value>{0} days</value>
+  </data>
+  <data name="CashFlow.Chart.Balance" xml:space="preserve">
+    <value>Balance</value>
+  </data>
+  <data name="CashFlow.Summary.Opening" xml:space="preserve">
+    <value>Opening balance</value>
+  </data>
+  <data name="CashFlow.Summary.Closing" xml:space="preserve">
+    <value>Closing balance</value>
+  </data>
+  <data name="CashFlow.Summary.Lowest" xml:space="preserve">
+    <value>Lowest balance</value>
+  </data>
+  <data name="CashFlow.Summary.LowestDate" xml:space="preserve">
+    <value>Reached on</value>
+  </data>
+  <data name="CashFlow.Tight.Warning" xml:space="preserve">
+    <value>Balance falls to or below zero within this window.</value>
+  </data>
+  <data name="CashFlow.Gap.Warning" xml:space="preserve">
+    <value>Imported statements have gaps — the opening balance may be unreliable.</value>
+  </data>
+  <data name="CashFlow.Gap.Range" xml:space="preserve">
+    <value>Missing statements: {0} – {1}</value>
+  </data>
+  <data name="CashFlow.Section.Timeline" xml:space="preserve">
+    <value>Timeline</value>
+  </data>
+  <data name="CashFlow.Section.Flows" xml:space="preserve">
+    <value>Recurring flows</value>
+  </data>
+  <data name="CashFlow.Section.Suggestions" xml:space="preserve">
+    <value>Detected suggestions</value>
+  </data>
+  <data name="CashFlow.Section.NewFlow" xml:space="preserve">
+    <value>Add a flow</value>
+  </data>
+  <data name="CashFlow.Timeline.Accrual" xml:space="preserve">
+    <value>Accrues: {0}</value>
+  </data>
+  <data name="CashFlow.Candidate.Day" xml:space="preserve">
+    <value>Day {0} of the month</value>
+  </data>
+  <data name="CashFlow.Direction.Inflow" xml:space="preserve">
+    <value>Inflow</value>
+  </data>
+  <data name="CashFlow.Direction.Outflow" xml:space="preserve">
+    <value>Outflow</value>
+  </data>
+  <data name="CashFlow.Interval.Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="CashFlow.Interval.Quarterly" xml:space="preserve">
+    <value>Quarterly</value>
+  </data>
+  <data name="CashFlow.Interval.Yearly" xml:space="preserve">
+    <value>Yearly</value>
+  </data>
+  <data name="CashFlow.Interval.Custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="CashFlow.Field.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="CashFlow.Field.Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="CashFlow.Field.Day" xml:space="preserve">
+    <value>Day of month</value>
+  </data>
+  <data name="CashFlow.Field.Interval" xml:space="preserve">
+    <value>Cadence</value>
+  </data>
+  <data name="CashFlow.Field.Direction" xml:space="preserve">
+    <value>Direction</value>
+  </data>
+  <data name="CashFlow.Field.AccrualOffset" xml:space="preserve">
+    <value>Accrual offset (months)</value>
+  </data>
+  <data name="CashFlow.Field.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="CashFlow.Action.Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="CashFlow.Action.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="CashFlow.Action.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="CashFlow.Action.Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="CashFlow.Empty" xml:space="preserve">
+    <value>No recurring flows yet. Add one or confirm a detected suggestion to project your balance.</value>
+  </data>
+  <data name="CashFlow.Error.Load" xml:space="preserve">
+    <value>Could not load the cash-flow plan.</value>
+  </data>
+  <data name="CashFlow.Error.Validation" xml:space="preserve">
+    <value>Enter a name, a positive amount and a day between 1 and 31.</value>
+  </data>
+  <data name="CashFlow.Error.Add" xml:space="preserve">
+    <value>Could not add the flow.</value>
+  </data>
+  <data name="CashFlow.Error.Save" xml:space="preserve">
+    <value>Could not save the flow.</value>
+  </data>
+  <data name="CashFlow.Error.Delete" xml:space="preserve">
+    <value>Could not delete the flow.</value>
+  </data>
+  <data name="CashFlow.Error.Confirm" xml:space="preserve">
+    <value>Could not confirm the suggestion.</value>
+  </data>
 </root>
