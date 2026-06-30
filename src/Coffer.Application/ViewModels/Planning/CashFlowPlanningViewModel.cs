@@ -19,7 +19,8 @@ namespace Coffer.Application.ViewModels.Planning;
 /// timeline plus the balance curve. Detection only proposes candidates the owner confirms; editing,
 /// adding, deleting and confirming all mutate through <see cref="IRecurringFlowRepository"/> and
 /// re-project. Changing the horizon re-projects from cached state without re-querying. The engine
-/// calculates; nothing here does AI — explanation is left to 16-C.
+/// calculates the timeline; <see cref="ICashFlowExplainer"/> narrates it on demand, falling back to a
+/// deterministic summary whenever the AI is unavailable. Re-projecting clears any stale narration.
 /// </summary>
 public sealed partial class CashFlowPlanningViewModel : ObservableObject
 {
@@ -31,12 +32,14 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
     private readonly IRunningBalanceQuery _balanceQuery;
     private readonly IStatementContinuityChecker _continuityChecker;
     private readonly CashFlowProjectionEngine _engine;
+    private readonly ICashFlowExplainer _explainer;
     private readonly ILocalizer _localizer;
     private readonly ILogger<CashFlowPlanningViewModel> _logger;
 
     private IReadOnlyList<RecurringFlow> _flows = [];
     private decimal _openingBalance;
     private DateOnly _today;
+    private CashFlowProjection? _projection;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -95,12 +98,25 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
     [ObservableProperty]
     private CashFlowIntervalOption? _newFlowInterval;
 
+    [ObservableProperty]
+    private bool _isExplaining;
+
+    [ObservableProperty]
+    private bool _hasNarrative;
+
+    [ObservableProperty]
+    private bool _narrativeIsAi;
+
+    [ObservableProperty]
+    private string _narrative = "";
+
     public CashFlowPlanningViewModel(
         IRecurringFlowRepository repository,
         IRecurringFlowDetector detector,
         IRunningBalanceQuery balanceQuery,
         IStatementContinuityChecker continuityChecker,
         CashFlowProjectionEngine engine,
+        ICashFlowExplainer explainer,
         ILocalizer localizer,
         ILogger<CashFlowPlanningViewModel> logger)
     {
@@ -109,6 +125,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(balanceQuery);
         ArgumentNullException.ThrowIfNull(continuityChecker);
         ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(explainer);
         ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(logger);
 
@@ -117,6 +134,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
         _balanceQuery = balanceQuery;
         _continuityChecker = continuityChecker;
         _engine = engine;
+        _explainer = explainer;
         _localizer = localizer;
         _logger = logger;
 
@@ -220,6 +238,33 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
+    private async Task ExplainAsync(CancellationToken ct)
+    {
+        if (_projection is not { } projection || IsExplaining)
+        {
+            return;
+        }
+
+        IsExplaining = true;
+        try
+        {
+            var explanation = await _explainer.ExplainAsync(projection, ct).ConfigureAwait(true);
+            Narrative = explanation.Narrative;
+            NarrativeIsAi = explanation.GeneratedByAi;
+            HasNarrative = !string.IsNullOrWhiteSpace(explanation.Narrative);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to explain cash-flow projection");
+            ErrorMessage = _localizer["CashFlow.Error.Explain"];
+        }
+        finally
+        {
+            IsExplaining = false;
+        }
+    }
+
     partial void OnSelectedHorizonChanged(HorizonOption? value)
     {
         if (value is not null && HasData)
@@ -277,6 +322,12 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
     {
         var horizon = SelectedHorizon?.Days ?? 90;
         var projection = _engine.Project(_flows, _openingBalance, _today, horizon);
+        _projection = projection;
+
+        // The previous narration describes a stale projection; require a fresh explanation.
+        Narrative = "";
+        HasNarrative = false;
+        NarrativeIsAi = false;
 
         Timeline.Clear();
         foreach (var e in projection.Events)
