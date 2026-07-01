@@ -84,6 +84,12 @@ public sealed partial class ImportViewModel : ObservableObject
     private bool _summaryAlreadyImported;
 
     [ObservableProperty]
+    private bool _aiFallbackUsed;
+
+    [ObservableProperty]
+    private bool _ownerNameUnredacted;
+
+    [ObservableProperty]
     private string _errorMessage = "";
 
     public ImportViewModel(
@@ -248,6 +254,8 @@ public sealed partial class ImportViewModel : ObservableObject
             SummaryAdded = summary.Added;
             SummarySkipped = summary.Skipped;
             SummaryAlreadyImported = summary.AlreadyImported;
+            AiFallbackUsed = summary.AiFallbackUsed;
+            OwnerNameUnredacted = summary.OwnerNameUnredacted;
             Warnings.Clear();
             foreach (var warning in summary.Warnings)
             {
@@ -313,6 +321,8 @@ public sealed partial class ImportViewModel : ObservableObject
         SummaryAdded = 0;
         SummarySkipped = 0;
         SummaryAlreadyImported = false;
+        AiFallbackUsed = false;
+        OwnerNameUnredacted = false;
         Warnings.Clear();
     }
 

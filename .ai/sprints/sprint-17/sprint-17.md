@@ -44,13 +44,13 @@ Phase 1 (Sprint 7/8) built the parsing spine — registry, detector, `StatementI
 
 ### 17-B — UI
 
-- [ ] 17.11 Ustawienia: an "AI fallback parsing" opt-in toggle (off by default) with a short consent explanation that statement text will be sent to the AI provider, and an "Account holder name" field feeding owner-identity redaction. Wired through the settings VM to `IAiSettings`. All strings via `{l:Localize}`, keys in **both** `.resx`.
-- [ ] 17.12 Import result: surface the `Medium`-confidence + "parsed by AI fallback, review the transactions" warning (and the header-exposure warning when owner name is unset) in the import page after an AI-fallback import. Localized.
-- [ ] 17.13 Tests (`Coffer.Application.Tests`): settings VM round-trips the toggle + name via a fake `IAiSettings`; import VM surfaces the AI-fallback warning when the result is `Medium` from `AI_FALLBACK`; `FakeLocalizer`; resource-key parity test stays green.
+- [x] 17.11 Ustawienia: an "AI fallback parsing" opt-in toggle (off by default) with a short consent explanation that statement text will be sent to the AI provider, and an "Account holder name" field feeding owner-identity redaction. Wired through the settings VM to `IAiSettings`. All strings via `{l:Localize}`, keys in **both** `.resx`.
+- [x] 17.12 Import result: surface the `Medium`-confidence + "parsed by AI fallback, review the transactions" warning (and the header-exposure warning when owner name is unset) in the import page after an AI-fallback import. Localized. (`ImportSummary` gained `AiFallbackUsed`/`OwnerNameUnredacted` flags — the parser warning constants live in Infrastructure, so the use case sets flags + suppresses the raw English warnings and the view renders localized banners.)
+- [x] 17.13 Tests (`Coffer.Application.Tests`): settings VM round-trips the toggle + name via a fake `IAiSettings`; import VM surfaces the AI-fallback flags; use case sets the flags and suppresses the raw AI warnings; resource-key parity test stays green.
 
 ### Sweep
 
-- [ ] 17.14 Resource-key parity holds; no residual hardcoded user-facing literals in the new settings/import surfaces.
+- [x] 17.14 Resource-key parity holds; no residual hardcoded user-facing literals in the new settings/import surfaces.
 - [ ] 17.15 Manual DoD click-through (below).
 
 ## Definition of Done

@@ -139,6 +139,21 @@
   <data name="Settings.Budget.Spent" xml:space="preserve">
     <value>Spent this month</value>
   </data>
+  <data name="Settings.AiFallback.Section" xml:space="preserve">
+    <value>AI fallback parsing</value>
+  </data>
+  <data name="Settings.AiFallback.Toggle" xml:space="preserve">
+    <value>Enable AI fallback parsing for unknown banks</value>
+  </data>
+  <data name="Settings.AiFallback.Consent" xml:space="preserve">
+    <value>When a statement comes from a bank with no built-in parser, its text is sent to the AI provider to extract the transactions. Account numbers, IBAN, NIP and the account holder's name (below) are redacted first. Off by default — enable it only if you accept sending statement contents to the provider.</value>
+  </data>
+  <data name="Settings.AiFallback.OwnerName" xml:space="preserve">
+    <value>Account holder name</value>
+  </data>
+  <data name="Settings.AiFallback.OwnerNameHint" xml:space="preserve">
+    <value>Redacted from statement text before it reaches the AI provider. Separate several spellings or aliases with commas. Leave empty to skip name redaction (the statement header may then be sent un-redacted).</value>
+  </data>
   <data name="Settings.Save" xml:space="preserve">
     <value>Save settings</value>
   </data>
@@ -231,6 +246,12 @@
   </data>
   <data name="Import.Summary.AlreadyImported" xml:space="preserve">
     <value>This file was already imported earlier.</value>
+  </data>
+  <data name="Import.Summary.AiFallback" xml:space="preserve">
+    <value>This bank has no built-in parser, so the transactions were extracted by the AI fallback. Review them before relying on them — dates, amounts or descriptions may need a second look.</value>
+  </data>
+  <data name="Import.Summary.OwnerNameUnredacted" xml:space="preserve">
+    <value>No account holder name is set, so the statement header may have reached the AI provider un-redacted. Set your name in Settings to redact it on future imports.</value>
   </data>
   <data name="Import.Stage.Reading" xml:space="preserve">
     <value>Reading file…</value>

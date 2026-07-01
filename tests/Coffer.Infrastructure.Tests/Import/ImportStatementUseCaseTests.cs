@@ -1,13 +1,16 @@
 using System.Security.Cryptography;
 using Coffer.Core.Domain;
 using Coffer.Core.Import;
+using Coffer.Core.Parsing;
 using Coffer.Infrastructure.Categorization;
 using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Parsing;
+using Coffer.Infrastructure.Parsing.Ai;
 using Coffer.Infrastructure.Parsing.Pko;
 using Coffer.Infrastructure.Persistence;
 using Coffer.Infrastructure.Tests.Parsing.Pko;
 using Coffer.Infrastructure.Tests.Persistence;
+using Coffer.Shared.Parsing;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -158,6 +161,27 @@ public class ImportStatementUseCaseTests : IDisposable
         summary.Warnings.Should().NotContain(PkoHistoriaCsvParser.AccountNumberAbsentWarning);
     }
 
+    [Fact]
+    public async Task Execute_AiFallbackResult_SetsFlagsAndSuppressesRawAiWarnings()
+    {
+        var accountId = await SeedAccountAsync();
+        // Registry with no deterministic parser but an AI fallback, so any statement resolves to it.
+        var registry = new StatementParserRegistry([], new StubAiFallbackParser());
+        var categorizer = new RuleCacheCategorizer(_factory, new RuleEngine(NullLogger<RuleEngine>.Instance));
+        var useCase = new ImportStatementUseCase(
+            _factory, new FingerprintBankDetector(), registry, categorizer, NullLogger<ImportStatementUseCase>.Instance);
+
+        var input = CsvStatementInputFactory.FromGoldenFile();
+        var summary = await useCase.ExecuteAsync(new ImportRequest(input, accountId), null, CancellationToken.None);
+
+        summary.AiFallbackUsed.Should().BeTrue();
+        summary.OwnerNameUnredacted.Should().BeTrue("the stub result carries the owner-name-unset warning");
+        summary.Warnings.Should().NotContain(AiAssistedParser.ReviewWarning);
+        summary.Warnings.Should().NotContain(AiAssistedParser.OwnerNameUnsetWarning);
+        summary.Warnings.Should().NotContain(AiAssistedParser.AccountNumberAbsentWarning);
+        summary.Warnings.Should().Contain("2 rows looked odd.", "unrelated parser warnings still reach the user");
+    }
+
     private ImportStatementUseCase CreateUseCase()
     {
         var registry = new StatementParserRegistry([new PkoHistoriaCsvParser()]);
@@ -215,5 +239,41 @@ public class ImportStatementUseCaseTests : IDisposable
         public List<ImportStage> Stages { get; } = [];
 
         public void Report(ImportProgress value) => Stages.Add(value.Stage);
+    }
+
+    // Mimics the AI fallback's output shape without any AI plumbing: it carries the same
+    // warning constants and bank code so the use case's flag/suppression logic can be checked.
+    private sealed class StubAiFallbackParser : IStatementParser
+    {
+        public string BankCode => AiAssistedParser.AiFallbackBankCode;
+
+        public StatementFormat Format => StatementFormat.Pdf;
+
+        public bool CanHandle(BankFingerprint fingerprint) => true;
+
+        public Task<ParseResult> ParseAsync(StatementInput input, CancellationToken ct)
+        {
+            var transactions = new List<ParsedTransaction>
+            {
+                new(new DateOnly(2026, 1, 5), null, -49.99m, "PLN", "BIEDRONKA 1234", "BIEDRONKA"),
+                new(new DateOnly(2026, 1, 10), null, 5000.00m, "PLN", "WYNAGRODZENIE", null),
+            };
+            var warnings = new List<string>
+            {
+                AiAssistedParser.ReviewWarning,
+                AiAssistedParser.AccountNumberAbsentWarning,
+                AiAssistedParser.OwnerNameUnsetWarning,
+                "2 rows looked odd.",
+            };
+            return Task.FromResult(new ParseResult(
+                AiAssistedParser.AiFallbackBankCode,
+                AccountNumber: string.Empty,
+                Currency: "PLN",
+                PeriodFrom: new DateOnly(2026, 1, 1),
+                PeriodTo: new DateOnly(2026, 1, 31),
+                Transactions: transactions,
+                Confidence: ParserConfidence.Medium,
+                Warnings: warnings));
+        }
     }
 }

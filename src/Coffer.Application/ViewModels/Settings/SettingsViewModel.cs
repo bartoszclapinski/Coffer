@@ -46,6 +46,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     private decimal _currentMonthSpendPln;
 
     [ObservableProperty]
+    private bool _aiFallbackParsingEnabled = AiDefaults.AiFallbackParsingEnabled;
+
+    [ObservableProperty]
+    private string _ownerIdentityNames = "";
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveApiKeyCommand))]
     private string _apiKeyInput = "";
 
@@ -116,6 +122,8 @@ public sealed partial class SettingsViewModel : ObservableObject
             SelectedProvider = await _settings.GetActiveProviderAsync(ct).ConfigureAwait(true);
             CategorizationModel = await _settings.GetCategorizationModelAsync(ct).ConfigureAwait(true);
             MonthlyCapPln = await _settings.GetMonthlyCapPlnAsync(ct).ConfigureAwait(true);
+            AiFallbackParsingEnabled = await _settings.GetAiFallbackParsingEnabledAsync(ct).ConfigureAwait(true);
+            OwnerIdentityNames = await _settings.GetOwnerIdentityNamesAsync(ct).ConfigureAwait(true) ?? "";
             CurrentMonthSpendPln = await _ledger.GetCurrentMonthSpendPlnAsync(ct).ConfigureAwait(true);
 
             var key = await _secrets.GetSecretAsync(AiDefaults.ClaudeApiKeySecret, ct).ConfigureAwait(true);
@@ -148,6 +156,8 @@ public sealed partial class SettingsViewModel : ObservableObject
             await _settings.SetActiveProviderAsync(SelectedProvider, ct).ConfigureAwait(true);
             await _settings.SetCategorizationModelAsync(CategorizationModel, ct).ConfigureAwait(true);
             await _settings.SetMonthlyCapPlnAsync(MonthlyCapPln, ct).ConfigureAwait(true);
+            await _settings.SetAiFallbackParsingEnabledAsync(AiFallbackParsingEnabled, ct).ConfigureAwait(true);
+            await _settings.SetOwnerIdentityNamesAsync(OwnerIdentityNames, ct).ConfigureAwait(true);
             StatusMessage = _localizer["Settings.Status.Saved"];
         }
         catch (Exception ex)

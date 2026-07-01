@@ -122,6 +122,16 @@
                     <TextBlock Text="{l:Localize Import.Summary.AlreadyImported}"
                                Foreground="#8E8E93"
                                IsVisible="{Binding SummaryAlreadyImported}" />
+                    <Border Background="#FFF7ED" CornerRadius="6" Padding="10"
+                            IsVisible="{Binding AiFallbackUsed}">
+                        <TextBlock Text="{l:Localize Import.Summary.AiFallback}"
+                                   Foreground="#B26A00" TextWrapping="Wrap" />
+                    </Border>
+                    <Border Background="#FEF2F2" CornerRadius="6" Padding="10"
+                            IsVisible="{Binding OwnerNameUnredacted}">
+                        <TextBlock Text="{l:Localize Import.Summary.OwnerNameUnredacted}"
+                                   Foreground="#B91C1C" TextWrapping="Wrap" />
+                    </Border>
                     <ItemsControl ItemsSource="{Binding Warnings}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
