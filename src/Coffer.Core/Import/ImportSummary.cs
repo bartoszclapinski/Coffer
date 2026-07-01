@@ -13,10 +13,20 @@ namespace Coffer.Core.Import;
 /// <param name="Categorized">Newly persisted transactions that got a category (rules/cache).</param>
 /// <param name="AlreadyImported">True when an earlier session imported a byte-identical file.</param>
 /// <param name="Warnings">Non-fatal issues surfaced by the parser (and the import).</param>
+/// <param name="AiFallbackUsed">
+/// True when the AI fallback parser produced this result (bank had no deterministic parser).
+/// The transactions are model-extracted (<c>Medium</c> confidence) and warrant a review prompt.
+/// </param>
+/// <param name="OwnerNameUnredacted">
+/// True when the AI fallback ran without a configured account-holder name, so the statement
+/// header may have reached the AI provider un-redacted. Prompts the owner to set their name.
+/// </param>
 public sealed record ImportSummary(
     Guid ImportSessionId,
     int Added,
     int Skipped,
     int Categorized,
     bool AlreadyImported,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings,
+    bool AiFallbackUsed = false,
+    bool OwnerNameUnredacted = false);

@@ -44,6 +44,44 @@ public class SettingsViewModelTests
     }
 
     [Fact]
+    public async Task Load_PopulatesAiFallbackToggleAndOwnerName()
+    {
+        var settings = new FakeAiSettings { AiFallbackParsingEnabled = true, OwnerIdentityNames = "Jan Kowalski" };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.AiFallbackParsingEnabled.Should().BeTrue();
+        vm.OwnerIdentityNames.Should().Be("Jan Kowalski");
+    }
+
+    [Fact]
+    public async Task Load_NullOwnerName_BindsToEmptyString()
+    {
+        var settings = new FakeAiSettings { OwnerIdentityNames = null };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.OwnerIdentityNames.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Save_PersistsAiFallbackToggleAndOwnerName()
+    {
+        var settings = new FakeAiSettings();
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
+
+        vm.AiFallbackParsingEnabled = true;
+        vm.OwnerIdentityNames = "Jan Kowalski, J. Kowalski";
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        settings.AiFallbackParsingEnabled.Should().BeTrue();
+        settings.OwnerIdentityNames.Should().Be("Jan Kowalski, J. Kowalski");
+    }
+
+    [Fact]
     public async Task SaveApiKey_StoresSecretAndClearsInput()
     {
         var secrets = new FakeSecretStore();

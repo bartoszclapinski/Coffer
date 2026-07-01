@@ -4,6 +4,7 @@ using Coffer.Core.Domain;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
 using Coffer.Infrastructure.Parsing;
+using Coffer.Infrastructure.Parsing.Ai;
 using Coffer.Infrastructure.Parsing.Polish;
 using Coffer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -172,14 +173,31 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
             "Imported {Added} new transaction(s), skipped {Skipped} duplicate(s) from {File} into account {Account}",
             toAdd.Count, skipped, session.FileName, account.Id);
 
-        // The PKO CSV omits the account number, so the parser warns it must be confirmed
-        // at import time. This flow always confirms it (the user picks the target account),
-        // so the warning is moot here — drop it rather than alarm the user on every import.
-        var userWarnings = parsed.Warnings
-            .Where(w => !string.Equals(w, Parsing.Pko.PkoHistoriaCsvParser.AccountNumberAbsentWarning, StringComparison.Ordinal))
-            .ToList();
+        var aiFallbackUsed = string.Equals(parsed.BankCode, AiAssistedParser.AiFallbackBankCode, StringComparison.Ordinal);
+        var ownerNameUnredacted = parsed.Warnings.Contains(AiAssistedParser.OwnerNameUnsetWarning, StringComparer.Ordinal);
 
-        return new ImportSummary(session.Id, toAdd.Count, skipped, categorized, alreadyImported, userWarnings);
+        // Both deterministic and AI parsers warn the account number is absent, but this flow
+        // always confirms the target account (the user picks it), so those warnings are moot
+        // here — drop them. The AI review and header-exposure warnings are surfaced as localized
+        // banners (AiFallbackUsed / OwnerNameUnredacted), so drop their raw English text too.
+        var suppressed = new HashSet<string>(StringComparer.Ordinal)
+        {
+            Parsing.Pko.PkoHistoriaCsvParser.AccountNumberAbsentWarning,
+            AiAssistedParser.AccountNumberAbsentWarning,
+            AiAssistedParser.ReviewWarning,
+            AiAssistedParser.OwnerNameUnsetWarning,
+        };
+        var userWarnings = parsed.Warnings.Where(w => !suppressed.Contains(w)).ToList();
+
+        return new ImportSummary(
+            session.Id,
+            toAdd.Count,
+            skipped,
+            categorized,
+            alreadyImported,
+            userWarnings,
+            aiFallbackUsed,
+            ownerNameUnredacted);
     }
 
     private static string ComputeFileHash(Stream content)

@@ -89,6 +89,35 @@ public class ImportViewModelTests
     }
 
     [Fact]
+    public async Task Import_AiFallbackResult_SurfacesReviewAndHeaderFlags()
+    {
+        var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
+        await vm.LoadAccountsCommand.ExecuteAsync(null);
+        await vm.BrowseCommand.ExecuteAsync(null);
+        useCase.Result = new ImportSummary(
+            Guid.NewGuid(), 5, 0, 0, false, [], AiFallbackUsed: true, OwnerNameUnredacted: true);
+
+        await vm.ImportCommand.ExecuteAsync(null);
+
+        vm.AiFallbackUsed.Should().BeTrue();
+        vm.OwnerNameUnredacted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Import_DeterministicResult_LeavesAiFallbackFlagsClear()
+    {
+        var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
+        await vm.LoadAccountsCommand.ExecuteAsync(null);
+        await vm.BrowseCommand.ExecuteAsync(null);
+        useCase.Result = new ImportSummary(Guid.NewGuid(), 8, 0, 0, false, []);
+
+        await vm.ImportCommand.ExecuteAsync(null);
+
+        vm.AiFallbackUsed.Should().BeFalse();
+        vm.OwnerNameUnredacted.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Import_WhileRunning_ReportsImportingThenClears()
     {
         var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);

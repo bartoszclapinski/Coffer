@@ -139,6 +139,21 @@
   <data name="Settings.Budget.Spent" xml:space="preserve">
     <value>Wydano w tym miesiącu</value>
   </data>
+  <data name="Settings.AiFallback.Section" xml:space="preserve">
+    <value>Parsowanie AI (awaryjne)</value>
+  </data>
+  <data name="Settings.AiFallback.Toggle" xml:space="preserve">
+    <value>Włącz parsowanie AI dla nieznanych banków</value>
+  </data>
+  <data name="Settings.AiFallback.Consent" xml:space="preserve">
+    <value>Gdy wyciąg pochodzi z banku bez wbudowanego parsera, jego treść jest wysyłana do dostawcy AI w celu wyodrębnienia transakcji. Numery kont, IBAN, NIP oraz imię i nazwisko posiadacza (poniżej) są najpierw usuwane. Domyślnie wyłączone — włącz tylko jeśli akceptujesz wysyłanie treści wyciągu do dostawcy.</value>
+  </data>
+  <data name="Settings.AiFallback.OwnerName" xml:space="preserve">
+    <value>Imię i nazwisko posiadacza</value>
+  </data>
+  <data name="Settings.AiFallback.OwnerNameHint" xml:space="preserve">
+    <value>Usuwane z treści wyciągu przed wysłaniem do dostawcy AI. Kilka pisowni lub aliasów oddziel przecinkami. Pozostaw puste, aby pominąć usuwanie nazwiska (nagłówek wyciągu może wtedy zostać wysłany bez maskowania).</value>
+  </data>
   <data name="Settings.Save" xml:space="preserve">
     <value>Zapisz ustawienia</value>
   </data>
@@ -231,6 +246,12 @@
   </data>
   <data name="Import.Summary.AlreadyImported" xml:space="preserve">
     <value>Ten plik był już wcześniej zaimportowany.</value>
+  </data>
+  <data name="Import.Summary.AiFallback" xml:space="preserve">
+    <value>Ten bank nie ma wbudowanego parsera, więc transakcje wyodrębniła funkcja AI. Zweryfikuj je przed wykorzystaniem — daty, kwoty lub opisy mogą wymagać sprawdzenia.</value>
+  </data>
+  <data name="Import.Summary.OwnerNameUnredacted" xml:space="preserve">
+    <value>Nie ustawiono imienia i nazwiska posiadacza, więc nagłówek wyciągu mógł trafić do dostawcy AI bez maskowania. Ustaw dane w Ustawieniach, aby maskować je przy kolejnych importach.</value>
   </data>
   <data name="Import.Stage.Reading" xml:space="preserve">
     <value>Odczytywanie pliku…</value>

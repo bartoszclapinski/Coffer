@@ -110,6 +110,25 @@
                 </StackPanel>
             </Border>
 
+            <!-- AI fallback parsing -->
+            <Border Background="#FFFFFF" CornerRadius="10" Padding="20" BorderBrush="#E5E5EA" BorderThickness="1">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="{l:Localize Settings.AiFallback.Section}" FontWeight="SemiBold" Foreground="#1D1D1F" />
+
+                    <CheckBox Content="{l:Localize Settings.AiFallback.Toggle}"
+                              IsChecked="{Binding AiFallbackParsingEnabled, Mode=TwoWay}" />
+                    <TextBlock Text="{l:Localize Settings.AiFallback.Consent}"
+                               FontSize="12" Foreground="#8E8E93" TextWrapping="Wrap" />
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="{l:Localize Settings.AiFallback.OwnerName}" FontSize="12" Foreground="#8E8E93" />
+                        <TextBox Text="{Binding OwnerIdentityNames, Mode=TwoWay}" />
+                        <TextBlock Text="{l:Localize Settings.AiFallback.OwnerNameHint}"
+                                   FontSize="12" Foreground="#8E8E93" TextWrapping="Wrap" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <Button Content="{l:Localize Settings.Save}"
                         Command="{Binding SaveCommand}"
