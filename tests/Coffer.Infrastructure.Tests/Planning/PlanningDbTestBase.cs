@@ -69,17 +69,17 @@ public abstract class PlanningDbTestBase : IDisposable
     private protected static Account NewAccount(
         DateOnly? anchorDate = null,
         decimal? anchorBalance = null) => new()
-    {
-        Id = Guid.NewGuid(),
-        Name = "Test account",
-        BankCode = "PKO_BP",
-        AccountNumber = "PL00000000000000000000000000",
-        Currency = "PLN",
-        Type = AccountType.Checking,
-        CreatedAt = DateTime.UtcNow,
-        AnchorDate = anchorDate,
-        AnchorBalance = anchorBalance,
-    };
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test account",
+            BankCode = "PKO_BP",
+            AccountNumber = "PL00000000000000000000000000",
+            Currency = "PLN",
+            Type = AccountType.Checking,
+            CreatedAt = DateTime.UtcNow,
+            AnchorDate = anchorDate,
+            AnchorBalance = anchorBalance,
+        };
 
     private protected static ImportSession NewImportSession(DateOnly periodFrom, DateOnly periodTo) => new()
     {
