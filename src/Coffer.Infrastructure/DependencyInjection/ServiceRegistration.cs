@@ -71,6 +71,7 @@ public static class ServiceRegistration
         services.AddTransient<IRecurringFlowDetector, RecurringFlowDetector>();
         services.AddTransient<IRunningBalanceQuery, RunningBalanceQuery>();
         services.AddTransient<IStatementContinuityChecker, StatementContinuityChecker>();
+        services.AddTransient<IBalanceTrustQuery, BalanceTrustQuery>();
         services.AddTransient<ICashFlowExplainer, CashFlowExplainer>();
         return services;
     }

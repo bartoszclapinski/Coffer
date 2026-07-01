@@ -64,7 +64,7 @@ public sealed class GetCashFlowProjectionTool : ChatTool
 
         var flows = await _flows.GetActiveAsync(ct).ConfigureAwait(false);
         var today = DateOnly.FromDateTime(DateTime.Now);
-        var opening = await _balance.GetBalanceAsOfAsync(today, ct).ConfigureAwait(false);
+        var opening = await _balance.GetBalanceAsOfAsync(today, accountId: null, ct).ConfigureAwait(false);
 
         if (flows.Count == 0)
         {

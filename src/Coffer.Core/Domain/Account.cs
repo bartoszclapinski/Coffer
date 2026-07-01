@@ -22,4 +22,17 @@ public class Account
     public bool IsArchived { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Date the owner reconciled the real balance (<see cref="AnchorBalance"/>). The absolute
+    /// balance on any later date is derived as anchor plus the sum of transactions after this
+    /// date. Null until the owner sets an anchor; the balance then stays a relative running sum.
+    /// </summary>
+    public DateOnly? AnchorDate { get; set; }
+
+    /// <summary>
+    /// The real account balance as of <see cref="AnchorDate"/>, entered manually by the owner.
+    /// Null when no anchor is set. Set together with <see cref="AnchorDate"/>.
+    /// </summary>
+    public decimal? AnchorBalance { get; set; }
 }

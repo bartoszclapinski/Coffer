@@ -59,7 +59,7 @@ internal sealed class FakeRunningBalanceQuery : IRunningBalanceQuery
 {
     public decimal Balance { get; set; }
 
-    public Task<decimal> GetBalanceAsOfAsync(DateOnly asOf, CancellationToken ct) =>
+    public Task<decimal> GetBalanceAsOfAsync(DateOnly asOf, Guid? accountId, CancellationToken ct) =>
         Task.FromResult(Balance);
 }
 

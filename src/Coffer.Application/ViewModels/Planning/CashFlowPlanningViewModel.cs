@@ -277,7 +277,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
     {
         _today = DateOnly.FromDateTime(DateTime.Today);
         _flows = await _repository.GetAllAsync(ct).ConfigureAwait(true);
-        _openingBalance = await _balanceQuery.GetBalanceAsOfAsync(_today, ct).ConfigureAwait(true);
+        _openingBalance = await _balanceQuery.GetBalanceAsOfAsync(_today, accountId: null, ct).ConfigureAwait(true);
         var candidates = await _detector.DetectAsync(ct).ConfigureAwait(true);
         var gaps = await _continuityChecker.FindGapsAsync(ct).ConfigureAwait(true);
 
