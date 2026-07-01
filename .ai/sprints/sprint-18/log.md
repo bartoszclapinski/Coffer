@@ -1,0 +1,10 @@
+# Sprint 18 log
+
+## 2026-07-01
+
+- `plan` sprint-18 drafted — real-balance anchoring + a deterministic "can I afford this today?" affordability answer, the core question the app exists for. Split into 18-A (anchor fields on `Account` + per-account anchor-aware `IRunningBalanceQuery` + continuity-trust signal), 18-B (`AffordabilityEngine` + safety floor + variable-burn query + `CanIAfford` chat tool), 18-C (anchor-editing UI + account selector + affordability panel on the planning page + safety-floor setting).
+- `context`: builds directly on Sprint 16. Today `RunningBalanceQuery` sums all PLN transactions across accounts with no anchor (relative, not real); `CashFlowProjectionEngine` has a `tightFloor` param that every caller passes as `0`; variable day-to-day spend is not modelled. Those three are exactly what block "can I spend 2000 today".
+- `decision` (owner, confirmed): balance anchor = manually set `(AnchorDate, AnchorBalance)`, then derived forward from imported statements; monthly imports self-update it; a partial-month import (e.g. 1–20) still yields today's balance. Continuity checker already surfaces per-account gaps — when a gap sits between the anchor and today the answer is flagged uncertain, not silently wrong.
+- `decision`: order chosen by assistant (both features equally important, owner left it open) — Sprint 18 = affordability + anchor (the heart of the product, foundational balance work), Sprint 19 = spending explorer (selectable-window category breakdown + merchant drill-down; data already present via `Transaction.Merchant`, no migration).
+- `decision`: **engine calculates, AI explains** holds — the `AffordabilityEngine` is pure C# and the `CanIAfford` tool makes zero API calls; only optional prose narration costs anything.
+- `open question` (for owner): confirm one anchor per account (no history); trailing-3-month single-number variable burn is enough for v1; safety floor is global not per-account; the affordability panel lives on the existing planning page.
