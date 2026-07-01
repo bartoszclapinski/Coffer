@@ -31,6 +31,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
     private readonly IRecurringFlowDetector _detector;
     private readonly IRunningBalanceQuery _balanceQuery;
     private readonly IStatementContinuityChecker _continuityChecker;
+    private readonly IPlanningSettings _planningSettings;
     private readonly CashFlowProjectionEngine _engine;
     private readonly ICashFlowExplainer _explainer;
     private readonly ILocalizer _localizer;
@@ -38,6 +39,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
 
     private IReadOnlyList<RecurringFlow> _flows = [];
     private decimal _openingBalance;
+    private decimal _safetyFloor;
     private DateOnly _today;
     private CashFlowProjection? _projection;
 
@@ -115,6 +117,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
         IRecurringFlowDetector detector,
         IRunningBalanceQuery balanceQuery,
         IStatementContinuityChecker continuityChecker,
+        IPlanningSettings planningSettings,
         CashFlowProjectionEngine engine,
         ICashFlowExplainer explainer,
         ILocalizer localizer,
@@ -124,6 +127,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(detector);
         ArgumentNullException.ThrowIfNull(balanceQuery);
         ArgumentNullException.ThrowIfNull(continuityChecker);
+        ArgumentNullException.ThrowIfNull(planningSettings);
         ArgumentNullException.ThrowIfNull(engine);
         ArgumentNullException.ThrowIfNull(explainer);
         ArgumentNullException.ThrowIfNull(localizer);
@@ -133,6 +137,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
         _detector = detector;
         _balanceQuery = balanceQuery;
         _continuityChecker = continuityChecker;
+        _planningSettings = planningSettings;
         _engine = engine;
         _explainer = explainer;
         _localizer = localizer;
@@ -278,6 +283,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
         _today = DateOnly.FromDateTime(DateTime.Today);
         _flows = await _repository.GetAllAsync(ct).ConfigureAwait(true);
         _openingBalance = await _balanceQuery.GetBalanceAsOfAsync(_today, accountId: null, ct).ConfigureAwait(true);
+        _safetyFloor = await _planningSettings.GetSafetyFloorPlnAsync(ct).ConfigureAwait(true);
         var candidates = await _detector.DetectAsync(ct).ConfigureAwait(true);
         var gaps = await _continuityChecker.FindGapsAsync(ct).ConfigureAwait(true);
 
@@ -321,7 +327,7 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
     private void Project()
     {
         var horizon = SelectedHorizon?.Days ?? 90;
-        var projection = _engine.Project(_flows, _openingBalance, _today, horizon);
+        var projection = _engine.Project(_flows, _openingBalance, _today, horizon, _safetyFloor);
         _projection = projection;
 
         // The previous narration describes a stale projection; require a fresh explanation.

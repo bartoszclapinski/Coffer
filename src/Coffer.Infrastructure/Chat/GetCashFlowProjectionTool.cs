@@ -21,20 +21,24 @@ public sealed class GetCashFlowProjectionTool : ChatTool
 
     private readonly IRecurringFlowRepository _flows;
     private readonly IRunningBalanceQuery _balance;
+    private readonly IPlanningSettings _planningSettings;
     private readonly CashFlowProjectionEngine _engine;
 
     public GetCashFlowProjectionTool(
         IDbContextFactory<CofferDbContext> contextFactory,
         IRecurringFlowRepository flows,
         IRunningBalanceQuery balance,
+        IPlanningSettings planningSettings,
         CashFlowProjectionEngine engine)
         : base(contextFactory)
     {
         ArgumentNullException.ThrowIfNull(flows);
         ArgumentNullException.ThrowIfNull(balance);
+        ArgumentNullException.ThrowIfNull(planningSettings);
         ArgumentNullException.ThrowIfNull(engine);
         _flows = flows;
         _balance = balance;
+        _planningSettings = planningSettings;
         _engine = engine;
     }
 
@@ -65,6 +69,7 @@ public sealed class GetCashFlowProjectionTool : ChatTool
         var flows = await _flows.GetActiveAsync(ct).ConfigureAwait(false);
         var today = DateOnly.FromDateTime(DateTime.Now);
         var opening = await _balance.GetBalanceAsOfAsync(today, accountId: null, ct).ConfigureAwait(false);
+        var safetyFloor = await _planningSettings.GetSafetyFloorPlnAsync(ct).ConfigureAwait(false);
 
         if (flows.Count == 0)
         {
@@ -78,7 +83,7 @@ public sealed class GetCashFlowProjectionTool : ChatTool
             };
         }
 
-        var projection = _engine.Project(flows, opening, today, horizonDays);
+        var projection = _engine.Project(flows, opening, today, horizonDays, safetyFloor);
 
         var events = projection.Events
             .Select(e => new

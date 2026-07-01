@@ -67,11 +67,14 @@ public static class ServiceRegistration
     public static IServiceCollection AddCofferPlanning(this IServiceCollection services)
     {
         services.AddSingleton<CashFlowProjectionEngine>();
+        services.AddSingleton<AffordabilityEngine>();
         services.AddTransient<IRecurringFlowRepository, RecurringFlowRepository>();
         services.AddTransient<IRecurringFlowDetector, RecurringFlowDetector>();
         services.AddTransient<IRunningBalanceQuery, RunningBalanceQuery>();
         services.AddTransient<IStatementContinuityChecker, StatementContinuityChecker>();
         services.AddTransient<IBalanceTrustQuery, BalanceTrustQuery>();
+        services.AddTransient<IPlanningSettings, AppSettingsStore>();
+        services.AddTransient<IVariableBurnQuery, VariableBurnQuery>();
         services.AddTransient<ICashFlowExplainer, CashFlowExplainer>();
         return services;
     }
@@ -171,6 +174,7 @@ public static class ServiceRegistration
         services.AddTransient<IChatTool, FindAnomaliesTool>();
         services.AddTransient<IChatTool, GetGoalsTool>();
         services.AddTransient<IChatTool, GetCashFlowProjectionTool>();
+        services.AddTransient<IChatTool, CanIAffordTool>();
         services.AddTransient<IChatService, ChatService>();
         return services;
     }

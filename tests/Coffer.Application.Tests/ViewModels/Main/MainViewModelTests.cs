@@ -182,6 +182,7 @@ public class MainViewModelTests
             new FakeRecurringFlowDetector(),
             new FakeRunningBalanceQuery(),
             new FakeStatementContinuityChecker(),
+            new FakePlanningSettings(),
             new CashFlowProjectionEngine(),
             new FakeCashFlowExplainer(),
             new FakeLocalizer(),

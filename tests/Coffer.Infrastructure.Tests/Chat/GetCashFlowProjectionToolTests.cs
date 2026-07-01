@@ -126,6 +126,7 @@ public class GetCashFlowProjectionToolTests : IDisposable
         _factory,
         new RecurringFlowRepository(_factory),
         new RunningBalanceQuery(_factory),
+        new Coffer.Infrastructure.AI.AppSettingsStore(_factory),
         new Core.Planning.CashFlowProjectionEngine());
 
     private static JsonElement Root(string json) => JsonDocument.Parse(json).RootElement;
