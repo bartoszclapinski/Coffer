@@ -18,7 +18,8 @@ public class MigrationRunnerTests : IDisposable
     private const string ExpectedGoalsMigration = "20260625104507_AddGoals";
     private const string ExpectedAdvisorReportsMigration = "20260625144724_AddAdvisorReports";
     private const string ExpectedRecurringFlowsMigration = "20260630100120_AddRecurringFlows";
-    private const string ExpectedLatestMigration = "20260630135239_AddSchemaInfoMaxLength";
+    private const string ExpectedSchemaInfoMaxLengthMigration = "20260630135239_AddSchemaInfoMaxLength";
+    private const string ExpectedLatestMigration = "20260701211515_AddAccountBalanceAnchor";
 
     private readonly string _tempDir;
     private readonly string _dbPath;
@@ -172,6 +173,7 @@ public class MigrationRunnerTests : IDisposable
             ExpectedGoalsMigration,
             ExpectedAdvisorReportsMigration,
             ExpectedRecurringFlowsMigration,
+            ExpectedSchemaInfoMaxLengthMigration,
             ExpectedLatestMigration);
     }
 

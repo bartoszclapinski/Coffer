@@ -59,7 +59,16 @@ public abstract class PlanningDbTestBase : IDisposable
         await db.SaveChangesAsync();
     }
 
-    private protected static Account NewAccount() => new()
+    private protected async Task SeedAccountsAsync(params Account[] accounts)
+    {
+        await using var db = Factory.CreateDbContext();
+        db.Accounts.AddRange(accounts);
+        await db.SaveChangesAsync();
+    }
+
+    private protected static Account NewAccount(
+        DateOnly? anchorDate = null,
+        decimal? anchorBalance = null) => new()
     {
         Id = Guid.NewGuid(),
         Name = "Test account",
@@ -68,6 +77,8 @@ public abstract class PlanningDbTestBase : IDisposable
         Currency = "PLN",
         Type = AccountType.Checking,
         CreatedAt = DateTime.UtcNow,
+        AnchorDate = anchorDate,
+        AnchorBalance = anchorBalance,
     };
 
     private protected static ImportSession NewImportSession(DateOnly periodFrom, DateOnly periodTo) => new()
