@@ -31,7 +31,7 @@ This sprint closes both gaps and ties them together into the one question the so
 
 - **18-A — balance anchor + per-account anchored balance + continuity trust (headless).** The `Account.AnchorDate`/`AnchorBalance` migration (with pre-migration-backup), `IRunningBalanceQuery` made per-account and anchor-aware, and a small "is this balance trustworthy as of D?" signal built on the existing continuity checker. Unit + integration tests; no pixels.
 - **18-B — affordability engine + safety floor + variable burn + chat tool (headless).** The deterministic `AffordabilityEngine` in `Coffer.Core`, the owner safety-floor setting threaded through, the variable-burn query, and the `CanIAfford` chat tool so the assistant can answer directly. Unit tests with golden-style fixtures.
-- **18-C — UI.** Anchor editing on the account (set/adjust the real balance + date), an account selector + an "Can I afford…?" panel on the cash-flow planning page (amount + optional date → verdict, headroom, the payment that pushes you under, uncertainty/relative warnings), and the safety-floor field in Ustawienia. Fully localized (keys in both `.resx`, parity test green).
+- **18-C — UI.** Anchor editing on the account (set/adjust the real balance + date), a **dedicated "Can I afford?" page** (its own nav entry) with an account selector + amount + optional date → verdict, headroom, the payment that pushes you under, uncertainty/relative warnings, and the safety-floor field in Ustawienia. Fully localized (keys in both `.resx`, parity test green).
 
 ## Steps
 
@@ -55,7 +55,7 @@ This sprint closes both gaps and ties them together into the one question the so
 ### 18-C — UI
 
 - [ ] 18.12 Account balance anchor editing: a "real balance as of date" set/adjust surface on the account (amount + date), wired through `IAccountService` (or a small settings command) to persist `AnchorDate`/`AnchorBalance`. Validates amount is `decimal` and date not in the future.
-- [ ] 18.13 Cash-flow planning page: an **account selector** (the projection is now per-account) and a "Can I afford…?" panel — amount input + optional date → verdict (afford/not), headroom, the payment that pushes you under, and a clear banner when the balance is *uncertain* (gap) or *relative* (no anchor). Reads the `AffordabilityEngine` via the VM.
+- [ ] 18.13 A **dedicated "Can I afford?" page** (own nav entry + `AffordabilityViewModel`): an account selector, amount input + optional date → verdict (afford/not), headroom, the payment that pushes you under, and a clear banner when the balance is *uncertain* (gap) or *relative* (no anchor). Reads the `AffordabilityEngine` via the VM. (The cash-flow planning page separately gains its per-account scope in 18.5.)
 - [ ] 18.14 Ustawienia: a safety-floor (buffer) field. All strings via `{l:Localize}`, keys in **both** `.resx`.
 - [ ] 18.15 Tests (`Coffer.Application.Tests`): the planning VM surfaces afford/not + headroom + uncertainty/relative flags from a fake engine/query; the settings VM round-trips the floor; the account VM round-trips the anchor; resource-key parity stays green.
 
@@ -68,7 +68,7 @@ This sprint closes both gaps and ties them together into the one question the so
 
 - **18-A (automated):** for an account with an anchor, `GetBalanceAsOfAsync` returns `anchor + post-anchor delta` and never blends other accounts; unanchored falls back to the per-account running sum; the migration ran a pre-migration backup; a seeded gap in the [anchor, asOf] window is reported as untrustworthy.
 - **18-B (automated):** the `AffordabilityEngine` returns the correct yes/no + headroom + "what pushes you under" for fixed fixtures; `IsUncertain`/`IsRelative` set in the right conditions; the variable burn excludes recurring-flow merchants; the `CanIAfford` tool shapes the verdict and makes zero provider calls.
-- **18-C (automated + manual):** the planning VM surfaces the verdict and flags; the settings VM round-trips the floor; the account VM round-trips the anchor. **Manual:** set an account's real balance for `1 Jan`, import a statement covering `1–20`, open the planning page for that account, ask "can I afford 2000 today" → get a grounded verdict that accounts for the upcoming leasing/tax outflows and the next salary; leave a statement gap and confirm the answer turns *uncertain*; clear the anchor and confirm it turns *relative*. Ask the assistant the same question in chat and get the same numbers. Every label switches PL↔EN live; money shows "zł".
+- **18-C (automated + manual):** the affordability VM surfaces the verdict and flags; the settings VM round-trips the floor; the account VM round-trips the anchor. **Manual:** set an account's real balance for `1 Jan`, import a statement covering `1–20`, open the "Can I afford?" page for that account, ask "can I afford 2000 today" → get a grounded verdict that accounts for the upcoming leasing/tax outflows and the next salary; leave a statement gap and confirm the answer turns *uncertain*; clear the anchor and confirm it turns *relative*. Ask the assistant the same question in chat and get the same numbers. Every label switches PL↔EN live; money shows "zł".
 - **Whole-sprint:** the app answers "can I spend 2000 zł today?" from the real balance, the known recurring flows, a conservative daily-burn allowance, and a personal safety floor — deterministically, with honest uncertainty when the data has holes.
 
 ## Files affected
@@ -80,8 +80,8 @@ This sprint closes both gaps and ties them together into the one question the so
 - `src/Coffer.Infrastructure/Planning/` variable-burn query (new)
 - `src/Coffer.Infrastructure/Chat/CanIAffordTool.cs` (new) + DI registration
 - `src/Coffer.Core/Ai/IAiSettings.cs` (or a planning-settings surface) + `src/Coffer.Infrastructure/AI/AppSettingsStore.cs` (safety-floor key) + `*Defaults`
-- `src/Coffer.Application/ViewModels/Planning/CashFlowPlanningViewModel.cs` (account scope + affordability panel), account-anchor VM, `SettingsViewModel` (floor)
-- `src/Coffer.Desktop/Views/**` (anchor editing, planning affordability panel + account selector, settings floor)
+- `src/Coffer.Application/ViewModels/Planning/CashFlowPlanningViewModel.cs` (per-account scope), a new `AffordabilityViewModel`, an account-anchor VM, `SettingsViewModel` (floor)
+- `src/Coffer.Desktop/Views/**` (anchor editing, a new "Can I afford?" page + nav entry, settings floor)
 - `src/Coffer.Application/Localization/Strings.resx` + `Strings.pl.resx` (new keys, parity)
 - `tests/Coffer.Core.Tests/Planning/**`, `tests/Coffer.Infrastructure.Tests/{Planning,Chat}/**`, `tests/Coffer.Application.Tests/ViewModels/**`
 
@@ -90,9 +90,12 @@ This sprint closes both gaps and ties them together into the one question the so
 To confirm with the owner before/while building (recorded as decisions in `log.md` once settled):
 
 - **Anchor scope** → proposed `(AnchorDate, AnchorBalance)` as nullable fields on `Account`, set manually, one anchor per account (re-anchoring just overwrites). Confirm we do *not* need a history of anchors in v1.
-- **Variable burn** → proposed a single trailing-3-month average daily spend excluding recurring-flow merchants, shown as a labelled *estimate*. Confirm the window and that a rough single number (not per-category) is acceptable for v1.
-- **Safety floor scope** → proposed one global buffer in Ustawienia. Confirm it need not be per-account in v1.
-- **Where the "can I afford" panel lives** → proposed on the existing cash-flow planning page (next to the projection it reuses). Confirm that over a dedicated new page.
+
+Settled (see `log.md` 2026-07-01):
+
+- **Variable burn** — single trailing-3-month average daily spend excluding recurring-flow merchants, shown as a labelled *estimate* (owner: OK for v1).
+- **Safety floor scope** — one global buffer in Ustawienia, not per-account in v1 (owner: OK).
+- **Where affordability lives** — a **dedicated "Can I afford?" page** with its own nav entry, not a panel on the planning page (owner: new page).
 
 ## Deferred to a follow-up
 
