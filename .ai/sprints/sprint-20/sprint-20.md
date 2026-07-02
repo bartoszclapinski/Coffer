@@ -38,13 +38,13 @@ So the new capability is mostly a small persisted entity + a deterministic track
 
 ### 20-A — entity + migration + tracking engine + query
 
-- [ ] 20.1 `CategoryBudget` entity in `Coffer.Core/Domain/` (`Id`, `CategoryId`, `LimitAmount` `decimal`, `Currency`, `IsActive`, `CreatedAt` UTC) + EF configuration (`decimal(18,2)`, FK to `Category`, index on `CategoryId`).
-- [ ] 20.2 EF migration adding `CategoryBudgets`. The `pre-migration-backup` callback runs first (rule #8) — verified in a migration integration test.
-- [ ] 20.3 `BudgetTrackingEngine` in `Coffer.Core/Budgeting/`: pure. Input (limit, spendToDate, daysElapsed, daysInMonth) → `BudgetStatus` (Spent, Remaining, Fraction, Projected, Zone ∈ {Ok, Warning, Over}). Linear projection; zone thresholds 80% / 100% or projected-over. Guards thin data (daysElapsed ≥ 1, limit > 0).
-- [ ] 20.4 `ICategoryBudgetRepository` (Core) + impl (Infrastructure): list active budgets, upsert a limit for a category, deactivate/remove. At most one active budget per (category, currency).
-- [ ] 20.5 `IBudgetTrackingQuery` (Core) + impl (Infrastructure): resolve the as-of month (dashboard anchor), sum each budgeted category's month-to-date debits server-side (`GROUP BY`, `AsNoTracking`, positive magnitudes), run each through the engine, and return the statuses plus the unbudgeted lines (real categories + the uncategorised bucket with month spend and no limit). Reuse Sprint-19 conventions.
-- [ ] 20.6 DI registration (Infrastructure) for the repository, the query, and the engine (singleton).
-- [ ] 20.7 Tests (`Coffer.Core.Tests` + `Coffer.Infrastructure.Tests`): engine zones at fixed fractions/projections (under/near/over, mid-month vs month-end); the query sums only the current month's debits per budgeted category, excludes credits, never blends other accounts if scoped; unbudgeted lines include the uncategorised bucket; the repository enforces one active budget per category; the migration ran a pre-migration backup and created the table.
+- [x] 20.1 `CategoryBudget` entity in `Coffer.Core/Domain/` (`Id`, `CategoryId`, `LimitAmount` `decimal`, `Currency`, `IsActive`, `CreatedAt` UTC) + EF configuration (`decimal(18,2)`, FK to `Category`, index on `CategoryId`).
+- [x] 20.2 EF migration adding `CategoryBudgets`. The `pre-migration-backup` callback runs first (rule #8) — verified in a migration integration test.
+- [x] 20.3 `BudgetTrackingEngine` in `Coffer.Core/Budgeting/`: pure. Input (limit, spendToDate, daysElapsed, daysInMonth) → `BudgetStatus` (Spent, Remaining, Fraction, Projected, Zone ∈ {Ok, Warning, Over}). Linear projection; zone thresholds 80% / 100% or projected-over. Guards thin data (daysElapsed ≥ 1, limit > 0).
+- [x] 20.4 `ICategoryBudgetRepository` (Core) + impl (Infrastructure): list active budgets, upsert a limit for a category, deactivate/remove. At most one active budget per (category, currency).
+- [x] 20.5 `IBudgetTrackingQuery` (Core) + impl (Infrastructure): resolve the as-of month (dashboard anchor), sum each budgeted category's month-to-date debits server-side (`GROUP BY`, `AsNoTracking`, positive magnitudes), run each through the engine, and return the statuses plus the unbudgeted lines (real categories + the uncategorised bucket with month spend and no limit). Reuse Sprint-19 conventions.
+- [x] 20.6 DI registration (Infrastructure) for the repository, the query, and the engine (singleton).
+- [x] 20.7 Tests (`Coffer.Core.Tests` + `Coffer.Infrastructure.Tests`): engine zones at fixed fractions/projections (under/near/over, mid-month vs month-end); the query sums only the current month's debits per budgeted category, excludes credits, never blends other accounts if scoped; unbudgeted lines include the uncategorised bucket; the repository enforces one active budget per category; the migration ran a pre-migration backup and created the table.
 
 ### 20-B — UI
 
