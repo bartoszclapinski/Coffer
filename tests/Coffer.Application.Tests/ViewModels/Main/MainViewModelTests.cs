@@ -1,5 +1,6 @@
 using Coffer.Application.Tests.Fakes;
 using Coffer.Application.ViewModels.Alerts;
+using Coffer.Application.ViewModels.Budgets;
 using Coffer.Application.ViewModels.Chat;
 using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Goals;
@@ -158,6 +159,17 @@ public class MainViewModelTests
         vm.CurrentPage.Should().BeSameAs(vm.Spending);
     }
 
+    [Fact]
+    public void ShowBudgets_SwitchesActivePage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.ShowBudgetsCommand.Execute(null);
+
+        vm.IsBudgetsActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Budgets);
+    }
+
     private static MainViewModel CreateViewModel(ILoginService loginService)
     {
         var dashboard = new DashboardViewModel(
@@ -227,9 +239,15 @@ public class MainViewModelTests
             new FakeAccountService(),
             new FakeLocalizer(),
             NullLogger<SpendingExplorerViewModel>.Instance);
+        var budgets = new BudgetsViewModel(
+            new FakeCategoryBudgetRepository(),
+            new FakeBudgetTrackingQuery(),
+            new FakeCategoryService(),
+            new FakeLocalizer(),
+            NullLogger<BudgetsViewModel>.Instance);
 
         return new MainViewModel(
-            dashboard, import, transactions, chat, alerts, advisor, planning, affordability, spending, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
+            dashboard, import, transactions, chat, alerts, advisor, planning, affordability, spending, budgets, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class StubChatService : IChatService

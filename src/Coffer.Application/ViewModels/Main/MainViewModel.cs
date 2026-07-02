@@ -1,6 +1,7 @@
 using System.Reflection;
 using Coffer.Application.Localization;
 using Coffer.Application.ViewModels.Alerts;
+using Coffer.Application.ViewModels.Budgets;
 using Coffer.Application.ViewModels.Chat;
 using Coffer.Application.ViewModels.Dashboard;
 using Coffer.Application.ViewModels.Goals;
@@ -42,6 +43,7 @@ public sealed partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsPlanningActive))]
     [NotifyPropertyChangedFor(nameof(IsAffordabilityActive))]
     [NotifyPropertyChangedFor(nameof(IsSpendingActive))]
+    [NotifyPropertyChangedFor(nameof(IsBudgetsActive))]
     [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     private ObservableObject? _currentPage;
 
@@ -55,6 +57,7 @@ public sealed partial class MainViewModel : ObservableObject
         CashFlowPlanningViewModel planningViewModel,
         AffordabilityViewModel affordabilityViewModel,
         SpendingExplorerViewModel spendingViewModel,
+        BudgetsViewModel budgetsViewModel,
         SettingsViewModel settingsViewModel,
         ILoginService loginService,
         ILocalizer localizer,
@@ -69,6 +72,7 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(planningViewModel);
         ArgumentNullException.ThrowIfNull(affordabilityViewModel);
         ArgumentNullException.ThrowIfNull(spendingViewModel);
+        ArgumentNullException.ThrowIfNull(budgetsViewModel);
         ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
         ArgumentNullException.ThrowIfNull(localizer);
@@ -83,6 +87,7 @@ public sealed partial class MainViewModel : ObservableObject
         Planning = planningViewModel;
         Affordability = affordabilityViewModel;
         Spending = spendingViewModel;
+        Budgets = budgetsViewModel;
         Settings = settingsViewModel;
         _loginService = loginService;
         _localizer = localizer;
@@ -115,6 +120,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     public SpendingExplorerViewModel Spending { get; }
 
+    public BudgetsViewModel Budgets { get; }
+
     public SettingsViewModel Settings { get; }
 
     public bool IsDashboardActive => ReferenceEquals(CurrentPage, Dashboard);
@@ -134,6 +141,8 @@ public sealed partial class MainViewModel : ObservableObject
     public bool IsAffordabilityActive => ReferenceEquals(CurrentPage, Affordability);
 
     public bool IsSpendingActive => ReferenceEquals(CurrentPage, Spending);
+
+    public bool IsBudgetsActive => ReferenceEquals(CurrentPage, Budgets);
 
     public bool IsSettingsActive => ReferenceEquals(CurrentPage, Settings);
 
@@ -244,6 +253,18 @@ public sealed partial class MainViewModel : ObservableObject
 
         CurrentPage = Spending;
         Spending.LoadCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private void ShowBudgets()
+    {
+        if (IsBudgetsActive)
+        {
+            return;
+        }
+
+        CurrentPage = Budgets;
+        Budgets.LoadCommand.Execute(null);
     }
 
     [RelayCommand]
