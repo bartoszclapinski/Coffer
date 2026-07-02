@@ -1,24 +1,26 @@
 using System.Globalization;
 using Coffer.Core.Ai;
 using Coffer.Core.Domain;
+using Coffer.Core.Planning;
 using Coffer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Coffer.Infrastructure.AI;
 
 /// <summary>
-/// <see cref="IAiSettings"/> backed by the <see cref="AppSetting"/> key/value table in the
-/// encrypted DB. Reads fall back to <see cref="AiDefaults"/> until the owner saves a value;
-/// writes upsert a single row per key. API keys never pass through here — they live in
-/// <c>ISecretStore</c> (hard rule #6/#11).
+/// The owner-settings key/value store backed by the <see cref="AppSetting"/> table in the encrypted DB,
+/// serving both <see cref="IAiSettings"/> and <see cref="IPlanningSettings"/>. Reads fall back to the
+/// per-domain <c>*Defaults</c> until the owner saves a value; writes upsert a single row per key. API
+/// keys never pass through here — they live in <c>ISecretStore</c> (hard rule #6/#11).
 /// </summary>
-public sealed class AppSettingsStore : IAiSettings
+public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
 {
     private const string MonthlyCapKey = "ai.monthlyCapPln";
     private const string ActiveProviderKey = "ai.activeProvider";
     private const string CategorizationModelKey = "ai.categorizationModel";
     private const string AiFallbackParsingEnabledKey = "ai.fallbackParsingEnabled";
     private const string OwnerIdentityNamesKey = "privacy.ownerIdentityNames";
+    private const string SafetyFloorKey = "planning.safetyFloorPln";
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
 
@@ -76,6 +78,17 @@ public sealed class AppSettingsStore : IAiSettings
 
     public Task SetOwnerIdentityNamesAsync(string? names, CancellationToken ct) =>
         SetValueAsync(OwnerIdentityNamesKey, names?.Trim() ?? string.Empty, ct);
+
+    public async Task<decimal> GetSafetyFloorPlnAsync(CancellationToken ct)
+    {
+        var raw = await GetValueAsync(SafetyFloorKey, ct).ConfigureAwait(false);
+        return raw is not null && decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var floor)
+            ? floor
+            : PlanningDefaults.SafetyFloorPln;
+    }
+
+    public Task SetSafetyFloorPlnAsync(decimal floorPln, CancellationToken ct) =>
+        SetValueAsync(SafetyFloorKey, floorPln.ToString(CultureInfo.InvariantCulture), ct);
 
     private async Task<string?> GetValueAsync(string key, CancellationToken ct)
     {

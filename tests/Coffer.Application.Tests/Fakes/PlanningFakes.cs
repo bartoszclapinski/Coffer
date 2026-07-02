@@ -63,6 +63,20 @@ internal sealed class FakeRunningBalanceQuery : IRunningBalanceQuery
         Task.FromResult(Balance);
 }
 
+/// <summary>In-memory <see cref="IPlanningSettings"/> returning a fixed safety floor (default 0).</summary>
+internal sealed class FakePlanningSettings : IPlanningSettings
+{
+    public decimal SafetyFloor { get; set; }
+
+    public Task<decimal> GetSafetyFloorPlnAsync(CancellationToken ct) => Task.FromResult(SafetyFloor);
+
+    public Task SetSafetyFloorPlnAsync(decimal floorPln, CancellationToken ct)
+    {
+        SafetyFloor = floorPln;
+        return Task.CompletedTask;
+    }
+}
+
 /// <summary>In-memory <see cref="IStatementContinuityChecker"/> returning seeded gaps.</summary>
 internal sealed class FakeStatementContinuityChecker : IStatementContinuityChecker
 {
