@@ -8,6 +8,7 @@ using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Planning;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Setup;
+using Coffer.Application.ViewModels.Spending;
 using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Import;
 using Coffer.Core.Security;
@@ -36,6 +37,7 @@ public static class DesktopServiceRegistration
         services.AddTransient<GoalsViewModel>();
         services.AddTransient<CashFlowPlanningViewModel>();
         services.AddTransient<AffordabilityViewModel>();
+        services.AddTransient<SpendingExplorerViewModel>();
         services.AddTransient<SettingsViewModel>();
 
         // The OS file-open dialog sits behind IFilePicker so the import VM (in

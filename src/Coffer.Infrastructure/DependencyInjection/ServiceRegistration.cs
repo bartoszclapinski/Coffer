@@ -10,6 +10,7 @@ using Coffer.Core.Localization;
 using Coffer.Core.Parsing;
 using Coffer.Core.Planning;
 using Coffer.Core.Security;
+using Coffer.Core.Spending;
 using Coffer.Core.Transactions;
 using Coffer.Infrastructure.Accounts;
 using Coffer.Infrastructure.AI;
@@ -30,6 +31,7 @@ using Coffer.Infrastructure.Persistence;
 using Coffer.Infrastructure.Persistence.Encryption;
 using Coffer.Infrastructure.Planning;
 using Coffer.Infrastructure.Security;
+using Coffer.Infrastructure.Spending;
 using Coffer.Infrastructure.Transactions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -190,6 +192,7 @@ public static class ServiceRegistration
         services.AddTransient<IImportStatementUseCase, ImportStatementUseCase>();
         services.AddTransient<IGetTransactionsQuery, GetTransactionsQuery>();
         services.AddTransient<IDashboardQuery, DashboardQuery>();
+        services.AddTransient<ISpendingExplorerQuery, SpendingExplorerQuery>();
         services.AddTransient<IAccountService, AccountService>();
         return services;
     }
