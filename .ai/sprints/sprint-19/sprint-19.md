@@ -44,14 +44,14 @@ This sprint turns the existing, already-aggregated category data into an interac
 
 ### 19-B — UI
 
-- [ ] 19.6 A dedicated **"Wydatki / Spending"** page (`Coffer.Desktop/Views/SpendingExplorerView.axaml` + `.axaml.cs`) with its own nav entry: a preset bar + custom-range `DatePicker`s + optional account `ComboBox`; a category list showing name, `CashFlowDisplay.Money` total, and a share bar/percent; a merchant panel shown on drill-down; the `TransactionListItem` leaf; a breadcrumb (`All → Category → Merchant`) with back. Reuse `Border.card`/`.sectionTitle`/`.metric*` local styles.
-- [ ] 19.7 Wire navigation: `SpendingExplorerViewModel` ctor param + null-check + get-only property + `IsSpendingActive` + `[NotifyPropertyChangedFor]` on `_currentPage` + `ShowSpending` `[RelayCommand]` in `MainViewModel`; DataTemplate + sidebar `<Button Classes="nav">` in `MainWindow.axaml` (label `Nav.Spending`).
-- [ ] 19.8 Localization: every label via `{l:Localize}`, keys added to **both** `Strings.resx` and `Strings.pl.resx` (Nav.Spending, window presets, custom-range labels, column headers, Uncategorized/UnknownMerchant fallbacks, empty-state, breadcrumb "All"). Parity test stays green.
-- [ ] 19.9 Tests (`Coffer.Application.Tests/ViewModels/Main/`): `ShowSpending_SwitchesActivePage`; resource-key parity green.
+- [x] 19.6 A dedicated **"Wydatki / Spending"** page (`Coffer.Desktop/Views/SpendingExplorerView.axaml` + `.axaml.cs`) with its own nav entry: a preset bar + custom-range `DatePicker`s + optional account `ComboBox`; a category list showing name, `CashFlowDisplay.Money` total, and a share bar/percent; a merchant panel shown on drill-down; the `TransactionListItem` leaf; a breadcrumb (`All → Category → Merchant`) with back. Reuse `Border.card`/`.sectionTitle`/`.metric*` local styles.
+- [x] 19.7 Wire navigation: `SpendingExplorerViewModel` ctor param + null-check + get-only property + `IsSpendingActive` + `[NotifyPropertyChangedFor]` on `_currentPage` + `ShowSpending` `[RelayCommand]` in `MainViewModel`; DataTemplate + sidebar `<Button Classes="nav">` in `MainWindow.axaml` (label `Nav.Spending`).
+- [x] 19.8 Localization: every label via `{l:Localize}`, keys added to **both** `Strings.resx` and `Strings.pl.resx` (Nav.Spending, window presets, custom-range labels, column headers, Uncategorized/UnknownMerchant fallbacks, empty-state, breadcrumb "All"). Parity test stays green.
+- [x] 19.9 Tests (`Coffer.Application.Tests/ViewModels/Main/`): `ShowSpending_SwitchesActivePage`; resource-key parity green.
 
 ### Sweep
 
-- [ ] 19.10 No residual hardcoded user-facing literals in the new surfaces (all via `{l:Localize}` / `ILocalizer`). Money renders `pl-PL` "zł" via `CashFlowDisplay.Money` regardless of UI language.
+- [x] 19.10 No residual hardcoded user-facing literals in the new surfaces (all via `{l:Localize}` / `ILocalizer`). Money renders `pl-PL` "zł" via `CashFlowDisplay.Money` regardless of UI language.
 - [ ] 19.11 Manual DoD click-through (below) — expected to defer to manual (needs a running desktop app + real imported data).
 
 ## Definition of Done

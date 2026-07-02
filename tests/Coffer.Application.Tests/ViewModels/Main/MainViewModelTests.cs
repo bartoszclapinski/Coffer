@@ -7,6 +7,7 @@ using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Planning;
 using Coffer.Application.ViewModels.Settings;
+using Coffer.Application.ViewModels.Spending;
 using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Anomalies;
 using Coffer.Core.Chat;
@@ -146,6 +147,17 @@ public class MainViewModelTests
         vm.CurrentPage.Should().BeSameAs(vm.Affordability);
     }
 
+    [Fact]
+    public void ShowSpending_SwitchesActivePage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.ShowSpendingCommand.Execute(null);
+
+        vm.IsSpendingActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Spending);
+    }
+
     private static MainViewModel CreateViewModel(ILoginService loginService)
     {
         var dashboard = new DashboardViewModel(
@@ -210,9 +222,14 @@ public class MainViewModelTests
             new FakeAccountService(),
             new FakeLocalizer(),
             NullLogger<AffordabilityViewModel>.Instance);
+        var spending = new SpendingExplorerViewModel(
+            new FakeSpendingExplorerQuery(),
+            new FakeAccountService(),
+            new FakeLocalizer(),
+            NullLogger<SpendingExplorerViewModel>.Instance);
 
         return new MainViewModel(
-            dashboard, import, transactions, chat, alerts, advisor, planning, affordability, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
+            dashboard, import, transactions, chat, alerts, advisor, planning, affordability, spending, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class StubChatService : IChatService
