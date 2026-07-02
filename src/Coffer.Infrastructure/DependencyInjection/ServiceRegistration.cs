@@ -1,6 +1,7 @@
 using Coffer.Core.Accounts;
 using Coffer.Core.Ai;
 using Coffer.Core.Anomalies;
+using Coffer.Core.Budgeting;
 using Coffer.Core.Categorization;
 using Coffer.Core.Chat;
 using Coffer.Core.Dashboard;
@@ -16,6 +17,7 @@ using Coffer.Infrastructure.Accounts;
 using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Anomalies;
 using Coffer.Infrastructure.Anomalies.Detectors;
+using Coffer.Infrastructure.Budgeting;
 using Coffer.Infrastructure.Categorization;
 using Coffer.Infrastructure.Chat;
 using Coffer.Infrastructure.Dashboard;
@@ -57,7 +59,22 @@ public static class ServiceRegistration
             .AddCofferImport()
             .AddCofferAnomalies()
             .AddCofferGoals()
-            .AddCofferPlanning();
+            .AddCofferPlanning()
+            .AddCofferBudgeting();
+
+    /// <summary>
+    /// Registers the Sprint-20 category-budget spine (beyond roadmap): the pure
+    /// <see cref="BudgetTrackingEngine"/>, the <see cref="ICategoryBudgetRepository"/> CRUD, and the
+    /// <see cref="IBudgetTrackingQuery"/> that assembles month-to-date spend and runs it through the
+    /// engine. The engine calculates; nothing here calls AI.
+    /// </summary>
+    public static IServiceCollection AddCofferBudgeting(this IServiceCollection services)
+    {
+        services.AddSingleton<BudgetTrackingEngine>();
+        services.AddTransient<ICategoryBudgetRepository, CategoryBudgetRepository>();
+        services.AddTransient<IBudgetTrackingQuery, BudgetTrackingQuery>();
+        return services;
+    }
 
     /// <summary>
     /// Registers the Sprint-16 cash-flow planning spine (beyond roadmap): the persisted

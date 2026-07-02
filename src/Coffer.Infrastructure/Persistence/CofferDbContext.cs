@@ -43,6 +43,8 @@ public sealed class CofferDbContext : DbContext
 
     public DbSet<RecurringFlow> RecurringFlows => Set<RecurringFlow>();
 
+    public DbSet<CategoryBudget> CategoryBudgets => Set<CategoryBudget>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -71,6 +73,7 @@ public sealed class CofferDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AdvisorReportConfiguration());
         modelBuilder.ApplyConfiguration(new AdvisorSuggestionConfiguration());
         modelBuilder.ApplyConfiguration(new RecurringFlowConfiguration());
+        modelBuilder.ApplyConfiguration(new CategoryBudgetConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
