@@ -135,6 +135,17 @@ public class MainViewModelTests
         vm.CurrentPage.Should().BeSameAs(vm.Planning);
     }
 
+    [Fact]
+    public void ShowAffordability_SwitchesActivePage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.ShowAffordabilityCommand.Execute(null);
+
+        vm.IsAffordabilityActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Affordability);
+    }
+
     private static MainViewModel CreateViewModel(ILoginService loginService)
     {
         var dashboard = new DashboardViewModel(
@@ -172,6 +183,8 @@ public class MainViewModelTests
             NullLogger<GoalsViewModel>.Instance);
         var settings = new SettingsViewModel(
             new FakeAiSettings(),
+            new FakePlanningSettings(),
+            new FakeAccountService(),
             new FakeSecretStore(),
             new FakeAiUsageLedger(),
             new FakeLocalizer(),
@@ -187,9 +200,19 @@ public class MainViewModelTests
             new FakeCashFlowExplainer(),
             new FakeLocalizer(),
             NullLogger<CashFlowPlanningViewModel>.Instance);
+        var affordability = new AffordabilityViewModel(
+            new AffordabilityEngine(new CashFlowProjectionEngine()),
+            new FakeRunningBalanceQuery(),
+            new FakeVariableBurnQuery(),
+            new FakeBalanceTrustQuery(),
+            new FakePlanningSettings(),
+            new FakeRecurringFlowRepository(),
+            new FakeAccountService(),
+            new FakeLocalizer(),
+            NullLogger<AffordabilityViewModel>.Instance);
 
         return new MainViewModel(
-            dashboard, import, transactions, chat, alerts, advisor, planning, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
+            dashboard, import, transactions, chat, alerts, advisor, planning, affordability, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class StubChatService : IChatService

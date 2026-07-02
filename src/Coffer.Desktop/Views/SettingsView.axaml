@@ -110,6 +110,81 @@
                 </StackPanel>
             </Border>
 
+            <!-- Planning: safety floor -->
+            <Border Background="#FFFFFF" CornerRadius="10" Padding="20" BorderBrush="#E5E5EA" BorderThickness="1">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="{l:Localize Settings.Planning.Section}" FontWeight="SemiBold" Foreground="#1D1D1F" />
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="{l:Localize Settings.Planning.SafetyFloor}" FontSize="12" Foreground="#8E8E93" />
+                        <NumericUpDown Minimum="0"
+                                       Increment="100"
+                                       FormatString="0.00"
+                                       Value="{Binding SafetyFloorPln, Mode=TwoWay}" />
+                        <TextBlock Text="{l:Localize Settings.Planning.SafetyFloorHint}"
+                                   FontSize="12" Foreground="#8E8E93" TextWrapping="Wrap" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Account balance anchors -->
+            <Border Background="#FFFFFF" CornerRadius="10" Padding="20" BorderBrush="#E5E5EA" BorderThickness="1">
+                <StackPanel Spacing="16">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{l:Localize Settings.Anchor.Section}" FontWeight="SemiBold" Foreground="#1D1D1F" />
+                        <TextBlock Text="{l:Localize Settings.Anchor.Hint}"
+                                   FontSize="12" Foreground="#8E8E93" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <TextBlock Text="{l:Localize Settings.Anchor.NoAccounts}"
+                               FontSize="12" Foreground="#8E8E93" TextWrapping="Wrap"
+                               IsVisible="{Binding !HasAccounts}" />
+
+                    <ItemsControl ItemsSource="{Binding Accounts}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:AccountAnchorRowViewModel">
+                                <Border Background="#F5F5F7" CornerRadius="8" Padding="14,12" Margin="0,0,0,8">
+                                    <StackPanel Spacing="8">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}"
+                                                       FontWeight="SemiBold" Foreground="#1D1D1F"
+                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            <Border Grid.Column="1" CornerRadius="6" Padding="8,2"
+                                                    Background="#34C759" VerticalAlignment="Center"
+                                                    IsVisible="{Binding HasAnchor}">
+                                                <TextBlock Text="{l:Localize Settings.Anchor.Set}"
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                                            </Border>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="*,*">
+                                            <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,6,0">
+                                                <TextBlock Text="{l:Localize Settings.Anchor.Balance}"
+                                                           FontSize="12" Foreground="#8E8E93" />
+                                                <NumericUpDown Increment="100" FormatString="0.00"
+                                                               Value="{Binding AnchorBalance}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Spacing="2" Margin="6,0,0,0">
+                                                <TextBlock Text="{l:Localize Settings.Anchor.Date}"
+                                                           FontSize="12" Foreground="#8E8E93" />
+                                                <DatePicker SelectedDate="{Binding AnchorDate}" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Content="{l:Localize Settings.Anchor.Save}"
+                                                    IsEnabled="{Binding !IsBusy}"
+                                                    Command="{Binding SaveAnchorCommand}" />
+                                            <Button Content="{l:Localize Settings.Anchor.Clear}"
+                                                    IsEnabled="{Binding !IsBusy}"
+                                                    Command="{Binding ClearAnchorCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
             <!-- AI fallback parsing -->
             <Border Background="#FFFFFF" CornerRadius="10" Padding="20" BorderBrush="#E5E5EA" BorderThickness="1">
                 <StackPanel Spacing="16">

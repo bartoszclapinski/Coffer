@@ -54,15 +54,15 @@ This sprint closes both gaps and ties them together into the one question the so
 
 ### 18-C — UI
 
-- [ ] 18.12 Account balance anchor editing: a "real balance as of date" set/adjust surface on the account (amount + date), wired through `IAccountService` (or a small settings command) to persist `AnchorDate`/`AnchorBalance`. Validates amount is `decimal` and date not in the future.
-- [ ] 18.13 A **dedicated "Can I afford?" page** (own nav entry + `AffordabilityViewModel`): an account selector, amount input + optional date → verdict (afford/not), headroom, the payment that pushes you under, and a clear banner when the balance is *uncertain* (gap) or *relative* (no anchor). Reads the `AffordabilityEngine` via the VM. (The cash-flow planning page separately gains its per-account scope in 18.5.)
-- [ ] 18.14 Ustawienia: a safety-floor (buffer) field. All strings via `{l:Localize}`, keys in **both** `.resx`.
-- [ ] 18.15 Tests (`Coffer.Application.Tests`): the planning VM surfaces afford/not + headroom + uncertainty/relative flags from a fake engine/query; the settings VM round-trips the floor; the account VM round-trips the anchor; resource-key parity stays green.
+- [x] 18.12 Account balance anchor editing: a "real balance as of date" set/adjust surface on the account (amount + date), wired through `IAccountService` (`GetAllWithAnchorsAsync` + `SetBalanceAnchorAsync`) to persist `AnchorDate`/`AnchorBalance`. Lives as a per-account card in Ustawienia (owner chose Settings over a page/dialog). Validates the date is not in the future; both fields set/cleared together.
+- [x] 18.13 A **dedicated "Can I afford?" page** (own nav entry + `AffordabilityViewModel`): an account selector (incl. all-accounts), amount input + optional date → verdict (afford/not), headroom, the payment that pushes you under, and a clear banner when the balance is *uncertain* (gap) or *relative* (no anchor). Reads the `AffordabilityEngine` via the VM — mirrors `CanIAffordTool`, zero AI calls.
+- [x] 18.14 Ustawienia: a safety-floor (buffer) field bound to `IPlanningSettings`. All strings via `{l:Localize}`, keys in **both** `.resx`.
+- [x] 18.15 Tests (`Coffer.Application.Tests`): the affordability VM surfaces afford/not + headroom + uncertainty/relative flags + driver from a real engine over fakes; the settings VM round-trips the floor and the anchor (incl. future-date rejection + clear); resource-key parity stays green. Plus `Coffer.Infrastructure.Tests` `AccountServiceTests` round-trips the anchor through real SQLCipher EF.
 
 ### Sweep
 
-- [ ] 18.16 Resource-key parity holds; no residual hardcoded user-facing literals in the new anchor/affordability/settings surfaces. Money still renders `pl-PL` "zł" regardless of UI language.
-- [ ] 18.17 Manual DoD click-through (below).
+- [x] 18.16 Resource-key parity holds (parity test green); no residual hardcoded user-facing literals in the new anchor/affordability/settings surfaces (all via `{l:Localize}`). Money still renders `pl-PL` "zł" via `CashFlowDisplay.Money` regardless of UI language.
+- [ ] 18.17 Manual DoD click-through (below) — deferred to manual (needs a running desktop app + a real statement).
 
 ## Definition of Done
 

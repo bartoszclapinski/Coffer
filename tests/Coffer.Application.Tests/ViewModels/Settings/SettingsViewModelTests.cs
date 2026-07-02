@@ -127,6 +127,8 @@ public class SettingsViewModelTests
         var store = new FakeLanguageStore();
         var vm = new SettingsViewModel(
             new FakeAiSettings(),
+            new FakePlanningSettings(),
+            new FakeAccountService(),
             new FakeSecretStore(),
             new FakeAiUsageLedger(),
             localizer,
@@ -140,9 +142,100 @@ public class SettingsViewModelTests
         store.SaveCalls.Should().Be(1);
     }
 
+    [Fact]
+    public async Task Load_PopulatesSafetyFloorAndAccounts()
+    {
+        var planning = new FakePlanningSettings { SafetyFloor = 1500m };
+        var accounts = new FakeAccountService();
+        var accountId = Guid.NewGuid();
+        accounts.SeedAnchor(accountId, "PKO", "PKO_BP", new DateOnly(2026, 1, 1), 4210.55m);
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), planning, accounts);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.SafetyFloorPln.Should().Be(1500m);
+        vm.HasAccounts.Should().BeTrue();
+        var row = vm.Accounts.Single();
+        row.HasAnchor.Should().BeTrue();
+        row.AnchorBalance.Should().Be(4210.55m);
+        row.AnchorDate!.Value.Date.Should().Be(new DateTime(2026, 1, 1));
+    }
+
+    [Fact]
+    public async Task Save_PersistsSafetyFloor()
+    {
+        var planning = new FakePlanningSettings();
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), planning, new FakeAccountService());
+
+        vm.SafetyFloorPln = 2000m;
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        planning.SafetyFloor.Should().Be(2000m);
+    }
+
+    [Fact]
+    public async Task SaveAnchor_PersistsBalanceAndDate()
+    {
+        var accounts = new FakeAccountService();
+        var accountId = Guid.NewGuid();
+        accounts.SeedAnchor(accountId, "PKO", "PKO_BP", date: null, balance: null);
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), new FakePlanningSettings(), accounts);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        var row = vm.Accounts.Single();
+        row.AnchorBalance = 3000m;
+        row.AnchorDate = new DateTimeOffset(new DateTime(2026, 1, 1), TimeSpan.Zero);
+        await row.SaveAnchorCommand.ExecuteAsync(null);
+
+        accounts.LastAnchor.Should().Be((accountId, (decimal?)3000m, (DateOnly?)new DateOnly(2026, 1, 1)));
+        row.HasAnchor.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SaveAnchor_WithFutureDate_DoesNotPersist()
+    {
+        var accounts = new FakeAccountService();
+        var accountId = Guid.NewGuid();
+        accounts.SeedAnchor(accountId, "PKO", "PKO_BP", date: null, balance: null);
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), new FakePlanningSettings(), accounts);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        var row = vm.Accounts.Single();
+        row.AnchorBalance = 3000m;
+        row.AnchorDate = DateTimeOffset.Now.AddDays(3);
+        await row.SaveAnchorCommand.ExecuteAsync(null);
+
+        accounts.SetAnchorCalls.Should().Be(0, "a future anchor date is rejected before persistence");
+    }
+
+    [Fact]
+    public async Task ClearAnchor_RemovesAnchor()
+    {
+        var accounts = new FakeAccountService();
+        var accountId = Guid.NewGuid();
+        accounts.SeedAnchor(accountId, "PKO", "PKO_BP", new DateOnly(2026, 1, 1), 4210.55m);
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), new FakePlanningSettings(), accounts);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        var row = vm.Accounts.Single();
+        await row.ClearAnchorCommand.ExecuteAsync(null);
+
+        accounts.LastAnchor.Should().Be((accountId, (decimal?)null, (DateOnly?)null));
+        row.HasAnchor.Should().BeFalse();
+        row.AnchorDate.Should().BeNull();
+    }
+
     private static SettingsViewModel Create(
         FakeAiSettings settings,
         FakeSecretStore secrets,
         FakeAiUsageLedger ledger) =>
-        new(settings, secrets, ledger, new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
+        Create(settings, secrets, ledger, new FakePlanningSettings(), new FakeAccountService());
+
+    private static SettingsViewModel Create(
+        FakeAiSettings settings,
+        FakeSecretStore secrets,
+        FakeAiUsageLedger ledger,
+        FakePlanningSettings planning,
+        FakeAccountService accounts) =>
+        new(settings, planning, accounts, secrets, ledger, new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
 }

@@ -39,6 +39,7 @@ public sealed partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsAlertsActive))]
     [NotifyPropertyChangedFor(nameof(IsAdvisorActive))]
     [NotifyPropertyChangedFor(nameof(IsPlanningActive))]
+    [NotifyPropertyChangedFor(nameof(IsAffordabilityActive))]
     [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     private ObservableObject? _currentPage;
 
@@ -50,6 +51,7 @@ public sealed partial class MainViewModel : ObservableObject
         AlertsViewModel alertsViewModel,
         GoalsViewModel goalsViewModel,
         CashFlowPlanningViewModel planningViewModel,
+        AffordabilityViewModel affordabilityViewModel,
         SettingsViewModel settingsViewModel,
         ILoginService loginService,
         ILocalizer localizer,
@@ -62,6 +64,7 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(alertsViewModel);
         ArgumentNullException.ThrowIfNull(goalsViewModel);
         ArgumentNullException.ThrowIfNull(planningViewModel);
+        ArgumentNullException.ThrowIfNull(affordabilityViewModel);
         ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
         ArgumentNullException.ThrowIfNull(localizer);
@@ -74,6 +77,7 @@ public sealed partial class MainViewModel : ObservableObject
         Alerts = alertsViewModel;
         Advisor = goalsViewModel;
         Planning = planningViewModel;
+        Affordability = affordabilityViewModel;
         Settings = settingsViewModel;
         _loginService = loginService;
         _localizer = localizer;
@@ -102,6 +106,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     public CashFlowPlanningViewModel Planning { get; }
 
+    public AffordabilityViewModel Affordability { get; }
+
     public SettingsViewModel Settings { get; }
 
     public bool IsDashboardActive => ReferenceEquals(CurrentPage, Dashboard);
@@ -117,6 +123,8 @@ public sealed partial class MainViewModel : ObservableObject
     public bool IsAdvisorActive => ReferenceEquals(CurrentPage, Advisor);
 
     public bool IsPlanningActive => ReferenceEquals(CurrentPage, Planning);
+
+    public bool IsAffordabilityActive => ReferenceEquals(CurrentPage, Affordability);
 
     public bool IsSettingsActive => ReferenceEquals(CurrentPage, Settings);
 
@@ -203,6 +211,18 @@ public sealed partial class MainViewModel : ObservableObject
 
         CurrentPage = Planning;
         Planning.LoadCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private void ShowAffordability()
+    {
+        if (IsAffordabilityActive)
+        {
+            return;
+        }
+
+        CurrentPage = Affordability;
+        Affordability.LoadCommand.Execute(null);
     }
 
     [RelayCommand]
