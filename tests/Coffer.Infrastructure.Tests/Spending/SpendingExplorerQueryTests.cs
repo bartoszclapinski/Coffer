@@ -13,7 +13,7 @@ namespace Coffer.Infrastructure.Tests.Spending;
 /// </summary>
 public class SpendingExplorerQueryTests : PlanningDbTestBase
 {
-    private static readonly SpendingWindow WholeYear =
+    private static readonly SpendingWindow _wholeYear =
         new(new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31));
 
     [Fact]
@@ -30,7 +30,7 @@ public class SpendingExplorerQueryTests : PlanningDbTestBase
             NewTransaction(account, session, new DateOnly(2026, 3, 4), -30m, "Kiosk", categoryId: null),
         });
 
-        var result = await new SpendingExplorerQuery(Factory).GetCategoriesAsync(WholeYear, null, default);
+        var result = await new SpendingExplorerQuery(Factory).GetCategoriesAsync(_wholeYear, null, default);
 
         result.Should().HaveCount(2);
         var top = result[0];
@@ -78,7 +78,7 @@ public class SpendingExplorerQueryTests : PlanningDbTestBase
             NewTransaction(second, session, new DateOnly(2026, 3, 1), -500m),
         });
 
-        var result = await new SpendingExplorerQuery(Factory).GetCategoriesAsync(WholeYear, first.Id, default);
+        var result = await new SpendingExplorerQuery(Factory).GetCategoriesAsync(_wholeYear, first.Id, default);
 
         result.Should().ContainSingle();
         result[0].Total.Should().Be(100m);
@@ -99,7 +99,7 @@ public class SpendingExplorerQueryTests : PlanningDbTestBase
             NewTransaction(account, session, new DateOnly(2026, 3, 5), -5m, merchant: "   ", category),
         });
 
-        var result = await new SpendingExplorerQuery(Factory).GetMerchantsAsync(WholeYear, category, null, default);
+        var result = await new SpendingExplorerQuery(Factory).GetMerchantsAsync(_wholeYear, category, null, default);
 
         result.Should().HaveCount(2);
         result[0].Merchant.Should().Be("Lidl");
@@ -127,7 +127,7 @@ public class SpendingExplorerQueryTests : PlanningDbTestBase
         });
 
         var result = await new SpendingExplorerQuery(Factory)
-            .GetTransactionsAsync(WholeYear, groceries, "Lidl", null, default);
+            .GetTransactionsAsync(_wholeYear, groceries, "Lidl", null, default);
 
         result.Should().HaveCount(2);
         result.Should().OnlyContain(t => t.Merchant == "Lidl" && t.CategoryName == "Groceries");
@@ -148,7 +148,7 @@ public class SpendingExplorerQueryTests : PlanningDbTestBase
         });
 
         var result = await new SpendingExplorerQuery(Factory)
-            .GetTransactionsAsync(WholeYear, category, null, null, default);
+            .GetTransactionsAsync(_wholeYear, category, null, null, default);
 
         result.Should().HaveCount(2);
         result.Should().OnlyContain(t => string.IsNullOrWhiteSpace(t.Merchant));
