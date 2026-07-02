@@ -1,0 +1,213 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Spending;assembly=Coffer.Application"
+             xmlns:l="clr-namespace:Coffer.Desktop.Localization"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="720"
+             x:Class="Coffer.Desktop.Views.SpendingExplorerView"
+             x:DataType="vm:SpendingExplorerViewModel"
+             x:CompileBindings="False">
+    <UserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="20,16" />
+        </Style>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+        </Style>
+        <Style Selector="TextBlock.metricLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8E8E93" />
+        </Style>
+        <Style Selector="Button.row">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="Button.row:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#F2F2F7" />
+        </Style>
+        <Style Selector="TextBlock.rowLabel">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.rowValue">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+        <Style Selector="TextBlock.rowShare">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8E8E93" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Margin="40,32" Spacing="20" MaxWidth="780" HorizontalAlignment="Left">
+            <StackPanel Spacing="4">
+                <TextBlock Text="{l:Localize Spending.Title}"
+                           FontSize="26"
+                           FontWeight="Light"
+                           Foreground="#1D1D1F" />
+                <TextBlock Text="{l:Localize Spending.Subtitle}"
+                           Foreground="#8E8E93"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Controls -->
+            <Border Classes="card">
+                <StackPanel Spacing="16">
+                    <Grid ColumnDefinitions="*,16,*">
+                        <StackPanel Grid.Column="0" Spacing="6">
+                            <TextBlock Text="{l:Localize Spending.Account}" Classes="metricLabel" />
+                            <ComboBox HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding Accounts}"
+                                      SelectedItem="{Binding SelectedAccount, Mode=TwoWay}"
+                                      DisplayMemberBinding="{Binding Label}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="6">
+                            <TextBlock Text="{l:Localize Spending.Period}" Classes="metricLabel" />
+                            <ComboBox HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding Presets}"
+                                      SelectedItem="{Binding SelectedPreset, Mode=TwoWay}"
+                                      DisplayMemberBinding="{Binding Label}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,16,*" IsVisible="{Binding IsCustomWindow}">
+                        <StackPanel Grid.Column="0" Spacing="6">
+                            <TextBlock Text="{l:Localize Spending.CustomFrom}" Classes="metricLabel" />
+                            <DatePicker SelectedDate="{Binding CustomFrom, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="6">
+                            <TextBlock Text="{l:Localize Spending.CustomTo}" Classes="metricLabel" />
+                            <DatePicker SelectedDate="{Binding CustomTo, Mode=TwoWay}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Content="{l:Localize Spending.Apply}"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{Binding !IsLoading}"
+                            Command="{Binding ApplyWindowCommand}" />
+                </StackPanel>
+            </Border>
+
+            <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoading}" />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="#D14"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <!-- Breadcrumb + total -->
+            <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding !IsLoading}">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button Content="{l:Localize Spending.Back}"
+                            IsVisible="{Binding CanGoBack}"
+                            Command="{Binding BackCommand}" />
+                    <TextBlock Text="{Binding WindowText}" Classes="metricLabel" VerticalAlignment="Center" />
+                    <TextBlock Text="›" Foreground="#8E8E93" VerticalAlignment="Center"
+                               IsVisible="{Binding SelectedCategory, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    <TextBlock Text="{Binding SelectedCategory.Label}" Classes="metricLabel" VerticalAlignment="Center"
+                               IsVisible="{Binding SelectedCategory, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    <TextBlock Text="›" Foreground="#8E8E93" VerticalAlignment="Center"
+                               IsVisible="{Binding SelectedMerchant, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    <TextBlock Text="{Binding SelectedMerchant.Label}" Classes="metricLabel" VerticalAlignment="Center"
+                               IsVisible="{Binding SelectedMerchant, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="{l:Localize Spending.Total}" Classes="metricLabel" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding TotalText}" FontWeight="SemiBold" Foreground="#1D1D1F" VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="{l:Localize Spending.Empty}"
+                       Foreground="#8E8E93"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding IsEmpty}" />
+
+            <!-- Categories -->
+            <Border Classes="card" IsVisible="{Binding IsCategoriesLevel}">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="sectionTitle" Text="{l:Localize Spending.Section.Categories}" />
+                    <ItemsControl Name="CategoriesList" ItemsSource="{Binding Categories}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row"
+                                        Command="{Binding DataContext.SelectCategoryCommand, ElementName=CategoriesList}"
+                                        CommandParameter="{Binding}">
+                                    <Grid ColumnDefinitions="*,140,110,54">
+                                        <TextBlock Grid.Column="0" Classes="rowLabel" Text="{Binding Label}" />
+                                        <ProgressBar Grid.Column="1" Minimum="0" Maximum="100" Height="6"
+                                                     VerticalAlignment="Center" Margin="0,0,12,0"
+                                                     Value="{Binding SharePercent}" Foreground="#1D4ED8" />
+                                        <TextBlock Grid.Column="2" Classes="rowValue" Text="{Binding TotalText}" />
+                                        <TextBlock Grid.Column="3" Classes="rowShare" Text="{Binding ShareText}" />
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Merchants -->
+            <Border Classes="card" IsVisible="{Binding IsMerchantsLevel}">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="sectionTitle" Text="{l:Localize Spending.Section.Merchants}" />
+                    <ItemsControl Name="MerchantsList" ItemsSource="{Binding Merchants}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row"
+                                        Command="{Binding DataContext.SelectMerchantCommand, ElementName=MerchantsList}"
+                                        CommandParameter="{Binding}">
+                                    <Grid ColumnDefinitions="*,140,110,54">
+                                        <TextBlock Grid.Column="0" Classes="rowLabel" Text="{Binding Label}" />
+                                        <ProgressBar Grid.Column="1" Minimum="0" Maximum="100" Height="6"
+                                                     VerticalAlignment="Center" Margin="0,0,12,0"
+                                                     Value="{Binding SharePercent}" Foreground="#1D4ED8" />
+                                        <TextBlock Grid.Column="2" Classes="rowValue" Text="{Binding TotalText}" />
+                                        <TextBlock Grid.Column="3" Classes="rowShare" Text="{Binding ShareText}" />
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Transactions -->
+            <Border Classes="card" IsVisible="{Binding IsTransactionsLevel}">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="sectionTitle" Text="{l:Localize Spending.Section.Transactions}" />
+                    <ItemsControl ItemsSource="{Binding Transactions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="100,*,120" Margin="12,8">
+                                    <TextBlock Grid.Column="0" Classes="metricLabel" VerticalAlignment="Center"
+                                               Text="{Binding DateText}" />
+                                    <TextBlock Grid.Column="1" Classes="rowLabel" Text="{Binding Title}" />
+                                    <TextBlock Grid.Column="2" Classes="rowValue" Text="{Binding AmountText}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

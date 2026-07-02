@@ -68,6 +68,9 @@ public sealed partial class SpendingExplorerViewModel : ObservableObject
     [ObservableProperty]
     private SpendingMerchantRow? _selectedMerchant;
 
+    [ObservableProperty]
+    private bool _isEmpty;
+
     public SpendingExplorerViewModel(
         ISpendingExplorerQuery query,
         IAccountService accountService,
@@ -209,12 +212,14 @@ public sealed partial class SpendingExplorerViewModel : ObservableObject
                 Transactions.Clear();
                 Level = SpendingDrillLevel.Merchants;
                 TotalText = SelectedCategory?.TotalText ?? "";
+                IsEmpty = Merchants.Count == 0;
                 break;
             case SpendingDrillLevel.Merchants:
                 SelectedCategory = null;
                 Merchants.Clear();
                 Level = SpendingDrillLevel.Categories;
                 TotalText = _categoriesTotalText;
+                IsEmpty = Categories.Count == 0;
                 break;
         }
     }
@@ -246,6 +251,7 @@ public sealed partial class SpendingExplorerViewModel : ObservableObject
 
             _categoriesTotalText = CashFlowDisplay.Money(total);
             TotalText = _categoriesTotalText;
+            IsEmpty = Categories.Count == 0;
         }
         catch (Exception ex)
         {
@@ -278,6 +284,8 @@ public sealed partial class SpendingExplorerViewModel : ObservableObject
                     Percent(m.Share),
                     m.Count));
             }
+
+            IsEmpty = Merchants.Count == 0;
         }
         catch (Exception ex)
         {
@@ -310,6 +318,8 @@ public sealed partial class SpendingExplorerViewModel : ObservableObject
                     t.Description,
                     CashFlowDisplay.Money(Math.Abs(t.Amount))));
             }
+
+            IsEmpty = Transactions.Count == 0;
         }
         catch (Exception ex)
         {

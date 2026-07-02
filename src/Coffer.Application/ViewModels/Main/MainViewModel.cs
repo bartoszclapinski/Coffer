@@ -7,6 +7,7 @@ using Coffer.Application.ViewModels.Goals;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Planning;
 using Coffer.Application.ViewModels.Settings;
+using Coffer.Application.ViewModels.Spending;
 using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -40,6 +41,7 @@ public sealed partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsAdvisorActive))]
     [NotifyPropertyChangedFor(nameof(IsPlanningActive))]
     [NotifyPropertyChangedFor(nameof(IsAffordabilityActive))]
+    [NotifyPropertyChangedFor(nameof(IsSpendingActive))]
     [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     private ObservableObject? _currentPage;
 
@@ -52,6 +54,7 @@ public sealed partial class MainViewModel : ObservableObject
         GoalsViewModel goalsViewModel,
         CashFlowPlanningViewModel planningViewModel,
         AffordabilityViewModel affordabilityViewModel,
+        SpendingExplorerViewModel spendingViewModel,
         SettingsViewModel settingsViewModel,
         ILoginService loginService,
         ILocalizer localizer,
@@ -65,6 +68,7 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(goalsViewModel);
         ArgumentNullException.ThrowIfNull(planningViewModel);
         ArgumentNullException.ThrowIfNull(affordabilityViewModel);
+        ArgumentNullException.ThrowIfNull(spendingViewModel);
         ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
         ArgumentNullException.ThrowIfNull(localizer);
@@ -78,6 +82,7 @@ public sealed partial class MainViewModel : ObservableObject
         Advisor = goalsViewModel;
         Planning = planningViewModel;
         Affordability = affordabilityViewModel;
+        Spending = spendingViewModel;
         Settings = settingsViewModel;
         _loginService = loginService;
         _localizer = localizer;
@@ -108,6 +113,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     public AffordabilityViewModel Affordability { get; }
 
+    public SpendingExplorerViewModel Spending { get; }
+
     public SettingsViewModel Settings { get; }
 
     public bool IsDashboardActive => ReferenceEquals(CurrentPage, Dashboard);
@@ -125,6 +132,8 @@ public sealed partial class MainViewModel : ObservableObject
     public bool IsPlanningActive => ReferenceEquals(CurrentPage, Planning);
 
     public bool IsAffordabilityActive => ReferenceEquals(CurrentPage, Affordability);
+
+    public bool IsSpendingActive => ReferenceEquals(CurrentPage, Spending);
 
     public bool IsSettingsActive => ReferenceEquals(CurrentPage, Settings);
 
@@ -223,6 +232,18 @@ public sealed partial class MainViewModel : ObservableObject
 
         CurrentPage = Affordability;
         Affordability.LoadCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private void ShowSpending()
+    {
+        if (IsSpendingActive)
+        {
+            return;
+        }
+
+        CurrentPage = Spending;
+        Spending.LoadCommand.Execute(null);
     }
 
     [RelayCommand]
