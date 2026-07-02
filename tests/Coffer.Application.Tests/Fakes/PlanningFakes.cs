@@ -86,6 +86,29 @@ internal sealed class FakeStatementContinuityChecker : IStatementContinuityCheck
         Task.FromResult<IReadOnlyList<StatementGap>>(Gaps.ToList());
 }
 
+/// <summary>In-memory <see cref="IVariableBurnQuery"/> returning a fixed daily burn (default 0).</summary>
+internal sealed class FakeVariableBurnQuery : IVariableBurnQuery
+{
+    public decimal DailyBurn { get; set; }
+
+    public Task<decimal> GetDailyBurnAsync(Guid? accountId, DateOnly asOf, CancellationToken ct) =>
+        Task.FromResult(DailyBurn);
+}
+
+/// <summary>
+/// In-memory <see cref="IBalanceTrustQuery"/>: trustworthy with no gaps by default, or seed
+/// <see cref="Gaps"/> and set <see cref="IsTrustworthy"/> to model an uncertain window.
+/// </summary>
+internal sealed class FakeBalanceTrustQuery : IBalanceTrustQuery
+{
+    public bool IsTrustworthy { get; set; } = true;
+
+    public List<StatementGap> Gaps { get; } = [];
+
+    public Task<BalanceTrust> CheckAsync(Guid accountId, DateOnly asOf, CancellationToken ct) =>
+        Task.FromResult(new BalanceTrust(IsTrustworthy, asOf, Gaps.ToList()));
+}
+
 /// <summary>
 /// In-memory <see cref="ICashFlowExplainer"/> returning a scripted explanation and recording the
 /// projection it was handed, so VM tests can assert the narrative is surfaced without any AI.

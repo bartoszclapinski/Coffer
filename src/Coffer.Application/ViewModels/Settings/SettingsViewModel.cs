@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using Coffer.Application.Localization;
+using Coffer.Core.Accounts;
 using Coffer.Core.Ai;
 using Coffer.Core.Localization;
+using Coffer.Core.Planning;
 using Coffer.Core.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -18,6 +20,8 @@ namespace Coffer.Application.ViewModels.Settings;
 public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly IAiSettings _settings;
+    private readonly IPlanningSettings _planningSettings;
+    private readonly IAccountService _accountService;
     private readonly ISecretStore _secrets;
     private readonly IAiUsageLedger _ledger;
     private readonly ILocalizer _localizer;
@@ -43,6 +47,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     private decimal _monthlyCapPln = AiDefaults.MonthlyCapPln;
 
     [ObservableProperty]
+    private decimal _safetyFloorPln = PlanningDefaults.SafetyFloorPln;
+
+    [ObservableProperty]
     private decimal _currentMonthSpendPln;
 
     [ObservableProperty]
@@ -61,6 +68,8 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public SettingsViewModel(
         IAiSettings settings,
+        IPlanningSettings planningSettings,
+        IAccountService accountService,
         ISecretStore secrets,
         IAiUsageLedger ledger,
         ILocalizer localizer,
@@ -68,6 +77,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         ILogger<SettingsViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(planningSettings);
+        ArgumentNullException.ThrowIfNull(accountService);
         ArgumentNullException.ThrowIfNull(secrets);
         ArgumentNullException.ThrowIfNull(ledger);
         ArgumentNullException.ThrowIfNull(localizer);
@@ -75,6 +86,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(logger);
 
         _settings = settings;
+        _planningSettings = planningSettings;
+        _accountService = accountService;
         _secrets = secrets;
         _ledger = ledger;
         _localizer = localizer;
@@ -83,6 +96,10 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         _selectedLanguage = Languages.First(l => l.Language == localizer.Current);
     }
+
+    public ObservableCollection<AccountAnchorRowViewModel> Accounts { get; } = [];
+
+    public bool HasAccounts => Accounts.Count > 0;
 
     public ObservableCollection<string> Providers { get; } =
         [AiDefaults.ClaudeProvider, AiDefaults.OpenAiProvider];
@@ -122,9 +139,12 @@ public sealed partial class SettingsViewModel : ObservableObject
             SelectedProvider = await _settings.GetActiveProviderAsync(ct).ConfigureAwait(true);
             CategorizationModel = await _settings.GetCategorizationModelAsync(ct).ConfigureAwait(true);
             MonthlyCapPln = await _settings.GetMonthlyCapPlnAsync(ct).ConfigureAwait(true);
+            SafetyFloorPln = await _planningSettings.GetSafetyFloorPlnAsync(ct).ConfigureAwait(true);
             AiFallbackParsingEnabled = await _settings.GetAiFallbackParsingEnabledAsync(ct).ConfigureAwait(true);
             OwnerIdentityNames = await _settings.GetOwnerIdentityNamesAsync(ct).ConfigureAwait(true) ?? "";
             CurrentMonthSpendPln = await _ledger.GetCurrentMonthSpendPlnAsync(ct).ConfigureAwait(true);
+
+            await LoadAccountsAsync(ct).ConfigureAwait(true);
 
             var key = await _secrets.GetSecretAsync(AiDefaults.ClaudeApiKeySecret, ct).ConfigureAwait(true);
             HasApiKey = !string.IsNullOrEmpty(key);
@@ -156,6 +176,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             await _settings.SetActiveProviderAsync(SelectedProvider, ct).ConfigureAwait(true);
             await _settings.SetCategorizationModelAsync(CategorizationModel, ct).ConfigureAwait(true);
             await _settings.SetMonthlyCapPlnAsync(MonthlyCapPln, ct).ConfigureAwait(true);
+            await _planningSettings.SetSafetyFloorPlnAsync(SafetyFloorPln, ct).ConfigureAwait(true);
             await _settings.SetAiFallbackParsingEnabledAsync(AiFallbackParsingEnabled, ct).ConfigureAwait(true);
             await _settings.SetOwnerIdentityNamesAsync(OwnerIdentityNames, ct).ConfigureAwait(true);
             StatusMessage = _localizer["Settings.Status.Saved"];
@@ -168,6 +189,92 @@ public sealed partial class SettingsViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private async Task LoadAccountsAsync(CancellationToken ct)
+    {
+        var accounts = await _accountService.GetAllWithAnchorsAsync(ct).ConfigureAwait(true);
+
+        Accounts.Clear();
+        foreach (var a in accounts)
+        {
+            Accounts.Add(new AccountAnchorRowViewModel(
+                a.Id, a.Name, a.BankCode, a.AnchorDate, a.AnchorBalance, SaveAnchorAsync, ClearAnchorAsync));
+        }
+
+        OnPropertyChanged(nameof(HasAccounts));
+    }
+
+    private async Task SaveAnchorAsync(AccountAnchorRowViewModel row)
+    {
+        if (row.IsBusy)
+        {
+            return;
+        }
+
+        // Anchoring needs both the real balance and the date it was true.
+        if (row.AnchorDate is not { } offset)
+        {
+            StatusMessage = _localizer["Settings.Anchor.DateRequired"];
+            return;
+        }
+
+        var date = DateOnly.FromDateTime(offset.Date);
+        if (date > DateOnly.FromDateTime(DateTime.Today))
+        {
+            StatusMessage = _localizer["Settings.Anchor.FutureDate"];
+            return;
+        }
+
+        row.IsBusy = true;
+        StatusMessage = "";
+        try
+        {
+            await _accountService
+                .SetBalanceAnchorAsync(row.Id, row.AnchorBalance, date, CancellationToken.None)
+                .ConfigureAwait(true);
+            row.HasAnchor = true;
+            StatusMessage = _localizer["Settings.Anchor.Saved"];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save balance anchor for account {AccountId}", row.Id);
+            StatusMessage = _localizer["Settings.Anchor.SaveFailed"];
+        }
+        finally
+        {
+            row.IsBusy = false;
+        }
+    }
+
+    private async Task ClearAnchorAsync(AccountAnchorRowViewModel row)
+    {
+        if (row.IsBusy)
+        {
+            return;
+        }
+
+        row.IsBusy = true;
+        StatusMessage = "";
+        try
+        {
+            await _accountService
+                .SetBalanceAnchorAsync(row.Id, balance: null, date: null, CancellationToken.None)
+                .ConfigureAwait(true);
+            row.HasAnchor = false;
+            row.AnchorBalance = 0m;
+            row.AnchorDate = null;
+            StatusMessage = _localizer["Settings.Anchor.Cleared"];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to clear balance anchor for account {AccountId}", row.Id);
+            StatusMessage = _localizer["Settings.Anchor.SaveFailed"];
+        }
+        finally
+        {
+            row.IsBusy = false;
         }
     }
 

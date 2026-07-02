@@ -898,4 +898,139 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="CashFlow.Action.Explain" xml:space="preserve">
     <value>Wyjaśnij</value>
   </data>
+  <data name="Nav.Affordability" xml:space="preserve">
+    <value>Czy mnie stać?</value>
+  </data>
+  <data name="Affordability.Title" xml:space="preserve">
+    <value>Czy mnie stać?</value>
+  </data>
+  <data name="Affordability.Subtitle" xml:space="preserve">
+    <value>Sprawdź, czy planowany wydatek utrzyma saldo powyżej progu bezpieczeństwa do najbliższego wpływu.</value>
+  </data>
+  <data name="Affordability.Account" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="Affordability.AllAccounts" xml:space="preserve">
+    <value>Wszystkie konta</value>
+  </data>
+  <data name="Affordability.Amount" xml:space="preserve">
+    <value>Kwota (PLN)</value>
+  </data>
+  <data name="Affordability.Date" xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="Affordability.Check" xml:space="preserve">
+    <value>Sprawdź</value>
+  </data>
+  <data name="Affordability.Empty" xml:space="preserve">
+    <value>Wpisz kwotę i sprawdź, czy Cię na nią stać.</value>
+  </data>
+  <data name="Affordability.Result.Yes" xml:space="preserve">
+    <value>Tak, stać Cię na to</value>
+  </data>
+  <data name="Affordability.Result.No" xml:space="preserve">
+    <value>Nie — to zejdzie poniżej progu</value>
+  </data>
+  <data name="Affordability.Section.Details" xml:space="preserve">
+    <value>Szczegóły</value>
+  </data>
+  <data name="Affordability.Summary.Opening" xml:space="preserve">
+    <value>Saldo dziś</value>
+  </data>
+  <data name="Affordability.Summary.SafetyFloor" xml:space="preserve">
+    <value>Próg bezpieczeństwa</value>
+  </data>
+  <data name="Affordability.Summary.Lowest" xml:space="preserve">
+    <value>Najniższy punkt</value>
+  </data>
+  <data name="Affordability.Summary.Headroom" xml:space="preserve">
+    <value>Zapas</value>
+  </data>
+  <data name="Affordability.Summary.DailyBurn" xml:space="preserve">
+    <value>Szacowany wydatek dzienny</value>
+  </data>
+  <data name="Affordability.Summary.NextInflow" xml:space="preserve">
+    <value>Najbliższy wpływ</value>
+  </data>
+  <data name="Affordability.NoInflow" xml:space="preserve">
+    <value>brak w zakresie</value>
+  </data>
+  <data name="Affordability.Driver.Label" xml:space="preserve">
+    <value>Co najbardziej obciąża</value>
+  </data>
+  <data name="Affordability.Driver.Detail" xml:space="preserve">
+    <value>{0} dnia {1}: {2}</value>
+  </data>
+  <data name="Affordability.Relative.Title" xml:space="preserve">
+    <value>Saldo względne</value>
+  </data>
+  <data name="Affordability.Relative.Hint" xml:space="preserve">
+    <value>To konto nie ma zakotwiczonego salda, więc poziom jest sumą względną. Ustaw realne saldo w Ustawieniach, aby uzyskać odpowiedź bezwzględną.</value>
+  </data>
+  <data name="Affordability.Uncertain.Title" xml:space="preserve">
+    <value>Odpowiedź niepewna</value>
+  </data>
+  <data name="Affordability.Uncertain.Range" xml:space="preserve">
+    <value>Brakuje dni wyciągu {0} – {1}, więc saldu nie można ufać.</value>
+  </data>
+  <data name="Affordability.Uncertain.Generic" xml:space="preserve">
+    <value>Luka w wyciągach w tym oknie oznacza, że saldu nie można ufać.</value>
+  </data>
+  <data name="Affordability.Error.Load" xml:space="preserve">
+    <value>Nie udało się wczytać kont.</value>
+  </data>
+  <data name="Affordability.Error.Amount" xml:space="preserve">
+    <value>Wpisz kwotę większą od zera.</value>
+  </data>
+  <data name="Affordability.Error.Check" xml:space="preserve">
+    <value>Nie udało się sprawdzić dostępności środków.</value>
+  </data>
+  <data name="Settings.Planning.Section" xml:space="preserve">
+    <value>Planowanie</value>
+  </data>
+  <data name="Settings.Planning.SafetyFloor" xml:space="preserve">
+    <value>Próg bezpieczeństwa (PLN)</value>
+  </data>
+  <data name="Settings.Planning.SafetyFloorHint" xml:space="preserve">
+    <value>Osobisty bufor trzymany z boku. Odpowiedź o dostępności środków i ostrzeżenia o napiętym oknie traktują „poniżej tej kwoty” jako za mało, a nie „poniżej zera”.</value>
+  </data>
+  <data name="Settings.Anchor.Section" xml:space="preserve">
+    <value>Salda kont</value>
+  </data>
+  <data name="Settings.Anchor.Hint" xml:space="preserve">
+    <value>Ustaw realne saldo konta na wybrany dzień. Aplikacja wyliczy dzisiejsze saldo na podstawie zaimportowanych wyciągów.</value>
+  </data>
+  <data name="Settings.Anchor.NoAccounts" xml:space="preserve">
+    <value>Brak kont. Najpierw zaimportuj wyciąg.</value>
+  </data>
+  <data name="Settings.Anchor.Set" xml:space="preserve">
+    <value>Zakotwiczone</value>
+  </data>
+  <data name="Settings.Anchor.Balance" xml:space="preserve">
+    <value>Realne saldo (PLN)</value>
+  </data>
+  <data name="Settings.Anchor.Date" xml:space="preserve">
+    <value>Na dzień</value>
+  </data>
+  <data name="Settings.Anchor.Save" xml:space="preserve">
+    <value>Zapisz</value>
+  </data>
+  <data name="Settings.Anchor.Clear" xml:space="preserve">
+    <value>Wyczyść</value>
+  </data>
+  <data name="Settings.Anchor.Saved" xml:space="preserve">
+    <value>Zapisano zakotwiczone saldo.</value>
+  </data>
+  <data name="Settings.Anchor.Cleared" xml:space="preserve">
+    <value>Usunięto zakotwiczone saldo.</value>
+  </data>
+  <data name="Settings.Anchor.SaveFailed" xml:space="preserve">
+    <value>Nie udało się zapisać zakotwiczonego salda.</value>
+  </data>
+  <data name="Settings.Anchor.DateRequired" xml:space="preserve">
+    <value>Wybierz dzień, na który saldo było prawdziwe.</value>
+  </data>
+  <data name="Settings.Anchor.FutureDate" xml:space="preserve">
+    <value>Data zakotwiczenia nie może być w przyszłości.</value>
+  </data>
 </root>

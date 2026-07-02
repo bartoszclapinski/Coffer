@@ -898,4 +898,139 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="CashFlow.Action.Explain" xml:space="preserve">
     <value>Explain</value>
   </data>
+  <data name="Nav.Affordability" xml:space="preserve">
+    <value>Can I afford?</value>
+  </data>
+  <data name="Affordability.Title" xml:space="preserve">
+    <value>Can I afford?</value>
+  </data>
+  <data name="Affordability.Subtitle" xml:space="preserve">
+    <value>Check whether a planned spend keeps you above your safety floor before your next income.</value>
+  </data>
+  <data name="Affordability.Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Affordability.AllAccounts" xml:space="preserve">
+    <value>All accounts</value>
+  </data>
+  <data name="Affordability.Amount" xml:space="preserve">
+    <value>Amount (PLN)</value>
+  </data>
+  <data name="Affordability.Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Affordability.Check" xml:space="preserve">
+    <value>Check</value>
+  </data>
+  <data name="Affordability.Empty" xml:space="preserve">
+    <value>Enter an amount and check whether you can afford it.</value>
+  </data>
+  <data name="Affordability.Result.Yes" xml:space="preserve">
+    <value>Yes, you can afford it</value>
+  </data>
+  <data name="Affordability.Result.No" xml:space="preserve">
+    <value>No — this would push you under</value>
+  </data>
+  <data name="Affordability.Section.Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Affordability.Summary.Opening" xml:space="preserve">
+    <value>Balance today</value>
+  </data>
+  <data name="Affordability.Summary.SafetyFloor" xml:space="preserve">
+    <value>Safety floor</value>
+  </data>
+  <data name="Affordability.Summary.Lowest" xml:space="preserve">
+    <value>Lowest point</value>
+  </data>
+  <data name="Affordability.Summary.Headroom" xml:space="preserve">
+    <value>Headroom</value>
+  </data>
+  <data name="Affordability.Summary.DailyBurn" xml:space="preserve">
+    <value>Estimated daily spend</value>
+  </data>
+  <data name="Affordability.Summary.NextInflow" xml:space="preserve">
+    <value>Next income</value>
+  </data>
+  <data name="Affordability.NoInflow" xml:space="preserve">
+    <value>none in range</value>
+  </data>
+  <data name="Affordability.Driver.Label" xml:space="preserve">
+    <value>What pushes you under</value>
+  </data>
+  <data name="Affordability.Driver.Detail" xml:space="preserve">
+    <value>{0} on {1}: {2}</value>
+  </data>
+  <data name="Affordability.Relative.Title" xml:space="preserve">
+    <value>Relative balance</value>
+  </data>
+  <data name="Affordability.Relative.Hint" xml:space="preserve">
+    <value>This account has no balance anchor, so the level is a relative running sum. Set a real balance in Settings for an absolute answer.</value>
+  </data>
+  <data name="Affordability.Uncertain.Title" xml:space="preserve">
+    <value>Uncertain answer</value>
+  </data>
+  <data name="Affordability.Uncertain.Range" xml:space="preserve">
+    <value>Statement days {0} – {1} are missing, so the balance cannot be trusted.</value>
+  </data>
+  <data name="Affordability.Uncertain.Generic" xml:space="preserve">
+    <value>A statement gap in this window means the balance cannot be trusted.</value>
+  </data>
+  <data name="Affordability.Error.Load" xml:space="preserve">
+    <value>Could not load accounts.</value>
+  </data>
+  <data name="Affordability.Error.Amount" xml:space="preserve">
+    <value>Enter an amount greater than zero.</value>
+  </data>
+  <data name="Affordability.Error.Check" xml:space="preserve">
+    <value>Could not check affordability.</value>
+  </data>
+  <data name="Settings.Planning.Section" xml:space="preserve">
+    <value>Planning</value>
+  </data>
+  <data name="Settings.Planning.SafetyFloor" xml:space="preserve">
+    <value>Safety floor (PLN)</value>
+  </data>
+  <data name="Settings.Planning.SafetyFloorHint" xml:space="preserve">
+    <value>A personal buffer kept aside. The affordability answer and tight-window warnings treat "below this" as too low, not "below zero".</value>
+  </data>
+  <data name="Settings.Anchor.Section" xml:space="preserve">
+    <value>Account balances</value>
+  </data>
+  <data name="Settings.Anchor.Hint" xml:space="preserve">
+    <value>Set an account's real balance as of a date. The app derives today's balance forward from your imported statements.</value>
+  </data>
+  <data name="Settings.Anchor.NoAccounts" xml:space="preserve">
+    <value>No accounts yet. Import a statement first.</value>
+  </data>
+  <data name="Settings.Anchor.Set" xml:space="preserve">
+    <value>Anchored</value>
+  </data>
+  <data name="Settings.Anchor.Balance" xml:space="preserve">
+    <value>Real balance (PLN)</value>
+  </data>
+  <data name="Settings.Anchor.Date" xml:space="preserve">
+    <value>As of date</value>
+  </data>
+  <data name="Settings.Anchor.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Settings.Anchor.Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Settings.Anchor.Saved" xml:space="preserve">
+    <value>Balance anchor saved.</value>
+  </data>
+  <data name="Settings.Anchor.Cleared" xml:space="preserve">
+    <value>Balance anchor cleared.</value>
+  </data>
+  <data name="Settings.Anchor.SaveFailed" xml:space="preserve">
+    <value>Could not save the balance anchor.</value>
+  </data>
+  <data name="Settings.Anchor.DateRequired" xml:space="preserve">
+    <value>Pick the date the balance was true.</value>
+  </data>
+  <data name="Settings.Anchor.FutureDate" xml:space="preserve">
+    <value>The anchor date cannot be in the future.</value>
+  </data>
 </root>

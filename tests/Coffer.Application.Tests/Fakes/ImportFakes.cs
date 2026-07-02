@@ -101,27 +101,59 @@ internal sealed class FakeImportStatementUseCase : IImportStatementUseCase
     }
 }
 
-/// <summary>In-memory account service: serves a seeded list and records inline creates.</summary>
+/// <summary>In-memory account service: serves a seeded list (with anchors), records inline creates and
+/// anchor writes.</summary>
 internal sealed class FakeAccountService : IAccountService
 {
-    private readonly List<AccountListItem> _accounts;
+    private readonly List<AccountAnchorItem> _accounts = [];
 
-    public FakeAccountService(params AccountListItem[] accounts) => _accounts = [.. accounts];
+    public FakeAccountService(params AccountListItem[] accounts)
+    {
+        foreach (var a in accounts)
+        {
+            _accounts.Add(new AccountAnchorItem(a.Id, a.Name, a.BankCode, null, null));
+        }
+    }
 
     public int CreateCalls { get; private set; }
 
     public NewAccount? LastCreated { get; private set; }
 
+    public int SetAnchorCalls { get; private set; }
+
+    public (Guid Id, decimal? Balance, DateOnly? Date)? LastAnchor { get; private set; }
+
+    /// <summary>Seeds an account carrying an anchor, for the Settings/affordability tests.</summary>
+    public void SeedAnchor(Guid id, string name, string bankCode, DateOnly? date, decimal? balance) =>
+        _accounts.Add(new AccountAnchorItem(id, name, bankCode, date, balance));
+
     public Task<IReadOnlyList<AccountListItem>> GetAllAsync(CancellationToken ct) =>
-        Task.FromResult<IReadOnlyList<AccountListItem>>([.. _accounts]);
+        Task.FromResult<IReadOnlyList<AccountListItem>>(
+            _accounts.Select(a => new AccountListItem(a.Id, a.Name, a.BankCode)).ToList());
+
+    public Task<IReadOnlyList<AccountAnchorItem>> GetAllWithAnchorsAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<AccountAnchorItem>>([.. _accounts]);
 
     public Task<Guid> CreateAsync(NewAccount account, CancellationToken ct)
     {
         CreateCalls++;
         LastCreated = account;
         var id = Guid.NewGuid();
-        _accounts.Add(new AccountListItem(id, account.Name, account.BankCode));
+        _accounts.Add(new AccountAnchorItem(id, account.Name, account.BankCode, null, null));
         return Task.FromResult(id);
+    }
+
+    public Task SetBalanceAnchorAsync(Guid accountId, decimal? balance, DateOnly? date, CancellationToken ct)
+    {
+        SetAnchorCalls++;
+        LastAnchor = (accountId, balance, date);
+        var index = _accounts.FindIndex(a => a.Id == accountId);
+        if (index >= 0)
+        {
+            _accounts[index] = _accounts[index] with { AnchorBalance = balance, AnchorDate = date };
+        }
+
+        return Task.CompletedTask;
     }
 }
 

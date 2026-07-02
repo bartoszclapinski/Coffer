@@ -32,6 +32,18 @@ public sealed class AccountService : IAccountService
             .ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<AccountAnchorItem>> GetAllWithAnchorsAsync(CancellationToken ct)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+
+        return await db.Accounts.AsNoTracking()
+            .Where(a => !a.IsArchived)
+            .OrderBy(a => a.Name)
+            .Select(a => new AccountAnchorItem(a.Id, a.Name, a.BankCode, a.AnchorDate, a.AnchorBalance))
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+    }
+
     public async Task<Guid> CreateAsync(NewAccount account, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(account);
@@ -52,5 +64,20 @@ public sealed class AccountService : IAccountService
         db.Accounts.Add(entity);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         return entity.Id;
+    }
+
+    public async Task SetBalanceAnchorAsync(Guid accountId, decimal? balance, DateOnly? date, CancellationToken ct)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+
+        // Load tracked (no AsNoTracking) so the assignment is persisted on SaveChanges.
+        var account = await db.Accounts
+            .FirstOrDefaultAsync(a => a.Id == accountId, ct)
+            .ConfigureAwait(false)
+            ?? throw new InvalidOperationException($"Account {accountId} was not found.");
+
+        account.AnchorBalance = balance;
+        account.AnchorDate = date;
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 }

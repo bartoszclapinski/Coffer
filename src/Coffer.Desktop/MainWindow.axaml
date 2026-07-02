@@ -43,6 +43,9 @@
         <DataTemplate DataType="planningVm:CashFlowPlanningViewModel">
             <views:CashFlowPlanningView />
         </DataTemplate>
+        <DataTemplate DataType="planningVm:AffordabilityViewModel">
+            <views:AffordabilityView />
+        </DataTemplate>
         <DataTemplate DataType="settingsVm:SettingsViewModel">
             <views:SettingsView />
         </DataTemplate>
@@ -103,6 +106,12 @@
                             Classes.active="{Binding IsPlanningActive}"
                             Content="{l:Localize Nav.CashFlow}"
                             Command="{Binding ShowPlanningCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left" />
+                    <Button Classes="nav"
+                            Classes.active="{Binding IsAffordabilityActive}"
+                            Content="{l:Localize Nav.Affordability}"
+                            Command="{Binding ShowAffordabilityCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"
