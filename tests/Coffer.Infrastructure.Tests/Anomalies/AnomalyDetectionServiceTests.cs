@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
 using Coffer.Core.Anomalies;
+using Coffer.Core.Budgeting;
 using Coffer.Core.Domain;
 using Coffer.Infrastructure.Anomalies;
 using Coffer.Infrastructure.Anomalies.Detectors;
+using Coffer.Infrastructure.Budgeting;
 using Coffer.Infrastructure.Tests.Persistence;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
@@ -126,6 +128,36 @@ public class AnomalyDetectionServiceTests : IDisposable
         alert.Description.Should().Be("LLM description");
     }
 
+    [Fact]
+    public async Task Run_PersistsOverBudgetAlert_WhenCategoryCrossesItsLimit()
+    {
+        await SeedOverBudgetScenarioAsync();
+
+        var added = await NewService().RunAsync(CancellationToken.None);
+
+        added.Should().Be(1);
+
+        await using var db = _factory.CreateDbContext();
+        var alert = await db.Alerts.SingleAsync();
+        alert.Type.Should().Be(AnomalyType.OverBudget);
+        alert.Status.Should().Be(AlertStatus.New);
+        alert.Signature.Should().StartWith("over-budget:");
+        alert.Title.Should().Contain("Spożywcze");
+        alert.RelatedAmount.Should().Be(150m);
+    }
+
+    [Fact]
+    public async Task Run_OverBudget_IsIdempotentWithinTheMonth()
+    {
+        await SeedOverBudgetScenarioAsync();
+
+        (await NewService().RunAsync(CancellationToken.None)).Should().Be(1);
+        (await NewService().RunAsync(CancellationToken.None)).Should().Be(0, "one alert per category per month");
+
+        await using var db = _factory.CreateDbContext();
+        (await db.Alerts.CountAsync()).Should().Be(1);
+    }
+
     private AnomalyDetectionService NewService(IAnomalyCommentator? commentator = null)
     {
         IAnomalyDetector[] detectors =
@@ -135,10 +167,12 @@ public class AnomalyDetectionServiceTests : IDisposable
             new CategorySpikeDetector(),
             new DuplicatePaymentDetector(),
             new MissingRecurrenceDetector(),
+            new OverBudgetDetector(),
         ];
         return new AnomalyDetectionService(
             _factory,
             detectors,
+            new BudgetTrackingQuery(_factory, new BudgetTrackingEngine()),
             commentator ?? new PassthroughCommentator(),
             NullLogger<AnomalyDetectionService>.Instance);
     }
@@ -203,8 +237,10 @@ public class AnomalyDetectionServiceTests : IDisposable
         await db.SaveChangesAsync();
     }
 
-    private Transaction NewTx(DateOnly date, decimal amount, string merchant) =>
-        new()
+    private Transaction NewTx(DateOnly date, decimal amount, string? merchant = null, Guid? categoryId = null)
+    {
+        var text = merchant ?? "TX";
+        return new Transaction
         {
             Id = Guid.NewGuid(),
             AccountId = _accountId,
@@ -212,10 +248,61 @@ public class AnomalyDetectionServiceTests : IDisposable
             Date = date,
             Amount = amount,
             Currency = "PLN",
-            Description = merchant,
-            NormalizedDescription = merchant.ToUpperInvariant(),
+            Description = text,
+            NormalizedDescription = text.ToUpperInvariant(),
             Merchant = merchant,
+            CategoryId = categoryId,
             Hash = Guid.NewGuid().ToString("N"),
             CreatedAt = DateTime.UtcNow,
         };
+    }
+
+    private async Task SeedOverBudgetScenarioAsync()
+    {
+        await using var db = _factory.CreateDbContext();
+        await db.Database.MigrateAsync();
+
+        _accountId = Guid.NewGuid();
+        _sessionId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+
+        db.Accounts.Add(new Account
+        {
+            Id = _accountId,
+            Name = "PKO",
+            BankCode = "PKO_BP",
+            AccountNumber = "PL01",
+            Currency = "PLN",
+            Type = AccountType.Checking,
+            CreatedAt = DateTime.UtcNow,
+        });
+        db.ImportSessions.Add(new ImportSession
+        {
+            Id = _sessionId,
+            FileName = "seed.csv",
+            FileHash = "SEEDHASH",
+            BankCode = "PKO_BP",
+            PeriodFrom = new DateOnly(2025, 1, 1),
+            PeriodTo = new DateOnly(2026, 12, 31),
+            ImportedAt = DateTime.UtcNow,
+            Status = ImportStatus.Completed,
+        });
+        db.Categories.Add(new Category { Id = categoryId, Name = "Spożywcze", Color = "#0F0" });
+        db.CategoryBudgets.Add(new CategoryBudget
+        {
+            Id = Guid.NewGuid(),
+            CategoryId = categoryId,
+            LimitAmount = 100m,
+            Currency = "PLN",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+        });
+
+        // Three merchant-less debits this month summing to 150 zł — over the 100 zł limit. No merchant
+        // and no baseline keeps every statistical detector quiet, so only the over-budget alert fires.
+        db.Transactions.Add(NewTx(new DateOnly(2026, 6, 5), -50m, categoryId: categoryId));
+        db.Transactions.Add(NewTx(new DateOnly(2026, 6, 12), -50m, categoryId: categoryId));
+        db.Transactions.Add(NewTx(new DateOnly(2026, 6, 19), -50m, categoryId: categoryId));
+        await db.SaveChangesAsync();
+    }
 }

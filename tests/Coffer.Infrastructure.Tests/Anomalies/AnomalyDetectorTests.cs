@@ -1,4 +1,5 @@
 using Coffer.Core.Anomalies;
+using Coffer.Core.Budgeting;
 using Coffer.Infrastructure.Anomalies.Detectors;
 using FluentAssertions;
 
@@ -175,4 +176,42 @@ public class AnomalyDetectorTests
 
         result.Should().BeEmpty();
     }
+
+    [Fact]
+    public void OverBudget_FlagsOnlyCategoriesInOverZone()
+    {
+        var overId = Guid.NewGuid();
+        var overview = new BudgetOverview(
+            new DateOnly(2026, 6, 1),
+            [
+                new BudgetLine(overId, "Spożywcze", "#0F0",
+                    new BudgetStatus(100m, 150m, -50m, 1.5m, 180m, BudgetZone.Over)),
+                new BudgetLine(Guid.NewGuid(), "Rozrywka", "#00F",
+                    new BudgetStatus(200m, 170m, 30m, 0.85m, 210m, BudgetZone.Warning)),
+                new BudgetLine(Guid.NewGuid(), "Transport", "#F00",
+                    new BudgetStatus(300m, 100m, 200m, 0.33m, 150m, BudgetZone.Ok)),
+            ],
+            []);
+
+        var result = new OverBudgetDetector().Detect(ContextWithBudgets(overview)).ToList();
+
+        result.Should().ContainSingle("only the Over zone crosses the limit");
+        result[0].Type.Should().Be(AnomalyType.OverBudget);
+        result[0].Signature.Should().Be($"over-budget:{overId}:202606");
+        result[0].Title.Should().Contain("Spożywcze");
+        result[0].RelatedAmount.Should().Be(150m);
+        result[0].PeriodFrom.Should().Be(new DateOnly(2026, 6, 1));
+        result[0].PeriodTo.Should().Be(new DateOnly(2026, 6, 30));
+    }
+
+    [Fact]
+    public void OverBudget_SilentWhenNoBudgetsSet()
+    {
+        var result = new OverBudgetDetector().Detect(Context([], [])).ToList();
+
+        result.Should().BeEmpty("a null budget overview means nothing to flag");
+    }
+
+    private static AnomalyDetectionContext ContextWithBudgets(BudgetOverview budgets) =>
+        new([], [], new Dictionary<Guid, string>(), _recentFrom, _recentTo, budgets);
 }

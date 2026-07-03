@@ -115,6 +115,7 @@ public class CanIAffordToolTests : IDisposable
         services.AddCofferChat();
         services.AddCofferGoals();
         services.AddCofferPlanning();
+        services.AddCofferBudgeting(); // GetBudgetStatusTool depends on the budget tracking query.
 
         using var provider = services.BuildServiceProvider();
         var toolNames = provider.GetServices<IChatTool>().Select(t => t.Name).ToList();

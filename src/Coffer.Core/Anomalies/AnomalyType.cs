@@ -20,4 +20,7 @@ public enum AnomalyType
 
     /// <summary>A regularly-recurring merchant that did not appear in the recent window.</summary>
     MissingRecurrence,
+
+    /// <summary>A category whose month-to-date spend has crossed its <see cref="Domain.CategoryBudget"/> limit.</summary>
+    OverBudget,
 }
