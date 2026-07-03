@@ -1,7 +1,7 @@
 # Sprint 23 — Local backup: daily snapshots, status, archive export
 
 **Phase:** — (roadmap-adjacent; `docs/architecture/08-backup-and-recovery.md`, Layer 1 "daily local snapshot" + Layer 3 "manual archive export" + the Settings "Backup & Recovery" panel. Layer 2 Google Drive and the whole restore side are explicitly out of scope — see Deferred.)
-**Status:** Planned
+**Status:** In progress
 **Depends on:** sprint-4 (`MigrationRunner` + `IPreMigrationBackup` + `SqlCipherKeyInterceptor`), sprint-2/3 (`IVaultPaths`, `dek.encrypted`, `IDekHolder`), sprint-9 (`IFilePicker`), sprint-15 (i18n). No new schema.
 
 ## Goal
@@ -31,13 +31,13 @@ Rule #8 already forces a **pre-migration** snapshot, and `PreMigrationBackup` do
 
 ### 23-A — backup service + archive exporter (headless)
 
-- [ ] 23.1 `Coffer.Core/Backup/` contracts + records: `IBackupService` (`CreateDailySnapshotAsync`, `CreateSnapshotNowAsync`, `GetStatusAsync`), `IArchiveExporter` (`ExportAsync(string targetZipPath, CancellationToken)`), and records `BackupStatus(DateOnly? LastDailySnapshot, int DailyCount, DateTime? LastPreMigrationSnapshot)`, `BackupResult(bool Created, string? Path)`.
-- [ ] 23.2 Pure `BackupRetention` (`Coffer.Core/Backup/`): given a list of snapshot filenames, `today`, and a keep-days window → the filenames to delete. Parses the date from `coffer-{yyyy-MM-dd}.db`; ignores unparsable names. Unit-tested at the boundary (exactly-N-days, older, malformed).
-- [ ] 23.3 `BackupSnapshotWriter` (`Coffer.Infrastructure/Backup/` or `/Persistence/`): copies `coffer.db` + `-wal`/`-shm` to a destination path (the shared copy technique). Refactor `PreMigrationBackup` to use it — behaviour unchanged (its byte-for-byte + side-file tests must stay green).
-- [ ] 23.4 `BackupService` (`Coffer.Infrastructure/Backup/`, `IVaultPaths` + `ILogger`): `CreateDailySnapshotAsync` — skip if `backups/coffer-{today}.db` exists; else write `.tmp` via the writer then atomic `File.Move`; then rotate daily (30d) and pre-migration (90d) via `BackupRetention`. `CreateSnapshotNowAsync` — force-refresh today's snapshot. `GetStatusAsync` — read the folder, return last daily date/count + last pre-migration timestamp.
-- [ ] 23.5 `ArchiveExporter` (`Coffer.Infrastructure/Backup/`, `IVaultPaths`): zip `DatabaseFile` + `EncryptedDekFilePath` + a generated `manifest.json` (app version + UTC timestamp) to the target path via `System.IO.Compression.ZipArchive`. Skips missing side inputs gracefully; the DB is mandatory.
-- [ ] 23.6 DI: a new `AddCofferBackup` (`IBackupService`/`IArchiveExporter` singletons or transients; the shared writer) chained into `AddCofferInfrastructure` after `AddCofferDatabase`.
-- [ ] 23.7 Tests (`Coffer.Core.Tests` + `Coffer.Infrastructure.Tests`): `BackupRetention` boundaries; `BackupService` creates a dated snapshot from a seeded DB file, is idempotent within the day, rotates >30-day daily and >90-day pre-migration files, reports status from disk; `ArchiveExporter` produces a zip containing `coffer.db` + `dek.encrypted` + `manifest.json`; `PreMigrationBackupTests` stay green after the refactor. `TestVaultPaths` temp dirs.
+- [x] 23.1 `Coffer.Core/Backup/` contracts + records: `IBackupService` (`CreateDailySnapshotAsync`, `CreateSnapshotNowAsync`, `GetStatusAsync`), `IArchiveExporter` (`ExportAsync(string targetZipPath, CancellationToken)`), and records `BackupStatus(DateOnly? LastDailySnapshot, int DailyCount, DateTime? LastPreMigrationSnapshot)`, `BackupResult(bool Created, string? Path)`.
+- [x] 23.2 Pure `BackupRetention` (`Coffer.Core/Backup/`): given a list of snapshot filenames, `today`, and a keep-days window → the filenames to delete. Parses the date from `coffer-{yyyy-MM-dd}.db`; ignores unparsable names. Unit-tested at the boundary (exactly-N-days, older, malformed).
+- [x] 23.3 `BackupSnapshotWriter` (`Coffer.Infrastructure/Backup/` or `/Persistence/`): copies `coffer.db` + `-wal`/`-shm` to a destination path (the shared copy technique). Refactor `PreMigrationBackup` to use it — behaviour unchanged (its byte-for-byte + side-file tests must stay green).
+- [x] 23.4 `BackupService` (`Coffer.Infrastructure/Backup/`, `IVaultPaths` + `ILogger`): `CreateDailySnapshotAsync` — skip if `backups/coffer-{today}.db` exists; else write `.tmp` via the writer then atomic `File.Move`; then rotate daily (30d) and pre-migration (90d) via `BackupRetention`. `CreateSnapshotNowAsync` — force-refresh today's snapshot. `GetStatusAsync` — read the folder, return last daily date/count + last pre-migration timestamp.
+- [x] 23.5 `ArchiveExporter` (`Coffer.Infrastructure/Backup/`, `IVaultPaths`): zip `DatabaseFile` + `EncryptedDekFilePath` + a generated `manifest.json` (app version + UTC timestamp) to the target path via `System.IO.Compression.ZipArchive`. Skips missing side inputs gracefully; the DB is mandatory.
+- [x] 23.6 DI: a new `AddCofferBackup` (`IBackupService`/`IArchiveExporter` singletons or transients; the shared writer) chained into `AddCofferInfrastructure` after `AddCofferDatabase`.
+- [x] 23.7 Tests (`Coffer.Core.Tests` + `Coffer.Infrastructure.Tests`): `BackupRetention` boundaries; `BackupService` creates a dated snapshot from a seeded DB file, is idempotent within the day, rotates >30-day daily and >90-day pre-migration files, reports status from disk; `ArchiveExporter` produces a zip containing `coffer.db` + `dek.encrypted` + `manifest.json`; `PreMigrationBackupTests` stay green after the refactor. `TestVaultPaths` temp dirs.
 
 ### 23-B — Settings panel + export picker + scheduler
 

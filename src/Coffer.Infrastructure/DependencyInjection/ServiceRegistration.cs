@@ -1,6 +1,7 @@
 using Coffer.Core.Accounts;
 using Coffer.Core.Ai;
 using Coffer.Core.Anomalies;
+using Coffer.Core.Backup;
 using Coffer.Core.Budgeting;
 using Coffer.Core.Categorization;
 using Coffer.Core.Chat;
@@ -18,6 +19,7 @@ using Coffer.Infrastructure.Accounts;
 using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Anomalies;
 using Coffer.Infrastructure.Anomalies.Detectors;
+using Coffer.Infrastructure.Backup;
 using Coffer.Infrastructure.Budgeting;
 using Coffer.Infrastructure.Categorization;
 using Coffer.Infrastructure.Chat;
@@ -63,7 +65,21 @@ public static class ServiceRegistration
             .AddCofferGoals()
             .AddCofferPlanning()
             .AddCofferBudgeting()
-            .AddCofferForecasting();
+            .AddCofferForecasting()
+            .AddCofferBackup();
+
+    /// <summary>
+    /// Registers the Sprint-23 local backup (doc 08, Layer 1 + 3): the <see cref="IBackupService"/> that
+    /// writes rolling daily snapshots of the encrypted database (and prunes them plus the pre-migration
+    /// folder), and the <see cref="IArchiveExporter"/> that produces a portable disaster-recovery zip.
+    /// File I/O behind <see cref="Core.Security.IVaultPaths"/>; no schema, no AI, no network.
+    /// </summary>
+    public static IServiceCollection AddCofferBackup(this IServiceCollection services)
+    {
+        services.AddSingleton<IBackupService, BackupService>();
+        services.AddSingleton<IArchiveExporter, ArchiveExporter>();
+        return services;
+    }
 
     /// <summary>
     /// Registers the Sprint-20 category-budget spine (beyond roadmap): the pure

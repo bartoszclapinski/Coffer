@@ -1,5 +1,6 @@
 using System.Globalization;
 using Coffer.Core.Security;
+using Coffer.Infrastructure.Backup;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 
@@ -53,26 +54,10 @@ public sealed class PreMigrationBackup : IPreMigrationBackup
         // The three files are copied separately (non-atomically). This is safe only
         // because the snapshot runs at startup before any migration, with no concurrent
         // writers — do not reuse this mid-session where the WAL can change underneath us.
-        await CopyFileAsync(source, destination, ct).ConfigureAwait(false);
-        await CopySideFileIfPresentAsync(source + "-wal", destination + "-wal", ct).ConfigureAwait(false);
-        await CopySideFileIfPresentAsync(source + "-shm", destination + "-shm", ct).ConfigureAwait(false);
+        // The destination stamp is unique, so no existing file is ever overwritten.
+        await BackupSnapshotWriter.CopyDatabaseAsync(source, destination, ct).ConfigureAwait(false);
 
         _logger.LogInformation("Pre-migration snapshot written to {Path}", destination);
         return destination;
-    }
-
-    private static async Task CopySideFileIfPresentAsync(string source, string destination, CancellationToken ct)
-    {
-        if (File.Exists(source))
-        {
-            await CopyFileAsync(source, destination, ct).ConfigureAwait(false);
-        }
-    }
-
-    private static async Task CopyFileAsync(string source, string destination, CancellationToken ct)
-    {
-        await using var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read);
-        await using var destinationStream = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-        await sourceStream.CopyToAsync(destinationStream, ct).ConfigureAwait(false);
     }
 }
