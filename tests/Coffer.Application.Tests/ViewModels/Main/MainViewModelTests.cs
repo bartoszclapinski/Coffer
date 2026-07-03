@@ -3,6 +3,7 @@ using Coffer.Application.ViewModels.Alerts;
 using Coffer.Application.ViewModels.Budgets;
 using Coffer.Application.ViewModels.Chat;
 using Coffer.Application.ViewModels.Dashboard;
+using Coffer.Application.ViewModels.Forecast;
 using Coffer.Application.ViewModels.Goals;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Main;
@@ -170,6 +171,17 @@ public class MainViewModelTests
         vm.CurrentPage.Should().BeSameAs(vm.Budgets);
     }
 
+    [Fact]
+    public void ShowForecast_SwitchesActivePage()
+    {
+        var vm = CreateViewModel(new RecordingLoginService());
+
+        vm.ShowForecastCommand.Execute(null);
+
+        vm.IsForecastActive.Should().BeTrue();
+        vm.CurrentPage.Should().BeSameAs(vm.Forecast);
+    }
+
     private static MainViewModel CreateViewModel(ILoginService loginService)
     {
         var dashboard = new DashboardViewModel(
@@ -245,9 +257,14 @@ public class MainViewModelTests
             new FakeCategoryService(),
             new FakeLocalizer(),
             NullLogger<BudgetsViewModel>.Instance);
+        var forecast = new ForecastViewModel(
+            new FakeExpenseForecastQuery(),
+            new FakeCategoryBudgetRepository(),
+            new FakeLocalizer(),
+            NullLogger<ForecastViewModel>.Instance);
 
         return new MainViewModel(
-            dashboard, import, transactions, chat, alerts, advisor, planning, affordability, spending, budgets, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
+            dashboard, import, transactions, chat, alerts, advisor, planning, affordability, spending, budgets, forecast, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class StubChatService : IChatService

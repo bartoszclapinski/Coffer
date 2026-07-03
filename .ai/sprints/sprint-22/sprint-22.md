@@ -1,7 +1,7 @@
 # Sprint 22 — Next-month expense forecast (per category, feeding suggested budgets)
 
 **Phase:** — (beyond-roadmap; the "Forecasting next month's expenses based on recurring patterns" item from `docs/architecture/10-roadmap.md` → "Beyond the roadmap". Reuses the Sprint-16 recurring-flow model, the Sprint-18 variable-burn exclusion, and the Sprint-19/11 per-category / per-month aggregations; ties into the Sprint-20 `CategoryBudget`.)
-**Status:** In progress
+**Status:** Closed
 **Depends on:** sprint-16 (`RecurringFlow` + `MatchCategoryId` + cadence, `CashFlowProjectionEngine`), sprint-18 (`IVariableBurnQuery` — the recurring-flow exclusion pattern), sprint-19 (`ISpendingExplorerQuery` per-category debit sums), sprint-11 (`DashboardQuery` per-month group-by + the latest-transaction month anchor), sprint-20 (`ICategoryBudgetRepository.SetBudgetAsync`, `IBudgetTrackingQuery`), sprint-15 (i18n)
 
 ## Goal
@@ -46,15 +46,15 @@ No new machinery is needed — just a small deterministic engine that folds acti
 
 ### 22-B — UI + set-as-budget
 
-- [ ] 22.7 A forecast surface + view model: per category the next-month fixed / variable / total, the suggested limit vs current limit, and an "accept" action calling `SetBudgetAsync` then refreshing. Money via `CashFlowDisplay`; month via `CashFlowDisplay.AccrualPeriod`; labels localized at the VM boundary.
-- [ ] 22.8 Wire navigation / placement per the resolved open question (own page vs a Budgets-page section), reusing the `ShowXxx`/`IsXxxActive` pattern if a new page; VM registered in the Desktop container.
-- [ ] 22.9 Localization: every label via `{l:Localize}`, keys in **both** `.resx` (parity test green).
+- [x] 22.7 A forecast surface + view model: per category the next-month fixed / variable / total, the suggested limit vs current limit, and an "accept" action calling `SetBudgetAsync` then refreshing. Money via `CashFlowDisplay`; month via `CashFlowDisplay.AccrualPeriod`; labels localized at the VM boundary.
+- [x] 22.8 Wire navigation / placement per the resolved open question (own page vs a Budgets-page section), reusing the `ShowXxx`/`IsXxxActive` pattern if a new page; VM registered in the Desktop container.
+- [x] 22.9 Localization: every label via `{l:Localize}`, keys in **both** `.resx` (parity test green).
 - [ ] 22.10 Optional `GetExpenseForecast` chat tool (read-only over `IExpenseForecastQuery`), registered in `AddCofferChat` — pulled in only if 22-A/B land comfortably.
-- [ ] 22.11 Tests (`Coffer.Application.Tests`): the VM surfaces per-category forecast + suggested vs current limit and round-trips "accept suggestion" → `SetBudgetAsync`; nav/registration; resource-key parity.
+- [x] 22.11 Tests (`Coffer.Application.Tests`): the VM surfaces per-category forecast + suggested vs current limit and round-trips "accept suggestion" → `SetBudgetAsync`; nav/registration; resource-key parity.
 
 ### Sweep
 
-- [ ] 22.12 No residual hardcoded user-facing literals; money renders `pl-PL` "zł" via `CashFlowDisplay`. `dotnet format --verify-no-changes` clean.
+- [x] 22.12 No residual hardcoded user-facing literals; money renders `pl-PL` "zł" via `CashFlowDisplay`. `dotnet format --verify-no-changes` clean.
 - [ ] 22.13 Manual DoD click-through (below) — expected to defer to manual (needs a running desktop app + real imported data with recurring history).
 
 ## Definition of Done

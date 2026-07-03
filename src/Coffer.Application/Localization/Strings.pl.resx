@@ -1171,4 +1171,49 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="Budgets.Error.Save" xml:space="preserve">
     <value>Nie udało się zapisać budżetu.</value>
   </data>
+  <data name="Nav.Forecast" xml:space="preserve">
+    <value>Prognoza</value>
+  </data>
+  <data name="Forecast.Title" xml:space="preserve">
+    <value>Prognoza</value>
+  </data>
+  <data name="Forecast.Subtitle" xml:space="preserve">
+    <value>Przewidywane wydatki na przyszły miesiąc według kategorii, z sugerowanym limitem budżetu.</value>
+  </data>
+  <data name="Forecast.Section.Categories" xml:space="preserve">
+    <value>Przyszły miesiąc według kategorii</value>
+  </data>
+  <data name="Forecast.TotalLabel" xml:space="preserve">
+    <value>Prognoza łącznie</value>
+  </data>
+  <data name="Forecast.Fixed" xml:space="preserve">
+    <value>Stałe</value>
+  </data>
+  <data name="Forecast.Variable" xml:space="preserve">
+    <value>Zmienne</value>
+  </data>
+  <data name="Forecast.Suggested" xml:space="preserve">
+    <value>Sugerowany limit</value>
+  </data>
+  <data name="Forecast.CurrentLimit" xml:space="preserve">
+    <value>Obecny limit</value>
+  </data>
+  <data name="Forecast.SetAsBudget" xml:space="preserve">
+    <value>Ustaw jako budżet</value>
+  </data>
+  <data name="Forecast.NoLimit" xml:space="preserve">
+    <value>brak</value>
+  </data>
+  <data name="Forecast.Uncategorized" xml:space="preserve">
+    <value>Bez kategorii</value>
+  </data>
+  <data name="Forecast.Empty" xml:space="preserve">
+    <value>Brak prognozy — zaimportuj wyciągi z historią cykliczną, aby zobaczyć przewidywania.</value>
+  </data>
+  <data name="Forecast.Error.Load" xml:space="preserve">
+    <value>Nie udało się wczytać prognozy.</value>
+  </data>
+  <data name="Forecast.Error.Save" xml:space="preserve">
+    <value>Nie udało się ustawić budżetu.</value>
+  </data>
 </root>
