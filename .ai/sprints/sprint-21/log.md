@@ -1,0 +1,8 @@
+# Sprint 21 log
+
+## 2026-07-03
+
+- `--:--` sprint planned — the optional **20-C** tail deferred at the close of Sprint 20: an over-budget `IAnomalyDetector` and a read-only `GetBudgetStatus` chat tool, so budget state surfaces on the Alerty page and in chat, not only on the Budgets page. Reuses the Sprint-13 anomaly engine (dedup + persist pipeline, the Alerty page) and the Sprint-12 chat-tool pattern (`ChatTool` base, auto-discovery, central anonymisation). No migration, no UI, no new AI cost.
+- `--:--` decision: **alert fires on `Over` only** (month-to-date spend ≥ limit), not `Warning`/approaching — a discrete "you crossed it" event; approaching stays a coloured bar on the Budgets page so alerts don't fire mid-month for every healthy budget. Signature `over-budget:{categoryId}:{yyyyMM}` → one alert per category per month, idempotent across reruns, dismissed never resurrected (existing pipeline behaviour). Alert text stays Polish-templated (baked at detection time, like all Sprint-13 alerts; runtime localization deferred under #128) → no new `.resx` keys.
+- `--:--` decision: **keep `IAnomalyDetector` pure** — `AnomalyDetectionService` (already async/DB-bound) calls the existing `IBudgetTrackingQuery.GetOverviewAsync` once and hands the `BudgetOverview` to an extended `AnomalyDetectionContext`; `OverBudgetDetector` just filters `Zone == Over`. Reuses the Sprint-20 query wholesale rather than re-implementing the month-to-date-per-category aggregation, and keeps the persist/dedup pipeline the Alerty page depends on (vs. raising alerts straight from the query, which would fork it).
+- `--:--` decision: **one headless PR (21-A)** for both hooks — small, shared theme, `Coffer.Core` + `Coffer.Infrastructure` + tests only; split only if review flags it.
