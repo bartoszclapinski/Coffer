@@ -131,6 +131,9 @@ public class SettingsViewModelTests
             new FakeAccountService(),
             new FakeSecretStore(),
             new FakeAiUsageLedger(),
+            new FakeBackupService(),
+            new FakeArchiveExporter(),
+            new FakeFilePicker(),
             localizer,
             store,
             NullLogger<SettingsViewModel>.Instance);
@@ -237,5 +240,65 @@ public class SettingsViewModelTests
         FakeAiUsageLedger ledger,
         FakePlanningSettings planning,
         FakeAccountService accounts) =>
-        new(settings, planning, accounts, secrets, ledger, new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
+        new(settings, planning, accounts, secrets, ledger,
+            new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(),
+            new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
+
+    private static SettingsViewModel CreateWithBackup(
+        FakeBackupService backup,
+        FakeArchiveExporter exporter,
+        FakeFilePicker picker) =>
+        new(new FakeAiSettings(), new FakePlanningSettings(), new FakeAccountService(),
+            new FakeSecretStore(), new FakeAiUsageLedger(), backup, exporter, picker,
+            new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
+
+    [Fact]
+    public async Task Load_PopulatesBackupStatus()
+    {
+        var backup = new FakeBackupService { Status = new(new DateOnly(2026, 7, 3), 4, null) };
+        var vm = CreateWithBackup(backup, new FakeArchiveExporter(), new FakeFilePicker());
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.LastDailySnapshotText.Should().Be("2026-07-03");
+        vm.DailyBackupCountText.Should().Be("4");
+    }
+
+    [Fact]
+    public async Task BackupNow_CreatesSnapshotAndRefreshesStatus()
+    {
+        var backup = new FakeBackupService();
+        var vm = CreateWithBackup(backup, new FakeArchiveExporter(), new FakeFilePicker());
+
+        await vm.BackupNowCommand.ExecuteAsync(null);
+
+        backup.NowCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ExportArchive_WithChosenPath_ExportsThere()
+    {
+        var exporter = new FakeArchiveExporter();
+        var picker = new FakeFilePicker { SaveResult = @"C:\backups\archive.zip" };
+        var vm = CreateWithBackup(new FakeBackupService(), exporter, picker);
+
+        await vm.ExportArchiveCommand.ExecuteAsync(null);
+
+        picker.SaveCalls.Should().Be(1);
+        exporter.Calls.Should().Be(1);
+        exporter.LastTarget.Should().Be(@"C:\backups\archive.zip");
+    }
+
+    [Fact]
+    public async Task ExportArchive_WhenCancelled_DoesNotExport()
+    {
+        var exporter = new FakeArchiveExporter();
+        var picker = new FakeFilePicker { SaveResult = null }; // cancelled
+        var vm = CreateWithBackup(new FakeBackupService(), exporter, picker);
+
+        await vm.ExportArchiveCommand.ExecuteAsync(null);
+
+        picker.SaveCalls.Should().Be(1);
+        exporter.Calls.Should().Be(0);
+    }
 }

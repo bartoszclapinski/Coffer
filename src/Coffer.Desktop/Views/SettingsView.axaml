@@ -204,6 +204,40 @@
                 </StackPanel>
             </Border>
 
+            <!-- Backup & Recovery -->
+            <Border Background="#FFFFFF" CornerRadius="10" Padding="20" BorderBrush="#E5E5EA" BorderThickness="1">
+                <StackPanel Spacing="16">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{l:Localize Settings.Backup.Section}" FontWeight="SemiBold" Foreground="#1D1D1F" />
+                        <TextBlock Text="{l:Localize Settings.Backup.Hint}"
+                                   FontSize="12" Foreground="#8E8E93" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{l:Localize Settings.Backup.LastSnapshot}" FontSize="12" Foreground="#8E8E93" />
+                            <TextBlock Text="{Binding LastDailySnapshotText}" FontSize="14" FontWeight="SemiBold" Foreground="#1D1D1F" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock Text="{l:Localize Settings.Backup.Count}" FontSize="12" Foreground="#8E8E93" />
+                            <TextBlock Text="{Binding DailyBackupCountText}" FontSize="14" FontWeight="SemiBold" Foreground="#1D1D1F" />
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="{l:Localize Settings.Backup.Now}"
+                                IsEnabled="{Binding !IsBusy}"
+                                Command="{Binding BackupNowCommand}" />
+                        <Button Content="{l:Localize Settings.Backup.Export}"
+                                IsEnabled="{Binding !IsBusy}"
+                                Command="{Binding ExportArchiveCommand}" />
+                    </StackPanel>
+
+                    <TextBlock Text="{l:Localize Settings.Backup.RestoreNote}"
+                               FontSize="12" Foreground="#8E8E93" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <Button Content="{l:Localize Settings.Save}"
                         Command="{Binding SaveCommand}"

@@ -1216,4 +1216,46 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="Forecast.Error.Save" xml:space="preserve">
     <value>Nie udało się ustawić budżetu.</value>
   </data>
+  <data name="Settings.Backup.Section" xml:space="preserve">
+    <value>Kopie zapasowe i odzyskiwanie</value>
+  </data>
+  <data name="Settings.Backup.Hint" xml:space="preserve">
+    <value>Automatyczne dzienne lokalne kopie zaszyfrowanej bazy, przechowywane przez 30 dni.</value>
+  </data>
+  <data name="Settings.Backup.LastSnapshot" xml:space="preserve">
+    <value>Ostatnia kopia</value>
+  </data>
+  <data name="Settings.Backup.Count" xml:space="preserve">
+    <value>Zachowane kopie</value>
+  </data>
+  <data name="Settings.Backup.Never" xml:space="preserve">
+    <value>Brak</value>
+  </data>
+  <data name="Settings.Backup.Now" xml:space="preserve">
+    <value>Utwórz kopię teraz</value>
+  </data>
+  <data name="Settings.Backup.Export" xml:space="preserve">
+    <value>Eksportuj pełne archiwum</value>
+  </data>
+  <data name="Settings.Backup.RestoreNote" xml:space="preserve">
+    <value>Kreator odzyskiwania jest w przygotowaniu. Na razie kopię można przywrócić, kopiując ją z powrotem na plik bazy po wylogowaniu.</value>
+  </data>
+  <data name="Settings.Backup.Status.Done" xml:space="preserve">
+    <value>Utworzono kopię zapasową.</value>
+  </data>
+  <data name="Settings.Backup.Status.Failed" xml:space="preserve">
+    <value>Nie udało się utworzyć kopii.</value>
+  </data>
+  <data name="Settings.Backup.Export.Done" xml:space="preserve">
+    <value>Wyeksportowano archiwum.</value>
+  </data>
+  <data name="Settings.Backup.Export.Failed" xml:space="preserve">
+    <value>Nie udało się wyeksportować archiwum.</value>
+  </data>
+  <data name="FilePicker.ArchiveFiles" xml:space="preserve">
+    <value>Archiwum (.zip)</value>
+  </data>
+  <data name="FilePicker.SaveArchiveTitle" xml:space="preserve">
+    <value>Eksportuj archiwum</value>
+  </data>
 </root>

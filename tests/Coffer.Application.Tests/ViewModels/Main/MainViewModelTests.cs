@@ -223,6 +223,9 @@ public class MainViewModelTests
             new FakeAccountService(),
             new FakeSecretStore(),
             new FakeAiUsageLedger(),
+            new FakeBackupService(),
+            new FakeArchiveExporter(),
+            new FakeFilePicker(),
             new FakeLocalizer(),
             new FakeLanguageStore(),
             NullLogger<SettingsViewModel>.Instance);
