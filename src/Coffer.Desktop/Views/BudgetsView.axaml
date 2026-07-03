@@ -1,0 +1,157 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Budgets;assembly=Coffer.Application"
+             xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:l="clr-namespace:Coffer.Desktop.Localization"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="720"
+             x:Class="Coffer.Desktop.Views.BudgetsView"
+             x:DataType="vm:BudgetsViewModel"
+             x:CompileBindings="False">
+    <UserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="20,16" />
+        </Style>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+        </Style>
+        <Style Selector="TextBlock.metricLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8E8E93" />
+        </Style>
+        <Style Selector="TextBlock.metricValue">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Margin="40,32" Spacing="20" MaxWidth="780" HorizontalAlignment="Left">
+            <StackPanel Spacing="4">
+                <TextBlock Text="{l:Localize Budgets.Title}"
+                           FontSize="26"
+                           FontWeight="Light"
+                           Foreground="#1D1D1F" />
+                <TextBlock Text="{l:Localize Budgets.Subtitle}"
+                           Foreground="#8E8E93"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{Binding MonthText}" Classes="metricLabel" />
+            </StackPanel>
+
+            <!-- Add / edit a limit -->
+            <Border Classes="card">
+                <StackPanel Spacing="16">
+                    <TextBlock Classes="sectionTitle" Text="{l:Localize Budgets.Set.Title}" />
+                    <Grid ColumnDefinitions="*,12,160,12,Auto" VerticalAlignment="Bottom">
+                        <StackPanel Grid.Column="0" Spacing="6">
+                            <TextBlock Text="{l:Localize Budgets.Category}" Classes="metricLabel" />
+                            <ComboBox HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding Categories}"
+                                      SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                                      DisplayMemberBinding="{Binding Name}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="6">
+                            <TextBlock Text="{l:Localize Budgets.Limit}" Classes="metricLabel" />
+                            <NumericUpDown Minimum="0"
+                                           Increment="100"
+                                           FormatString="N2"
+                                           Value="{Binding NewLimit, Mode=TwoWay}" />
+                        </StackPanel>
+                        <Button Grid.Column="4"
+                                Content="{l:Localize Budgets.Save}"
+                                VerticalAlignment="Bottom"
+                                IsEnabled="{Binding !IsLoading}"
+                                Command="{Binding AddBudgetCommand}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoading}" />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="#D14"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <TextBlock Text="{l:Localize Budgets.Empty}"
+                       Foreground="#8E8E93"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding IsEmpty}" />
+
+            <!-- Tracked budgets -->
+            <Border Classes="card" IsVisible="{Binding HasBudgets}">
+                <StackPanel Spacing="14">
+                    <TextBlock Classes="sectionTitle" Text="{l:Localize Budgets.Section.Tracked}" />
+                    <ItemsControl Name="BudgetsList" ItemsSource="{Binding Budgets}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#F0F0F2" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,12">
+                                    <StackPanel Spacing="8">
+                                        <Grid ColumnDefinitions="*,Auto,Auto">
+                                            <TextBlock Grid.Column="0" Text="{Binding CategoryName}"
+                                                       FontWeight="SemiBold" Foreground="#1D1D1F" VerticalAlignment="Center" />
+                                            <Border Grid.Column="1" CornerRadius="6" Padding="8,2" Margin="0,0,8,0"
+                                                    Background="{Binding ZoneColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}">
+                                                <TextBlock Text="{Binding ZoneLabel}" Foreground="#FFFFFF" FontSize="11" FontWeight="SemiBold" />
+                                            </Border>
+                                            <Button Grid.Column="2" Content="{l:Localize Budgets.Remove}"
+                                                    Command="{Binding DataContext.RemoveBudgetCommand, ElementName=BudgetsList}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+                                        <ProgressBar Minimum="0" Maximum="100" Height="8"
+                                                     Value="{Binding BarValue}"
+                                                     Foreground="{Binding ZoneColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                        <Grid ColumnDefinitions="*,*,*,*">
+                                            <StackPanel Grid.Column="0" Spacing="2">
+                                                <TextBlock Classes="metricLabel" Text="{l:Localize Budgets.Spent}" />
+                                                <TextBlock Classes="metricValue" Text="{Binding SpentText}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Classes="metricLabel" Text="{l:Localize Budgets.Limit}" />
+                                                <TextBlock Classes="metricValue" Text="{Binding LimitText}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Spacing="2">
+                                                <TextBlock Classes="metricLabel" Text="{l:Localize Budgets.Remaining}" />
+                                                <TextBlock Classes="metricValue" Text="{Binding RemainingText}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="3" Spacing="2">
+                                                <TextBlock Classes="metricLabel" Text="{l:Localize Budgets.Projected}" />
+                                                <TextBlock Classes="metricValue" Text="{Binding ProjectedText}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Unbudgeted this month -->
+            <Border Classes="card" IsVisible="{Binding HasUnbudgeted}">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="sectionTitle" Text="{l:Localize Budgets.Section.Unbudgeted}" />
+                    <ItemsControl ItemsSource="{Binding Unbudgeted}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="*,120" Margin="0,4">
+                                    <TextBlock Grid.Column="0" Text="{Binding Label}" Foreground="#1D1D1F" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding SpentText}" Classes="metricValue"
+                                               HorizontalAlignment="Right" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

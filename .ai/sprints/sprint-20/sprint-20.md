@@ -48,14 +48,14 @@ So the new capability is mostly a small persisted entity + a deterministic track
 
 ### 20-B — UI
 
-- [ ] 20.8 A dedicated **"Budżety / Budgets"** page (`BudgetsView.axaml` + `.axaml.cs`) + `BudgetsViewModel`: a category picker + limit input to add/edit a budget, a list of budgeted categories each with spent/limit text, a zone-coloured progress bar, remaining, and projected end-of-month; an "unbudgeted this month" section. Money via `CashFlowDisplay`; labels localized at the VM boundary.
-- [ ] 20.9 Wire navigation: `BudgetsViewModel` ctor param + null-check + property + `IsBudgetsActive` + `[NotifyPropertyChangedFor]` + `ShowBudgets` `[RelayCommand]` in `MainViewModel`; DataTemplate + sidebar `<Button Classes="nav">` in `MainWindow.axaml` (label `Nav.Budgets`); VM registered in the Desktop container.
-- [ ] 20.10 Localization: every label via `{l:Localize}`, keys in **both** `.resx` (Nav.Budgets, Budgets.* title/subtitle/add/edit/remove/limit/spent/remaining/projected/zone captions/unbudgeted/empty/errors). Parity test stays green.
-- [ ] 20.11 Tests (`Coffer.Application.Tests`): the budgets VM surfaces statuses + zones + unbudgeted lines from a real engine over fakes, round-trips add/edit/remove; `ShowBudgets_SwitchesActivePage`; resource-key parity green.
+- [x] 20.8 A dedicated **"Budżety / Budgets"** page (`BudgetsView.axaml` + `.axaml.cs`) + `BudgetsViewModel`: a category picker + limit input to add/edit a budget, a list of budgeted categories each with spent/limit text, a zone-coloured progress bar, remaining, and projected end-of-month; an "unbudgeted this month" section. Money via `CashFlowDisplay`; labels localized at the VM boundary.
+- [x] 20.9 Wire navigation: `BudgetsViewModel` ctor param + null-check + property + `IsBudgetsActive` + `[NotifyPropertyChangedFor]` + `ShowBudgets` `[RelayCommand]` in `MainViewModel`; DataTemplate + sidebar `<Button Classes="nav">` in `MainWindow.axaml` (label `Nav.Budgets`); VM registered in the Desktop container.
+- [x] 20.10 Localization: every label via `{l:Localize}`, keys in **both** `.resx` (Nav.Budgets, Budgets.* title/subtitle/add/edit/remove/limit/spent/remaining/projected/zone captions/unbudgeted/empty/errors). Parity test stays green.
+- [x] 20.11 Tests (`Coffer.Application.Tests`): the budgets VM surfaces statuses + zones + unbudgeted lines from a real engine over fakes, round-trips add/edit/remove; `ShowBudgets_SwitchesActivePage`; resource-key parity green.
 
 ### Sweep
 
-- [ ] 20.12 No residual hardcoded user-facing literals in the new surfaces (all via `{l:Localize}` / `ILocalizer`). Money renders `pl-PL` "zł" via `CashFlowDisplay` regardless of UI language.
+- [x] 20.12 No residual hardcoded user-facing literals in the new surfaces (all via `{l:Localize}` / `ILocalizer`). Money renders `pl-PL` "zł" via `CashFlowDisplay` regardless of UI language.
 - [ ] 20.13 Manual DoD click-through (below) — expected to defer to manual (needs a running desktop app + real imported data).
 
 ## Definition of Done

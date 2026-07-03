@@ -1105,4 +1105,70 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="Spending.Error.Load" xml:space="preserve">
     <value>Nie udało się wczytać wydatków.</value>
   </data>
+  <data name="Nav.Budgets" xml:space="preserve">
+    <value>Budżety</value>
+  </data>
+  <data name="Budgets.Title" xml:space="preserve">
+    <value>Budżety</value>
+  </data>
+  <data name="Budgets.Subtitle" xml:space="preserve">
+    <value>Ustaw miesięczny limit na kategorię i śledź go w trakcie miesiąca.</value>
+  </data>
+  <data name="Budgets.Set.Title" xml:space="preserve">
+    <value>Ustaw limit</value>
+  </data>
+  <data name="Budgets.Category" xml:space="preserve">
+    <value>Kategoria</value>
+  </data>
+  <data name="Budgets.Limit" xml:space="preserve">
+    <value>Limit (PLN)</value>
+  </data>
+  <data name="Budgets.Save" xml:space="preserve">
+    <value>Zapisz</value>
+  </data>
+  <data name="Budgets.Remove" xml:space="preserve">
+    <value>Usuń</value>
+  </data>
+  <data name="Budgets.Spent" xml:space="preserve">
+    <value>Wydano</value>
+  </data>
+  <data name="Budgets.Remaining" xml:space="preserve">
+    <value>Pozostało</value>
+  </data>
+  <data name="Budgets.Projected" xml:space="preserve">
+    <value>Prognoza</value>
+  </data>
+  <data name="Budgets.Section.Tracked" xml:space="preserve">
+    <value>Śledzone budżety</value>
+  </data>
+  <data name="Budgets.Section.Unbudgeted" xml:space="preserve">
+    <value>Poza budżetem w tym miesiącu</value>
+  </data>
+  <data name="Budgets.Empty" xml:space="preserve">
+    <value>Brak wydatków i budżetów w tym miesiącu.</value>
+  </data>
+  <data name="Budgets.Uncategorized" xml:space="preserve">
+    <value>Bez kategorii</value>
+  </data>
+  <data name="Budgets.Zone.Ok" xml:space="preserve">
+    <value>Na dobrej drodze</value>
+  </data>
+  <data name="Budgets.Zone.Warning" xml:space="preserve">
+    <value>Blisko limitu</value>
+  </data>
+  <data name="Budgets.Zone.Over" xml:space="preserve">
+    <value>Przekroczono</value>
+  </data>
+  <data name="Budgets.Error.Load" xml:space="preserve">
+    <value>Nie udało się wczytać budżetów.</value>
+  </data>
+  <data name="Budgets.Error.Category" xml:space="preserve">
+    <value>Najpierw wybierz kategorię.</value>
+  </data>
+  <data name="Budgets.Error.Limit" xml:space="preserve">
+    <value>Podaj limit większy od zera.</value>
+  </data>
+  <data name="Budgets.Error.Save" xml:space="preserve">
+    <value>Nie udało się zapisać budżetu.</value>
+  </data>
 </root>
