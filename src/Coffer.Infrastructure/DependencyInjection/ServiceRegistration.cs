@@ -5,6 +5,7 @@ using Coffer.Core.Budgeting;
 using Coffer.Core.Categorization;
 using Coffer.Core.Chat;
 using Coffer.Core.Dashboard;
+using Coffer.Core.Forecasting;
 using Coffer.Core.Goals;
 using Coffer.Core.Import;
 using Coffer.Core.Localization;
@@ -21,6 +22,7 @@ using Coffer.Infrastructure.Budgeting;
 using Coffer.Infrastructure.Categorization;
 using Coffer.Infrastructure.Chat;
 using Coffer.Infrastructure.Dashboard;
+using Coffer.Infrastructure.Forecasting;
 using Coffer.Infrastructure.Goals;
 using Coffer.Infrastructure.Goals.Strategies;
 using Coffer.Infrastructure.Import;
@@ -60,7 +62,8 @@ public static class ServiceRegistration
             .AddCofferAnomalies()
             .AddCofferGoals()
             .AddCofferPlanning()
-            .AddCofferBudgeting();
+            .AddCofferBudgeting()
+            .AddCofferForecasting();
 
     /// <summary>
     /// Registers the Sprint-20 category-budget spine (beyond roadmap): the pure
@@ -73,6 +76,19 @@ public static class ServiceRegistration
         services.AddSingleton<BudgetTrackingEngine>();
         services.AddTransient<ICategoryBudgetRepository, CategoryBudgetRepository>();
         services.AddTransient<IBudgetTrackingQuery, BudgetTrackingQuery>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the Sprint-22 next-month expense forecast (beyond roadmap): the pure
+    /// <see cref="ExpenseForecastEngine"/> and the <see cref="IExpenseForecastQuery"/> that assembles each
+    /// category's fixed (recurring outflows landing next month) and variable (trailing history, recurring
+    /// charges excluded) parts and its current budget limit. The engine calculates; nothing here calls AI.
+    /// </summary>
+    public static IServiceCollection AddCofferForecasting(this IServiceCollection services)
+    {
+        services.AddSingleton<ExpenseForecastEngine>();
+        services.AddTransient<IExpenseForecastQuery, ExpenseForecastQuery>();
         return services;
     }
 
