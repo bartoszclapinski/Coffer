@@ -1,4 +1,5 @@
 using Coffer.Core.Anomalies;
+using Coffer.Core.Budgeting;
 using Coffer.Core.Domain;
 using Coffer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -22,21 +23,25 @@ public sealed class AnomalyDetectionService : IDetectAnomaliesUseCase
 
     private readonly IDbContextFactory<CofferDbContext> _contextFactory;
     private readonly IReadOnlyList<IAnomalyDetector> _detectors;
+    private readonly IBudgetTrackingQuery _budgetTracking;
     private readonly IAnomalyCommentator _commentator;
     private readonly ILogger<AnomalyDetectionService> _logger;
 
     public AnomalyDetectionService(
         IDbContextFactory<CofferDbContext> contextFactory,
         IEnumerable<IAnomalyDetector> detectors,
+        IBudgetTrackingQuery budgetTracking,
         IAnomalyCommentator commentator,
         ILogger<AnomalyDetectionService> logger)
     {
         ArgumentNullException.ThrowIfNull(contextFactory);
         ArgumentNullException.ThrowIfNull(detectors);
+        ArgumentNullException.ThrowIfNull(budgetTracking);
         ArgumentNullException.ThrowIfNull(commentator);
         ArgumentNullException.ThrowIfNull(logger);
         _contextFactory = contextFactory;
         _detectors = detectors.ToList();
+        _budgetTracking = budgetTracking;
         _commentator = commentator;
         _logger = logger;
     }
@@ -77,7 +82,12 @@ public sealed class AnomalyDetectionService : IDetectAnomaliesUseCase
             .ToDictionaryAsync(c => c.Id, c => c.Name, ct)
             .ConfigureAwait(false);
 
-        var context = new AnomalyDetectionContext(recent, baseline, categoryNames, recentFrom, recentTo);
+        // The over-budget detector reasons over calendar-month budget state, not the rolling window,
+        // so the query assembles it once (dashboard-anchored month, all accounts) and the detector
+        // stays pure. Null-safe: with no budgets set it returns an empty overview.
+        var budgets = await _budgetTracking.GetOverviewAsync(accountId: null, ct).ConfigureAwait(false);
+
+        var context = new AnomalyDetectionContext(recent, baseline, categoryNames, recentFrom, recentTo, budgets);
 
         var candidates = _detectors
             .SelectMany(d => d.Detect(context))

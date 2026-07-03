@@ -94,6 +94,7 @@ public class GetGoalsToolTests : IDisposable
         services.AddCofferChat();
         services.AddCofferGoals();
         services.AddCofferPlanning(); // GetCashFlowProjectionTool depends on the planning spine.
+        services.AddCofferBudgeting(); // GetBudgetStatusTool depends on the budget tracking query.
 
         using var provider = services.BuildServiceProvider();
         var toolNames = provider.GetServices<IChatTool>().Select(t => t.Name).ToList();

@@ -1,7 +1,7 @@
 # Sprint 21 — Over-budget alert + `GetBudgetStatus` chat tool (the Sprint-20 tail)
 
 **Phase:** — (beyond-roadmap; the optional **20-C** deferred at the close of Sprint 20 — the "over-budget alert detector + `GetBudgetStatus` chat tool" follow-up. Reuses the Sprint-13 anomaly engine per `docs/architecture/04-ai-strategy.md` and the Sprint-12 chat-tool pattern.)
-**Status:** Planned
+**Status:** Closed
 **Depends on:** sprint-20 (`CategoryBudget`, `BudgetTrackingEngine`, `IBudgetTrackingQuery`/`BudgetOverview`), sprint-13 (`IAnomalyDetector` engine, `Alert`, `AnomalyDetectionService` dedup+persist pipeline, the Alerty page), sprint-12 (the `ChatTool` base + `ChatService` tool-call loop)
 
 ## Goal
@@ -35,21 +35,21 @@ Sprint 20 shipped budgets on their own page, but budget state is inert everywher
 
 ### 21-A — over-budget alert + chat tool
 
-- [ ] 21.1 Add `OverBudget` to the `AnomalyType` enum (`Coffer.Core/Anomalies/AnomalyType.cs`) — persisted as the enum name on `Alert.Type`.
-- [ ] 21.2 Extend `AnomalyDetectionContext` (`Coffer.Core/Anomalies/`) with an optional `BudgetOverview? Budgets` (default `null`) so existing detectors and their tests are unaffected; other detectors ignore it.
-- [ ] 21.3 `AnomalyDetectionService` (`Coffer.Infrastructure/Anomalies/`) injects `IBudgetTrackingQuery`, calls `GetOverviewAsync(accountId: null, ct)` once while building the context, and passes the `BudgetOverview` in. Existing ctor-based tests updated to supply the new dependency.
-- [ ] 21.4 `OverBudgetDetector : IAnomalyDetector` (`Coffer.Infrastructure/Anomalies/Detectors/`): for each `BudgetLine` whose `Status.Zone == Over`, emit an `AnomalyCandidate` — `AnomalyType.OverBudget`, `Score` = overspend magnitude (`Spent - Limit`), signature `over-budget:{categoryId}:{yyyyMM}`, Polish templated `Title`/`Description` (category name, limit, spent, overspend via `AnomalyFormatting.Pln`), `PeriodFrom`/`PeriodTo` = the anchored month's first/last day, and a `Context` dict of raw numbers for the 13-B commentator. Emits nothing when `context.Budgets` is null/empty.
-- [ ] 21.5 Register the detector: one line in `ServiceRegistration.AddCofferAnomalies` (`services.AddTransient<IAnomalyDetector, OverBudgetDetector>()`).
-- [ ] 21.6 `GetBudgetStatusTool : ChatTool` (`Coffer.Infrastructure/Chat/`): inject `IBudgetTrackingQuery`, `Name = "GetBudgetStatus"`, Polish `Description`, empty parameter schema (`{}`); `RunAsync` calls `GetOverviewAsync(null, ct)` and projects each `BudgetLine` (category, limit, spent, remaining, fraction, projected, `Zone.ToString()`) + the unbudgeted lines into an anonymous JSON object (amounts PLN, month `yyyy-MM`). Empty-budgets shape handled (`count = 0`).
-- [ ] 21.7 Register the tool: one line in `ServiceRegistration.AddCofferChat` (`services.AddTransient<IChatTool, GetBudgetStatusTool>()`).
-- [ ] 21.8 Tests:
+- [x] 21.1 Add `OverBudget` to the `AnomalyType` enum (`Coffer.Core/Anomalies/AnomalyType.cs`) — persisted as the enum name on `Alert.Type`.
+- [x] 21.2 Extend `AnomalyDetectionContext` (`Coffer.Core/Anomalies/`) with an optional `BudgetOverview? Budgets` (default `null`) so existing detectors and their tests are unaffected; other detectors ignore it.
+- [x] 21.3 `AnomalyDetectionService` (`Coffer.Infrastructure/Anomalies/`) injects `IBudgetTrackingQuery`, calls `GetOverviewAsync(accountId: null, ct)` once while building the context, and passes the `BudgetOverview` in. Existing ctor-based tests updated to supply the new dependency.
+- [x] 21.4 `OverBudgetDetector : IAnomalyDetector` (`Coffer.Infrastructure/Anomalies/Detectors/`): for each `BudgetLine` whose `Status.Zone == Over`, emit an `AnomalyCandidate` — `AnomalyType.OverBudget`, `Score` = overspend magnitude (`Spent - Limit`), signature `over-budget:{categoryId}:{yyyyMM}`, Polish templated `Title`/`Description` (category name, limit, spent, overspend via `AnomalyFormatting.Pln`), `PeriodFrom`/`PeriodTo` = the anchored month's first/last day, and a `Context` dict of raw numbers for the 13-B commentator. Emits nothing when `context.Budgets` is null/empty.
+- [x] 21.5 Register the detector: one line in `ServiceRegistration.AddCofferAnomalies` (`services.AddTransient<IAnomalyDetector, OverBudgetDetector>()`).
+- [x] 21.6 `GetBudgetStatusTool : ChatTool` (`Coffer.Infrastructure/Chat/`): inject `IBudgetTrackingQuery`, `Name = "GetBudgetStatus"`, Polish `Description`, empty parameter schema (`{}`); `RunAsync` calls `GetOverviewAsync(null, ct)` and projects each `BudgetLine` (category, limit, spent, remaining, fraction, projected, `Zone.ToString()`) + the unbudgeted lines into an anonymous JSON object (amounts PLN, month `yyyy-MM`). Empty-budgets shape handled (`count = 0`).
+- [x] 21.7 Register the tool: one line in `ServiceRegistration.AddCofferChat` (`services.AddTransient<IChatTool, GetBudgetStatusTool>()`).
+- [x] 21.8 Tests:
   - `Coffer.Infrastructure.Tests/Anomalies/AnomalyDetectorTests.cs` — `OverBudgetDetector` over a hand-built context: only `Over` lines emit, `Warning`/`Ok` do not; signature is month-stable; empty/null budgets emit nothing; the templated text carries category + amounts.
   - `Coffer.Infrastructure.Tests/Anomalies/AnomalyDetectionServiceTests.cs` — end-to-end over a real SQLCipher DB: a category whose current-month debits exceed its `CategoryBudget` produces exactly one persisted `Over-budget` `Alert`; a second detection run adds no duplicate; a dismissed one is not resurrected.
   - `Coffer.Infrastructure.Tests/Chat/GetBudgetStatusToolTests.cs` — real DB: seed a budget + current-month transactions, assert the projected JSON fields (zone, spent, limit, projected) and the unbudgeted bucket; assert the tool is discoverable through `AddCofferChat`.
 
 ### Sweep
 
-- [ ] 21.9 No new user-facing literals leak untemplated: alert text follows the existing `AnomalyFormatting` Polish templates (localization deferred, #128); the chat tool's `Description` is Polish like its siblings. `dotnet format --verify-no-changes` clean.
+- [x] 21.9 No new user-facing literals leak untemplated: alert text follows the existing `AnomalyFormatting` Polish templates (localization deferred, #128); the chat tool's `Description` is Polish like its siblings. `dotnet format --verify-no-changes` clean.
 - [ ] 21.10 Manual DoD click-through (below) — expected to defer to manual (needs a running desktop app + real imported data + an API key for the chat leg).
 
 ## Definition of Done

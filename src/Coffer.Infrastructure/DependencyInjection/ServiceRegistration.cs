@@ -139,6 +139,7 @@ public static class ServiceRegistration
         services.AddTransient<IAnomalyDetector, CategorySpikeDetector>();
         services.AddTransient<IAnomalyDetector, DuplicatePaymentDetector>();
         services.AddTransient<IAnomalyDetector, MissingRecurrenceDetector>();
+        services.AddTransient<IAnomalyDetector, OverBudgetDetector>();
         services.AddTransient<IDetectAnomaliesUseCase, AnomalyDetectionService>();
         services.AddTransient<IAlertsQuery, AlertsQuery>();
         services.AddTransient<IAlertService, AlertService>();
@@ -194,6 +195,7 @@ public static class ServiceRegistration
         services.AddTransient<IChatTool, GetGoalsTool>();
         services.AddTransient<IChatTool, GetCashFlowProjectionTool>();
         services.AddTransient<IChatTool, CanIAffordTool>();
+        services.AddTransient<IChatTool, GetBudgetStatusTool>();
         services.AddTransient<IChatService, ChatService>();
         return services;
     }
