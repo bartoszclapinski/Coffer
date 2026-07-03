@@ -69,4 +69,32 @@ public sealed class AvaloniaFilePicker : IFilePicker
             return new PickedFile(buffer, file.Name);
         }
     }
+
+    public async Task<string?> PickSaveArchiveFileAsync(string suggestedFileName, CancellationToken ct)
+    {
+        var window = (Avalonia.Application.Current?.ApplicationLifetime
+            as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (window?.StorageProvider is not { CanSave: true } storage)
+        {
+            _logger.LogWarning(
+                "Archive save picker unavailable — no main window or storage provider that can save.");
+            return null;
+        }
+
+        var archiveFiles = new FilePickerFileType(_localizer["FilePicker.ArchiveFiles"])
+        {
+            Patterns = ["*.zip"],
+        };
+
+        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = _localizer["FilePicker.SaveArchiveTitle"],
+            SuggestedFileName = suggestedFileName,
+            DefaultExtension = "zip",
+            FileTypeChoices = [archiveFiles],
+        }).ConfigureAwait(true);
+
+        // TryGetLocalPath returns the real filesystem path on desktop; null for non-local targets.
+        return file?.TryGetLocalPath();
+    }
 }

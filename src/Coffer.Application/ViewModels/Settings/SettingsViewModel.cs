@@ -1,7 +1,10 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Coffer.Application.Localization;
 using Coffer.Core.Accounts;
 using Coffer.Core.Ai;
+using Coffer.Core.Backup;
+using Coffer.Core.Import;
 using Coffer.Core.Localization;
 using Coffer.Core.Planning;
 using Coffer.Core.Security;
@@ -24,6 +27,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IAccountService _accountService;
     private readonly ISecretStore _secrets;
     private readonly IAiUsageLedger _ledger;
+    private readonly IBackupService _backupService;
+    private readonly IArchiveExporter _archiveExporter;
+    private readonly IFilePicker _filePicker;
     private readonly ILocalizer _localizer;
     private readonly ILanguageStore _languageStore;
     private readonly ILogger<SettingsViewModel> _logger;
@@ -66,12 +72,21 @@ public sealed partial class SettingsViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(ClearApiKeyCommand))]
     private bool _hasApiKey;
 
+    [ObservableProperty]
+    private string _lastDailySnapshotText = "";
+
+    [ObservableProperty]
+    private string _dailyBackupCountText = "";
+
     public SettingsViewModel(
         IAiSettings settings,
         IPlanningSettings planningSettings,
         IAccountService accountService,
         ISecretStore secrets,
         IAiUsageLedger ledger,
+        IBackupService backupService,
+        IArchiveExporter archiveExporter,
+        IFilePicker filePicker,
         ILocalizer localizer,
         ILanguageStore languageStore,
         ILogger<SettingsViewModel> logger)
@@ -81,6 +96,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(accountService);
         ArgumentNullException.ThrowIfNull(secrets);
         ArgumentNullException.ThrowIfNull(ledger);
+        ArgumentNullException.ThrowIfNull(backupService);
+        ArgumentNullException.ThrowIfNull(archiveExporter);
+        ArgumentNullException.ThrowIfNull(filePicker);
         ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(languageStore);
         ArgumentNullException.ThrowIfNull(logger);
@@ -90,6 +108,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         _accountService = accountService;
         _secrets = secrets;
         _ledger = ledger;
+        _backupService = backupService;
+        _archiveExporter = archiveExporter;
+        _filePicker = filePicker;
         _localizer = localizer;
         _languageStore = languageStore;
         _logger = logger;
@@ -148,6 +169,8 @@ public sealed partial class SettingsViewModel : ObservableObject
 
             var key = await _secrets.GetSecretAsync(AiDefaults.ClaudeApiKeySecret, ct).ConfigureAwait(true);
             HasApiKey = !string.IsNullOrEmpty(key);
+
+            await LoadBackupStatusAsync(ct).ConfigureAwait(true);
         }
         catch (Exception ex)
         {
@@ -276,6 +299,76 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             row.IsBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private async Task BackupNowAsync()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "";
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            await _backupService.CreateSnapshotNowAsync(today, CancellationToken.None).ConfigureAwait(true);
+            await LoadBackupStatusAsync(CancellationToken.None).ConfigureAwait(true);
+            StatusMessage = _localizer["Settings.Backup.Status.Done"];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create a backup snapshot");
+            StatusMessage = _localizer["Settings.Backup.Status.Failed"];
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportArchiveAsync()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        var suggested = $"Coffer-archive-{DateOnly.FromDateTime(DateTime.Now):yyyy-MM-dd}.zip";
+        var target = await _filePicker.PickSaveArchiveFileAsync(suggested, CancellationToken.None).ConfigureAwait(true);
+        if (string.IsNullOrWhiteSpace(target))
+        {
+            return; // user cancelled
+        }
+
+        IsBusy = true;
+        StatusMessage = "";
+        try
+        {
+            await _archiveExporter.ExportAsync(target, CancellationToken.None).ConfigureAwait(true);
+            StatusMessage = _localizer["Settings.Backup.Export.Done"];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to export the archive");
+            StatusMessage = _localizer["Settings.Backup.Export.Failed"];
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadBackupStatusAsync(CancellationToken ct)
+    {
+        var status = await _backupService.GetStatusAsync(ct).ConfigureAwait(true);
+        LastDailySnapshotText = status.LastDailySnapshot is { } date
+            ? date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            : _localizer["Settings.Backup.Never"];
+        DailyBackupCountText = status.DailyCount.ToString(CultureInfo.InvariantCulture);
     }
 
     private bool CanSaveApiKey() => !string.IsNullOrWhiteSpace(ApiKeyInput);

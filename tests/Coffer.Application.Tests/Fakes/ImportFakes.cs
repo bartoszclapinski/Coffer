@@ -54,10 +54,24 @@ internal sealed class FakeFilePicker : IFilePicker
 
     public int Calls { get; private set; }
 
+    /// <summary>The path returned by <see cref="PickSaveArchiveFileAsync"/>; null models a cancelled dialog.</summary>
+    public string? SaveResult { get; set; }
+
+    public int SaveCalls { get; private set; }
+
+    public string? LastSuggestedName { get; private set; }
+
     public Task<PickedFile?> PickStatementFileAsync(CancellationToken ct)
     {
         Calls++;
         return Task.FromResult(_result);
+    }
+
+    public Task<string?> PickSaveArchiveFileAsync(string suggestedFileName, CancellationToken ct)
+    {
+        SaveCalls++;
+        LastSuggestedName = suggestedFileName;
+        return Task.FromResult(SaveResult);
     }
 }
 

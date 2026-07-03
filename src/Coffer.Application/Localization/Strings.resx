@@ -1216,4 +1216,46 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="Forecast.Error.Save" xml:space="preserve">
     <value>Could not set the budget.</value>
   </data>
+  <data name="Settings.Backup.Section" xml:space="preserve">
+    <value>Backup &amp; Recovery</value>
+  </data>
+  <data name="Settings.Backup.Hint" xml:space="preserve">
+    <value>Automatic daily local snapshots of your encrypted database, kept for 30 days.</value>
+  </data>
+  <data name="Settings.Backup.LastSnapshot" xml:space="preserve">
+    <value>Last snapshot</value>
+  </data>
+  <data name="Settings.Backup.Count" xml:space="preserve">
+    <value>Snapshots kept</value>
+  </data>
+  <data name="Settings.Backup.Never" xml:space="preserve">
+    <value>None yet</value>
+  </data>
+  <data name="Settings.Backup.Now" xml:space="preserve">
+    <value>Backup now</value>
+  </data>
+  <data name="Settings.Backup.Export" xml:space="preserve">
+    <value>Export full archive</value>
+  </data>
+  <data name="Settings.Backup.RestoreNote" xml:space="preserve">
+    <value>Guided restore is coming. For now, a snapshot can be restored by copying it back over the database file while logged out.</value>
+  </data>
+  <data name="Settings.Backup.Status.Done" xml:space="preserve">
+    <value>Backup created.</value>
+  </data>
+  <data name="Settings.Backup.Status.Failed" xml:space="preserve">
+    <value>Could not create the backup.</value>
+  </data>
+  <data name="Settings.Backup.Export.Done" xml:space="preserve">
+    <value>Archive exported.</value>
+  </data>
+  <data name="Settings.Backup.Export.Failed" xml:space="preserve">
+    <value>Could not export the archive.</value>
+  </data>
+  <data name="FilePicker.ArchiveFiles" xml:space="preserve">
+    <value>Archive (.zip)</value>
+  </data>
+  <data name="FilePicker.SaveArchiveTitle" xml:space="preserve">
+    <value>Export archive</value>
+  </data>
 </root>

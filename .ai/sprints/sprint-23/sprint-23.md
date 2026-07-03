@@ -1,7 +1,7 @@
 # Sprint 23 — Local backup: daily snapshots, status, archive export
 
 **Phase:** — (roadmap-adjacent; `docs/architecture/08-backup-and-recovery.md`, Layer 1 "daily local snapshot" + Layer 3 "manual archive export" + the Settings "Backup & Recovery" panel. Layer 2 Google Drive and the whole restore side are explicitly out of scope — see Deferred.)
-**Status:** In progress
+**Status:** Closed
 **Depends on:** sprint-4 (`MigrationRunner` + `IPreMigrationBackup` + `SqlCipherKeyInterceptor`), sprint-2/3 (`IVaultPaths`, `dek.encrypted`, `IDekHolder`), sprint-9 (`IFilePicker`), sprint-15 (i18n). No new schema.
 
 ## Goal
@@ -41,16 +41,16 @@ Rule #8 already forces a **pre-migration** snapshot, and `PreMigrationBackup` do
 
 ### 23-B — Settings panel + export picker + scheduler
 
-- [ ] 23.8 Extend `IFilePicker` with `PickSaveArchiveFileAsync(string suggestedName, CancellationToken)` (returns a target path or null) + Avalonia impl via `StorageProvider.SaveFilePickerAsync`; a fake in tests.
-- [ ] 23.9 A "Backup & Recovery" section in `SettingsViewModel`: `LastDailySnapshotText`/`DailyCountText`/`LastPreMigrationText` (from `GetStatusAsync`), `BackupNowCommand` (calls `CreateSnapshotNowAsync`, refreshes status), `ExportArchiveCommand` (picks a save path via `IFilePicker`, calls `IArchiveExporter.ExportAsync`, reports via the shared `StatusMessage`). Injects `IBackupService` + `IArchiveExporter` + `IFilePicker`.
-- [ ] 23.10 `SettingsView.axaml`: a "Backup & Recovery" card mirroring the existing card pattern — status lines, a "Backup now" button, an "Export full archive" button, and a one-line note that guided restore is coming (manual copy meanwhile).
-- [ ] 23.11 Startup scheduler: a delayed `Task.Run` (mirroring `StartDailyAdvisorRefresh`) dispatched after the main window opens, calling `IBackupService.CreateDailySnapshotAsync`; failures logged and swallowed.
-- [ ] 23.12 Localization: every label via `{l:Localize}`, keys in **both** `.resx` (`Settings.Backup.*`), parity test green.
-- [ ] 23.13 Tests (`Coffer.Application.Tests`): the settings VM surfaces status, "Backup now" calls the service and refreshes, "Export" picks a path and calls the exporter (and no-ops on a cancelled picker); resource-key parity.
+- [x] 23.8 Extend `IFilePicker` with `PickSaveArchiveFileAsync(string suggestedName, CancellationToken)` (returns a target path or null) + Avalonia impl via `StorageProvider.SaveFilePickerAsync`; a fake in tests.
+- [x] 23.9 A "Backup & Recovery" section in `SettingsViewModel`: `LastDailySnapshotText`/`DailyCountText`/`LastPreMigrationText` (from `GetStatusAsync`), `BackupNowCommand` (calls `CreateSnapshotNowAsync`, refreshes status), `ExportArchiveCommand` (picks a save path via `IFilePicker`, calls `IArchiveExporter.ExportAsync`, reports via the shared `StatusMessage`). Injects `IBackupService` + `IArchiveExporter` + `IFilePicker`.
+- [x] 23.10 `SettingsView.axaml`: a "Backup & Recovery" card mirroring the existing card pattern — status lines, a "Backup now" button, an "Export full archive" button, and a one-line note that guided restore is coming (manual copy meanwhile).
+- [x] 23.11 Startup scheduler: a delayed `Task.Run` (mirroring `StartDailyAdvisorRefresh`) dispatched after the main window opens, calling `IBackupService.CreateDailySnapshotAsync`; failures logged and swallowed.
+- [x] 23.12 Localization: every label via `{l:Localize}`, keys in **both** `.resx` (`Settings.Backup.*`), parity test green.
+- [x] 23.13 Tests (`Coffer.Application.Tests`): the settings VM surfaces status, "Backup now" calls the service and refreshes, "Export" picks a path and calls the exporter (and no-ops on a cancelled picker); resource-key parity.
 
 ### Sweep
 
-- [ ] 23.14 No residual hardcoded user-facing literals; `dotnet format --verify-no-changes` clean.
+- [x] 23.14 No residual hardcoded user-facing literals; `dotnet format --verify-no-changes` clean.
 - [ ] 23.15 Manual DoD click-through (below) — expected to defer to manual (needs a running desktop app with a real DB).
 
 ## Definition of Done

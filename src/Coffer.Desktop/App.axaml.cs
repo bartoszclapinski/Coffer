@@ -8,6 +8,7 @@ using Coffer.Application.Localization;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Setup;
+using Coffer.Core.Backup;
 using Coffer.Core.Categorization;
 using Coffer.Core.Goals;
 using Coffer.Core.Localization;
@@ -254,6 +255,7 @@ public partial class App : Avalonia.Application
     {
         SeedDefaultCategories();
         StartDailyAdvisorRefresh();
+        StartDailyBackup();
 
         var window = Services.GetRequiredService<MainWindow>();
         var vm = Services.GetRequiredService<MainViewModel>();
@@ -279,6 +281,26 @@ public partial class App : Avalonia.Application
             catch (Exception ex)
             {
                 Log.Warning(ex, "Daily advisor refresh failed; continuing without today's report");
+            }
+        });
+    }
+
+    private static void StartDailyBackup()
+    {
+        // Daily local snapshot of the encrypted database (doc 08, Layer 1). Idempotent within a day, so
+        // firing on every launch is safe. Runs off the bootstrap thread after a short delay so it does not
+        // compete with startup I/O; a failure here must never crash or block the app.
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromMinutes(5), CancellationToken.None);
+                var backup = Services.GetRequiredService<IBackupService>();
+                await backup.CreateDailySnapshotAsync(DateOnly.FromDateTime(DateTime.Now), CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Daily backup snapshot failed; continuing without today's snapshot");
             }
         });
     }
