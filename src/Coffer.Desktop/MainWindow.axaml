@@ -12,6 +12,7 @@
         xmlns:planningVm="clr-namespace:Coffer.Application.ViewModels.Planning;assembly=Coffer.Application"
         xmlns:spendingVm="clr-namespace:Coffer.Application.ViewModels.Spending;assembly=Coffer.Application"
         xmlns:budgetsVm="clr-namespace:Coffer.Application.ViewModels.Budgets;assembly=Coffer.Application"
+        xmlns:forecastVm="clr-namespace:Coffer.Application.ViewModels.Forecast;assembly=Coffer.Application"
         xmlns:settingsVm="clr-namespace:Coffer.Application.ViewModels.Settings;assembly=Coffer.Application"
         xmlns:views="clr-namespace:Coffer.Desktop.Views"
         xmlns:l="clr-namespace:Coffer.Desktop.Localization"
@@ -53,6 +54,9 @@
         </DataTemplate>
         <DataTemplate DataType="budgetsVm:BudgetsViewModel">
             <views:BudgetsView />
+        </DataTemplate>
+        <DataTemplate DataType="forecastVm:ForecastViewModel">
+            <views:ForecastView />
         </DataTemplate>
         <DataTemplate DataType="settingsVm:SettingsViewModel">
             <views:SettingsView />
@@ -102,6 +106,12 @@
                             Classes.active="{Binding IsBudgetsActive}"
                             Content="{l:Localize Nav.Budgets}"
                             Command="{Binding ShowBudgetsCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left" />
+                    <Button Classes="nav"
+                            Classes.active="{Binding IsForecastActive}"
+                            Content="{l:Localize Nav.Forecast}"
+                            Command="{Binding ShowForecastCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left" />
                     <Button Classes="nav"

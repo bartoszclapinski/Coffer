@@ -1171,4 +1171,49 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="Budgets.Error.Save" xml:space="preserve">
     <value>Could not save the budget.</value>
   </data>
+  <data name="Nav.Forecast" xml:space="preserve">
+    <value>Forecast</value>
+  </data>
+  <data name="Forecast.Title" xml:space="preserve">
+    <value>Forecast</value>
+  </data>
+  <data name="Forecast.Subtitle" xml:space="preserve">
+    <value>Predicted spend for next month per category, with a suggested budget limit.</value>
+  </data>
+  <data name="Forecast.Section.Categories" xml:space="preserve">
+    <value>Next month by category</value>
+  </data>
+  <data name="Forecast.TotalLabel" xml:space="preserve">
+    <value>Forecast total</value>
+  </data>
+  <data name="Forecast.Fixed" xml:space="preserve">
+    <value>Fixed</value>
+  </data>
+  <data name="Forecast.Variable" xml:space="preserve">
+    <value>Variable</value>
+  </data>
+  <data name="Forecast.Suggested" xml:space="preserve">
+    <value>Suggested limit</value>
+  </data>
+  <data name="Forecast.CurrentLimit" xml:space="preserve">
+    <value>Current limit</value>
+  </data>
+  <data name="Forecast.SetAsBudget" xml:space="preserve">
+    <value>Set as budget</value>
+  </data>
+  <data name="Forecast.NoLimit" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="Forecast.Uncategorized" xml:space="preserve">
+    <value>Uncategorized</value>
+  </data>
+  <data name="Forecast.Empty" xml:space="preserve">
+    <value>No forecast yet — import statements with recurring history to see predictions.</value>
+  </data>
+  <data name="Forecast.Error.Load" xml:space="preserve">
+    <value>Could not load the forecast.</value>
+  </data>
+  <data name="Forecast.Error.Save" xml:space="preserve">
+    <value>Could not set the budget.</value>
+  </data>
 </root>

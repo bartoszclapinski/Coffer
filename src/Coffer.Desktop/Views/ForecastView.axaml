@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Forecast;assembly=Coffer.Application"
+             xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:l="clr-namespace:Coffer.Desktop.Localization"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="720"
+             x:Class="Coffer.Desktop.Views.ForecastView"
+             x:DataType="vm:ForecastViewModel"
+             x:CompileBindings="False">
+    <UserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="20,16" />
+        </Style>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+        </Style>
+        <Style Selector="TextBlock.metricLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8E8E93" />
+        </Style>
+        <Style Selector="TextBlock.metricValue">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#1D1D1F" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Margin="40,32" Spacing="20" MaxWidth="780" HorizontalAlignment="Left">
+            <StackPanel Spacing="4">
+                <TextBlock Text="{l:Localize Forecast.Title}"
+                           FontSize="26"
+                           FontWeight="Light"
+                           Foreground="#1D1D1F" />
+                <TextBlock Text="{l:Localize Forecast.Subtitle}"
+                           Foreground="#8E8E93"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{Binding MonthText}" Classes="metricLabel" />
+            </StackPanel>
+
+            <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoading}" />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="#D14"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <TextBlock Text="{l:Localize Forecast.Empty}"
+                       Foreground="#8E8E93"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding IsEmpty}" />
+
+            <!-- Per-category forecast -->
+            <Border Classes="card" IsVisible="{Binding HasForecast}">
+                <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Classes="sectionTitle" Text="{l:Localize Forecast.Section.Categories}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                            <TextBlock Classes="metricLabel" Text="{l:Localize Forecast.TotalLabel}" VerticalAlignment="Center" />
+                            <TextBlock Classes="metricValue" Text="{Binding TotalText}" />
+                        </StackPanel>
+                    </Grid>
+                    <ItemsControl Name="ForecastList" ItemsSource="{Binding Forecasts}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#F0F0F2" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,12">
+                                    <StackPanel Spacing="8">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Grid.Column="0" Width="10" Height="10" CornerRadius="5" Margin="0,0,8,0"
+                                                    VerticalAlignment="Center"
+                                                    Background="{Binding Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding CategoryName}"
+                                                       FontWeight="SemiBold" Foreground="#1D1D1F" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="2" Text="{Binding TotalText}"
+                                                       Classes="metricValue" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <Grid ColumnDefinitions="*,*,*,*,Auto" VerticalAlignment="Center">
+                                            <StackPanel Grid.Column="0" Spacing="2">
+                                                <TextBlock Classes="metricLabel" Text="{l:Localize Forecast.Fixed}" />
+                                                <TextBlock Classes="metricValue" Text="{Binding FixedText}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Classes="metricLabel" Text="{l:Localize Forecast.Variable}" />
+                                                <TextBlock Classes="metricValue" Text="{Binding VariableText}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Spacing="2">
+                                                <TextBlock Classes="metricLabel" Text="{l:Localize Forecast.Suggested}" />
+                                                <TextBlock Classes="metricValue" Text="{Binding SuggestedText}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="3" Spacing="2">
+                                                <TextBlock Classes="metricLabel" Text="{l:Localize Forecast.CurrentLimit}" />
+                                                <TextBlock Classes="metricValue" Text="{Binding CurrentLimitText}" />
+                                            </StackPanel>
+                                            <Button Grid.Column="4"
+                                                    Content="{l:Localize Forecast.SetAsBudget}"
+                                                    VerticalAlignment="Center"
+                                                    IsVisible="{Binding CanAccept}"
+                                                    Command="{Binding DataContext.AcceptSuggestionCommand, ElementName=ForecastList}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
