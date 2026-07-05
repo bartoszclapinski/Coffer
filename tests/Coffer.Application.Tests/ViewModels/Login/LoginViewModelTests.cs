@@ -83,6 +83,19 @@ public class LoginViewModelTests
     }
 
     [Fact]
+    public void RestoreFromSeedCommand_RaisesRestoreFromSeedRequested()
+    {
+        var vm = new LoginViewModel(new FakeLoginService(), new FakeLocalizer(), NullLogger<LoginViewModel>.Instance);
+
+        var raised = 0;
+        vm.RestoreFromSeedRequested += (_, _) => raised++;
+
+        vm.RestoreFromSeedCommand.Execute(null);
+
+        raised.Should().Be(1);
+    }
+
+    [Fact]
     public void ClearSensitive_ZeroesPassword()
     {
         var vm = new LoginViewModel(new FakeLoginService(), new FakeLocalizer(), NullLogger<LoginViewModel>.Instance)

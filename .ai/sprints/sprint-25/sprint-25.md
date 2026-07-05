@@ -42,10 +42,10 @@ Doc 09's whole premise is a **decoupled DEK**: the database key is wrapped by tw
 
 ### 25-B — restore-from-seed UI
 
-- [ ] 25.9 `RestoreFromSeedViewModel` (`Coffer.Application`): 12-word entry (validated via `ISeedManager.IsValid`), new-password + confirm with the shared `IPasswordStrengthChecker`, a `RecoverCommand` calling `ISeedRecoveryService.RecoverWithSeedAsync`, a `RecoveryCompleted` event (mirrors `LoginCompleted`), distinct localized errors for invalid seed vs v1 vault vs weak/mismatched password.
-- [ ] 25.10 `RestoreFromSeedWindow` (`Coffer.Desktop`) + a "Forgot password? Restore from seed" link on `LoginWindow`; `App` opens the window and, on `RecoveryCompleted`, routes to `BuildPostUnlockWindow` exactly like a normal login. No seed/copy affordances beyond entry; input cleared on close.
-- [ ] 25.11 Localization + DI: keys in both `.resx` (parity), `RestoreFromSeedViewModel`/`RestoreFromSeedWindow` registered.
-- [ ] 25.12 Tests (`Coffer.Application.Tests`): the VM validates the seed, rejects a weak/mismatched password, calls the service and raises `RecoveryCompleted`, and surfaces the right message for `InvalidRecoverySeedException` / `SeedRecoveryUnavailableException` (fake `ISeedRecoveryService`); resource-key parity.
+- [x] 25.9 `RestoreFromSeedViewModel` (`Coffer.Application`): 12-word entry (whitespace/case-normalized, validated via `ISeedManager.IsValid`), new-password + confirm with the shared `IPasswordStrengthChecker` rules (len≥12, ≥3 classes, score≥3, match, ≠ seed), a `RecoverCommand` (CanExecute-gated) calling `RecoverWithSeedAsync`, a `RecoveryCompleted` event, distinct localized errors for invalid seed vs v1 vault vs weak/mismatched password. Clears the seed + passwords on success.
+- [x] 25.10 `RestoreFromSeedWindow` (`Coffer.Desktop`) + a "Forgot password? Restore from seed" link on `LoginWindow` (a `RestoreFromSeedRequested` event + `RestoreFromSeedCommand` on `LoginViewModel`); `App.OnRestoreFromSeedRequested` shows the window modally over login and, on `RecoveryCompleted`, routes to `BuildPostUnlockWindow` like a normal login, closing both windows. Input cleared + close blocked while busy in the code-behind.
+- [x] 25.11 Localization + DI: `Login.ForgotPassword` + `Restore.Seed.*` keys in both `.resx` (parity green); `RestoreFromSeedViewModel`/`RestoreFromSeedWindow` registered in `AddCofferDesktopUi`.
+- [x] 25.12 Tests (`Coffer.Application.Tests`, +7): the VM cannot execute with an invalid seed / mismatched / weak password, calls the service with the **normalized** seed + raises `RecoveryCompleted` + clears sensitive, and maps `InvalidRecoverySeedException` / `SeedRecoveryUnavailableException` to distinct messages; `LoginViewModel` raises `RestoreFromSeedRequested`. Fakes `FakeSeedRecoveryService`/`FakeSeedManager`/`FakePasswordStrengthChecker`. Resource-key parity green.
 
 ### 25-C — enable-seed-recovery in Settings
 

@@ -1297,4 +1297,40 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="App.Restore.Failed.Quit" xml:space="preserve">
     <value>Quit</value>
   </data>
+  <data name="Login.ForgotPassword" xml:space="preserve">
+    <value>Forgot password? Restore from seed</value>
+  </data>
+  <data name="Restore.Seed.Title" xml:space="preserve">
+    <value>Restore from seed</value>
+  </data>
+  <data name="Restore.Seed.Intro" xml:space="preserve">
+    <value>Enter your 12-word recovery seed and choose a new master password. Your data is not changed.</value>
+  </data>
+  <data name="Restore.Seed.SeedLabel" xml:space="preserve">
+    <value>Recovery seed (12 words)</value>
+  </data>
+  <data name="Restore.Seed.NewPassword" xml:space="preserve">
+    <value>New master password</value>
+  </data>
+  <data name="Restore.Seed.ConfirmPassword" xml:space="preserve">
+    <value>Confirm new password</value>
+  </data>
+  <data name="Restore.Seed.Note" xml:space="preserve">
+    <value>This resets your master password using the seed. The next sign-in uses the new password.</value>
+  </data>
+  <data name="Restore.Seed.Recover" xml:space="preserve">
+    <value>Recover</value>
+  </data>
+  <data name="Restore.Seed.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Restore.Seed.Error.InvalidSeed" xml:space="preserve">
+    <value>That seed did not unlock this vault. Check the 12 words and their order.</value>
+  </data>
+  <data name="Restore.Seed.Error.Unavailable" xml:space="preserve">
+    <value>This vault has no seed recovery. Sign in with your master password, then enable seed recovery in Settings.</value>
+  </data>
+  <data name="Restore.Seed.Error.Generic" xml:space="preserve">
+    <value>Recovery failed. Please try again.</value>
+  </data>
 </root>
