@@ -1,0 +1,76 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Restore;assembly=Coffer.Application"
+        xmlns:l="clr-namespace:Coffer.Desktop.Localization"
+        mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="440"
+        x:Class="Coffer.Desktop.Views.RestoreWindow"
+        x:DataType="vm:RestoreViewModel"
+        x:CompileBindings="False"
+        Title="{l:Localize Restore.Title}"
+        Width="480" Height="440"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="24">
+        <StackPanel Grid.Row="0" Spacing="6">
+            <TextBlock Text="{l:Localize Restore.Title}"
+                       FontSize="20"
+                       FontWeight="Light" />
+            <TextBlock Text="{l:Localize Restore.Intro}"
+                       TextWrapping="Wrap"
+                       Foreground="#8E8E93" />
+        </StackPanel>
+
+        <Border Grid.Row="1" Margin="0,16,0,0"
+                BorderBrush="#E5E5EA" BorderThickness="1" CornerRadius="6">
+            <Grid>
+                <ListBox ItemsSource="{Binding Snapshots}"
+                         SelectedItem="{Binding SelectedSnapshot, Mode=TwoWay}"
+                         IsVisible="{Binding HasSnapshots}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="*,Auto" Margin="4">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding DisplayDate}"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DisplaySize}"
+                                           Foreground="#8E8E93"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <TextBlock Text="{l:Localize Restore.Empty}"
+                           Foreground="#8E8E93"
+                           TextWrapping="Wrap"
+                           Margin="16"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding !HasSnapshots}" />
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="2"
+                   Margin="0,12,0,0"
+                   Text="{Binding StatusMessage}"
+                   Foreground="#D14"
+                   TextWrapping="Wrap"
+                   IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,16,0,0">
+            <Button Content="{l:Localize Restore.Cancel}"
+                    MinWidth="100"
+                    IsCancel="True"
+                    Command="{Binding CancelCommand}" />
+            <Button Content="{l:Localize Restore.Restore}"
+                    MinWidth="120"
+                    IsDefault="True"
+                    IsEnabled="{Binding !IsBusy}"
+                    Command="{Binding RestoreCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>

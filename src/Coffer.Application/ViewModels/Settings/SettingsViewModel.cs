@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Coffer.Application.Dialogs;
 using Coffer.Application.Localization;
 using Coffer.Core.Accounts;
 using Coffer.Core.Ai;
@@ -30,6 +31,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IBackupService _backupService;
     private readonly IArchiveExporter _archiveExporter;
     private readonly IFilePicker _filePicker;
+    private readonly IRestoreDialogService _restoreDialog;
     private readonly ILocalizer _localizer;
     private readonly ILanguageStore _languageStore;
     private readonly ILogger<SettingsViewModel> _logger;
@@ -87,6 +89,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         IBackupService backupService,
         IArchiveExporter archiveExporter,
         IFilePicker filePicker,
+        IRestoreDialogService restoreDialog,
         ILocalizer localizer,
         ILanguageStore languageStore,
         ILogger<SettingsViewModel> logger)
@@ -99,6 +102,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(backupService);
         ArgumentNullException.ThrowIfNull(archiveExporter);
         ArgumentNullException.ThrowIfNull(filePicker);
+        ArgumentNullException.ThrowIfNull(restoreDialog);
         ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(languageStore);
         ArgumentNullException.ThrowIfNull(logger);
@@ -111,6 +115,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _backupService = backupService;
         _archiveExporter = archiveExporter;
         _filePicker = filePicker;
+        _restoreDialog = restoreDialog;
         _localizer = localizer;
         _languageStore = languageStore;
         _logger = logger;
@@ -359,6 +364,23 @@ public sealed partial class SettingsViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task RestoreFromSnapshotAsync()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        StatusMessage = "";
+        var staged = await _restoreDialog.ShowRestoreDialogAsync(CancellationToken.None).ConfigureAwait(true);
+        if (staged)
+        {
+            // The swap runs at the next startup, before the database opens — tell the owner to restart.
+            StatusMessage = _localizer["Settings.Restore.Staged"];
         }
     }
 

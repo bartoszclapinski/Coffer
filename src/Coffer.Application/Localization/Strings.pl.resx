@@ -1237,8 +1237,14 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="Settings.Backup.Export" xml:space="preserve">
     <value>Eksportuj pełne archiwum</value>
   </data>
-  <data name="Settings.Backup.RestoreNote" xml:space="preserve">
-    <value>Kreator odzyskiwania jest w przygotowaniu. Na razie kopię można przywrócić, kopiując ją z powrotem na plik bazy po wylogowaniu.</value>
+  <data name="Settings.Restore.Button" xml:space="preserve">
+    <value>Przywróć ze snapshotu…</value>
+  </data>
+  <data name="Settings.Restore.Note" xml:space="preserve">
+    <value>Przed przywróceniem zapisywana jest kopia bezpieczeństwa bieżącej bazy. Przywracanie z frazy odzyskiwania wkrótce.</value>
+  </data>
+  <data name="Settings.Restore.Staged" xml:space="preserve">
+    <value>Przywracanie przygotowane. Uruchom aplikację ponownie, aby je dokończyć.</value>
   </data>
   <data name="Settings.Backup.Status.Done" xml:space="preserve">
     <value>Utworzono kopię zapasową.</value>
@@ -1257,5 +1263,38 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   </data>
   <data name="FilePicker.SaveArchiveTitle" xml:space="preserve">
     <value>Eksportuj archiwum</value>
+  </data>
+  <data name="Restore.Title" xml:space="preserve">
+    <value>Przywróć ze snapshotu</value>
+  </data>
+  <data name="Restore.Intro" xml:space="preserve">
+    <value>Wybierz snapshot do przywrócenia. Zastąpi to bieżące dane; najpierw zapisywana jest kopia bezpieczeństwa bieżącej bazy, a przywracanie zostanie wykonane przy następnym uruchomieniu aplikacji.</value>
+  </data>
+  <data name="Restore.Empty" xml:space="preserve">
+    <value>Brak dostępnych snapshotów.</value>
+  </data>
+  <data name="Restore.Restore" xml:space="preserve">
+    <value>Przywróć</value>
+  </data>
+  <data name="Restore.Cancel" xml:space="preserve">
+    <value>Anuluj</value>
+  </data>
+  <data name="Restore.Status.LoadFailed" xml:space="preserve">
+    <value>Nie udało się wczytać listy dostępnych snapshotów.</value>
+  </data>
+  <data name="Restore.Status.StageFailed" xml:space="preserve">
+    <value>Nie udało się przygotować przywracania. Snapshot może już nie być dostępny.</value>
+  </data>
+  <data name="App.Restore.Failed.Title" xml:space="preserve">
+    <value>Przywracanie nie powiodło się</value>
+  </data>
+  <data name="App.Restore.Failed.Message" xml:space="preserve">
+    <value>Nie udało się zastosować snapshotu przygotowanego do przywrócenia — mógł zostać przeniesiony lub usunięty. Możesz odrzucić przywracanie i kontynuować z bieżącymi danymi albo zamknąć aplikację.</value>
+  </data>
+  <data name="App.Restore.Failed.Continue" xml:space="preserve">
+    <value>Odrzuć przywracanie i kontynuuj</value>
+  </data>
+  <data name="App.Restore.Failed.Quit" xml:space="preserve">
+    <value>Zamknij</value>
   </data>
 </root>
