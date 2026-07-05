@@ -32,6 +32,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IArchiveExporter _archiveExporter;
     private readonly IFilePicker _filePicker;
     private readonly IRestoreDialogService _restoreDialog;
+    private readonly ISeedRecoveryService _seedRecovery;
+    private readonly IEnableSeedRecoveryDialog _enableSeedRecoveryDialog;
     private readonly ILocalizer _localizer;
     private readonly ILanguageStore _languageStore;
     private readonly ILogger<SettingsViewModel> _logger;
@@ -80,6 +82,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _dailyBackupCountText = "";
 
+    [ObservableProperty]
+    private bool _seedRecoveryEnabled;
+
     public SettingsViewModel(
         IAiSettings settings,
         IPlanningSettings planningSettings,
@@ -90,6 +95,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         IArchiveExporter archiveExporter,
         IFilePicker filePicker,
         IRestoreDialogService restoreDialog,
+        ISeedRecoveryService seedRecovery,
+        IEnableSeedRecoveryDialog enableSeedRecoveryDialog,
         ILocalizer localizer,
         ILanguageStore languageStore,
         ILogger<SettingsViewModel> logger)
@@ -103,6 +110,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(archiveExporter);
         ArgumentNullException.ThrowIfNull(filePicker);
         ArgumentNullException.ThrowIfNull(restoreDialog);
+        ArgumentNullException.ThrowIfNull(seedRecovery);
+        ArgumentNullException.ThrowIfNull(enableSeedRecoveryDialog);
         ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(languageStore);
         ArgumentNullException.ThrowIfNull(logger);
@@ -116,6 +125,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _archiveExporter = archiveExporter;
         _filePicker = filePicker;
         _restoreDialog = restoreDialog;
+        _seedRecovery = seedRecovery;
+        _enableSeedRecoveryDialog = enableSeedRecoveryDialog;
         _localizer = localizer;
         _languageStore = languageStore;
         _logger = logger;
@@ -176,6 +187,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             HasApiKey = !string.IsNullOrEmpty(key);
 
             await LoadBackupStatusAsync(ct).ConfigureAwait(true);
+            SeedRecoveryEnabled = await _seedRecovery.IsSeedRecoveryEnabledAsync(ct).ConfigureAwait(true);
         }
         catch (Exception ex)
         {
@@ -381,6 +393,23 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             // The swap runs at the next startup, before the database opens — tell the owner to restart.
             StatusMessage = _localizer["Settings.Restore.Staged"];
+        }
+    }
+
+    [RelayCommand]
+    private async Task EnableSeedRecoveryAsync()
+    {
+        if (IsBusy || SeedRecoveryEnabled)
+        {
+            return;
+        }
+
+        StatusMessage = "";
+        var enabled = await _enableSeedRecoveryDialog.ShowAsync(CancellationToken.None).ConfigureAwait(true);
+        if (enabled)
+        {
+            SeedRecoveryEnabled = true;
+            StatusMessage = _localizer["Settings.SeedRecovery.Enabled"];
         }
     }
 

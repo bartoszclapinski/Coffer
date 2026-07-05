@@ -1333,4 +1333,34 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="Restore.Seed.Error.Generic" xml:space="preserve">
     <value>Odzyskiwanie nie powiodło się. Spróbuj ponownie.</value>
   </data>
+  <data name="Settings.SeedRecovery.Section" xml:space="preserve">
+    <value>Fraza odzyskiwania</value>
+  </data>
+  <data name="Settings.SeedRecovery.Hint" xml:space="preserve">
+    <value>Włącz odzyskiwanie z 12-słownej frazy, aby zapomniane hasło główne nie oznaczało utraty danych. Włączenie pokaże nową frazę do zapisania.</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnabledState" xml:space="preserve">
+    <value>Odzyskiwanie z frazy jest włączone.</value>
+  </data>
+  <data name="Settings.SeedRecovery.Enable" xml:space="preserve">
+    <value>Włącz odzyskiwanie z frazy</value>
+  </data>
+  <data name="Settings.SeedRecovery.Enabled" xml:space="preserve">
+    <value>Włączono odzyskiwanie z frazy.</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnableTitle" xml:space="preserve">
+    <value>Włącz odzyskiwanie z frazy</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnableIntro" xml:space="preserve">
+    <value>Zapisz te 12 słów i przechowuj je bezpiecznie. Pozwolą odzyskać sejf, jeśli zapomnisz hasła głównego. Fraza pokazana podczas konfiguracji przestaje obowiązywać.</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnableConfirm" xml:space="preserve">
+    <value>Włącz</value>
+  </data>
+  <data name="Settings.SeedRecovery.Cancel" xml:space="preserve">
+    <value>Anuluj</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnableFailed" xml:space="preserve">
+    <value>Nie udało się włączyć odzyskiwania z frazy.</value>
+  </data>
 </root>

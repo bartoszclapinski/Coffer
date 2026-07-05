@@ -1,6 +1,21 @@
+using Coffer.Application.Dialogs;
 using Coffer.Core.Security;
 
 namespace Coffer.Application.Tests.Fakes;
+
+/// <summary>In-memory <see cref="IEnableSeedRecoveryDialog"/>: records opens and returns a set result.</summary>
+internal sealed class FakeEnableSeedRecoveryDialog : IEnableSeedRecoveryDialog
+{
+    public int ShowCalls { get; private set; }
+
+    public bool ResultEnabled { get; set; }
+
+    public Task<bool> ShowAsync(CancellationToken ct)
+    {
+        ShowCalls++;
+        return Task.FromResult(ResultEnabled);
+    }
+}
 
 /// <summary>In-memory <see cref="ISeedRecoveryService"/>: records calls and can be made to throw.</summary>
 internal sealed class FakeSeedRecoveryService : ISeedRecoveryService

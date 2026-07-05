@@ -1,7 +1,7 @@
 # Sprint 25 — Restore from a BIP39 seed (DEK dual-wrap)
 
 **Phase:** — (roadmap-adjacent; `docs/architecture/08-backup-and-recovery.md` "Restore from BIP39 seed" + `09-security-key-management.md` three-layer key hierarchy. Closes the forgot-password recovery channel and the DEK-format gap that blocked it.)
-**Status:** Planned
+**Status:** Closed
 **Depends on:** sprint-2/3 (`DekFile`, `AesGcmCrypto`, `Argon2KeyDerivation`, `Bip39SeedManager`, `IDekHolder`, `IVaultPaths`), sprint-5/6 (setup wizard, `LoginService`/`ILoginService`, `App` startup routing), sprint-24 (restore mental model), sprint-15 (i18n). No new database schema (the change is to the `dek.encrypted` file format, not EF).
 
 ## Goal
@@ -49,14 +49,14 @@ Doc 09's whole premise is a **decoupled DEK**: the database key is wrapped by tw
 
 ### 25-C — enable-seed-recovery in Settings
 
-- [ ] 25.13 Settings "Recovery seed" card: `SettingsViewModel` gains `SeedRecoveryEnabled` (from `IsSeedRecoveryEnabledAsync` in `LoadAsync`) and an `EnableSeedRecoveryCommand` that runs a generate→display→verify seed flow (reusing the setup seed-display/verification VMs + the screen-capture blocker) then calls `EnableSeedRecoveryAsync`; success refreshes the state and reports via `StatusMessage`.
-- [ ] 25.14 View + i18n: a card in `SettingsView.axaml` (enabled/disabled state + the enable action), all `{l:Localize}`, keys in both `.resx` (parity). Reuse the seed-display/verification views.
-- [ ] 25.15 Tests (`Coffer.Application.Tests`): `SettingsViewModel` reflects enabled/disabled and the enable command calls the service and refreshes; the generated seed is never logged; parity.
+- [x] 25.13 Settings "Recovery seed" card: `SettingsViewModel` gains `SeedRecoveryEnabled` (from `IsSeedRecoveryEnabledAsync` in `LoadAsync`) + `EnableSeedRecoveryCommand` that opens the enable dialog (behind a new `IEnableSeedRecoveryDialog` seam) and, on success, refreshes the state + `StatusMessage`. `EnableSeedRecoveryViewModel` generates a fresh mnemonic, reuses `BipSeedDisplayStepViewModel` (word grid) + `BipSeedVerificationStepViewModel` (word #3/#7), gates `EnableCommand` on verification, calls `EnableSeedRecoveryAsync`.
+- [x] 25.14 View + i18n: `EnableSeedRecoveryWindow` (word grid + verification + enable/cancel) with the screen-capture blocker applied on open by `EnableSeedRecoveryDialogService`; a "Recovery seed" card in `SettingsView.axaml` (enabled state vs enable action); all `{l:Localize}`, `Settings.SeedRecovery.*` keys in both `.resx` (parity green), verification labels reused from `Setup.Verification.*`.
+- [x] 25.15 Tests (`Coffer.Application.Tests`, +6): `SettingsViewModel` reflects enabled state and the enable command opens the dialog + refreshes on success / no-ops on cancel; `EnableSeedRecoveryViewModel` shows the 12 words, gates enable on verification, calls the service with the generated mnemonic + raises `Completed`, cancel raises `CancelRequested`. No seed logged. Parity green.
 
 ### Sweep
 
-- [ ] 25.16 No residual hardcoded user-facing literals; `dotnet format --verify-no-changes` clean. Security self-check (doc 09 checklist): no new plaintext DEK/seed on disk, no new sensitive logging, Argon2 params not weakened.
-- [ ] 25.17 Manual DoD click-through (below) — expected to defer to manual (needs a running app + a real vault + the real seed).
+- [x] 25.16 No residual hardcoded user-facing literals; `dotnet format --verify-no-changes` clean (only pre-existing repo-wide CRLF/whitespace noise). Security self-check (doc 09): no new plaintext DEK/seed on disk, no new sensitive logging, Argon2 params unchanged.
+- [ ] 25.17 Manual DoD click-through (below) — deferred to manual (needs a running app + a real vault + the real seed).
 
 ## Definition of Done
 
