@@ -1297,4 +1297,40 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="App.Restore.Failed.Quit" xml:space="preserve">
     <value>Zamknij</value>
   </data>
+  <data name="Login.ForgotPassword" xml:space="preserve">
+    <value>Nie pamiętasz hasła? Przywróć z frazy</value>
+  </data>
+  <data name="Restore.Seed.Title" xml:space="preserve">
+    <value>Przywróć z frazy odzyskiwania</value>
+  </data>
+  <data name="Restore.Seed.Intro" xml:space="preserve">
+    <value>Wpisz 12-słowną frazę odzyskiwania i ustaw nowe hasło główne. Twoje dane nie zostaną zmienione.</value>
+  </data>
+  <data name="Restore.Seed.SeedLabel" xml:space="preserve">
+    <value>Fraza odzyskiwania (12 słów)</value>
+  </data>
+  <data name="Restore.Seed.NewPassword" xml:space="preserve">
+    <value>Nowe hasło główne</value>
+  </data>
+  <data name="Restore.Seed.ConfirmPassword" xml:space="preserve">
+    <value>Potwierdź nowe hasło</value>
+  </data>
+  <data name="Restore.Seed.Note" xml:space="preserve">
+    <value>To resetuje hasło główne za pomocą frazy. Następne logowanie użyje nowego hasła.</value>
+  </data>
+  <data name="Restore.Seed.Recover" xml:space="preserve">
+    <value>Przywróć</value>
+  </data>
+  <data name="Restore.Seed.Cancel" xml:space="preserve">
+    <value>Anuluj</value>
+  </data>
+  <data name="Restore.Seed.Error.InvalidSeed" xml:space="preserve">
+    <value>Ta fraza nie odblokowała sejfu. Sprawdź 12 słów i ich kolejność.</value>
+  </data>
+  <data name="Restore.Seed.Error.Unavailable" xml:space="preserve">
+    <value>Ten sejf nie ma odzyskiwania z frazy. Zaloguj się hasłem głównym, a następnie włącz odzyskiwanie z frazy w Ustawieniach.</value>
+  </data>
+  <data name="Restore.Seed.Error.Generic" xml:space="preserve">
+    <value>Odzyskiwanie nie powiodło się. Spróbuj ponownie.</value>
+  </data>
 </root>

@@ -7,12 +7,14 @@ using Avalonia.Threading;
 using Coffer.Application.Localization;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
+using Coffer.Application.ViewModels.Recovery;
 using Coffer.Application.ViewModels.Setup;
 using Coffer.Core.Backup;
 using Coffer.Core.Categorization;
 using Coffer.Core.Goals;
 using Coffer.Core.Localization;
 using Coffer.Core.Security;
+using Coffer.Desktop.Views;
 using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
 using Coffer.Infrastructure.Persistence;
@@ -245,7 +247,41 @@ public partial class App : Avalonia.Application
         var vm = Services.GetRequiredService<LoginViewModel>();
         window.DataContext = vm;
         vm.LoginCompleted += (_, _) => OnLoginCompleted(desktop, window);
+        vm.RestoreFromSeedRequested += (_, _) => OnRestoreFromSeedRequested(desktop, window);
         return window;
+    }
+
+    private async void OnRestoreFromSeedRequested(
+        IClassicDesktopStyleApplicationLifetime desktop, Window loginWindow)
+    {
+        var window = Services.GetRequiredService<RestoreFromSeedWindow>();
+        var vm = Services.GetRequiredService<RestoreFromSeedViewModel>();
+        window.DataContext = vm;
+
+        Window? recovered = null;
+        vm.RecoveryCompleted += (_, _) =>
+        {
+            // Recovery reset the password and published the DEK — route in like a normal login.
+            recovered = BuildPostUnlockWindow(desktop);
+            window.Close();
+        };
+
+        try
+        {
+            await window.ShowDialog(loginWindow);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Restore-from-seed window failed");
+            return;
+        }
+
+        if (recovered is not null)
+        {
+            desktop.MainWindow = recovered;
+            recovered.Show();
+            loginWindow.Close();
+        }
     }
 
     private void OnLoginCompleted(IClassicDesktopStyleApplicationLifetime desktop, Window loginWindow)

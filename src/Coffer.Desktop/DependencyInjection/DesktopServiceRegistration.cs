@@ -9,6 +9,7 @@ using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Planning;
+using Coffer.Application.ViewModels.Recovery;
 using Coffer.Application.ViewModels.Restore;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Setup;
@@ -59,6 +60,10 @@ public static class DesktopServiceRegistration
 
         services.AddTransient<LoginWindow>();
         services.AddTransient<LoginViewModel>();
+
+        // Restore-from-seed (forgot-password) recovery — opened from the login window.
+        services.AddTransient<RestoreFromSeedViewModel>();
+        services.AddTransient<RestoreFromSeedWindow>();
 
         services.AddTransient<SetupWizardViewModel>();
         services.AddTransient<SetupWizardWindow>();

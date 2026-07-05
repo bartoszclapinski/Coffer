@@ -42,12 +42,21 @@
                          IsVisible="{Binding IsBusy}" />
         </StackPanel>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
-            <Button Content="{l:Localize Login.SignIn}"
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+            <Button Grid.Column="0"
+                    Content="{l:Localize Login.ForgotPassword}"
+                    HorizontalAlignment="Left"
+                    Background="Transparent"
+                    Foreground="#0A84FF"
+                    Padding="0"
+                    IsEnabled="{Binding !IsBusy}"
+                    Command="{Binding RestoreFromSeedCommand}" />
+            <Button Grid.Column="1"
+                    Content="{l:Localize Login.SignIn}"
                     MinWidth="120"
                     IsDefault="True"
                     IsEnabled="{Binding !IsBusy}"
                     Command="{Binding LoginCommand}" />
-        </StackPanel>
+        </Grid>
     </Grid>
 </Window>

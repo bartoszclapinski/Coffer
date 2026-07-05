@@ -40,6 +40,12 @@ public sealed partial class LoginViewModel : ObservableObject
 
     public event EventHandler<LoginCompletedEventArgs>? LoginCompleted;
 
+    /// <summary>Raised when the owner chooses "Restore from seed" — the shell opens the recovery window.</summary>
+    public event EventHandler? RestoreFromSeedRequested;
+
+    [RelayCommand]
+    private void RestoreFromSeed() => RestoreFromSeedRequested?.Invoke(this, EventArgs.Empty);
+
     [RelayCommand]
     private async Task LoginAsync()
     {

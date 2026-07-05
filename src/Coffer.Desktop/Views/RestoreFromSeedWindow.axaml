@@ -1,0 +1,69 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Recovery;assembly=Coffer.Application"
+        xmlns:l="clr-namespace:Coffer.Desktop.Localization"
+        mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="520"
+        x:Class="Coffer.Desktop.Views.RestoreFromSeedWindow"
+        x:DataType="vm:RestoreFromSeedViewModel"
+        x:CompileBindings="False"
+        Title="{l:Localize Restore.Seed.Title}"
+        Width="480" Height="520"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="32">
+        <StackPanel Grid.Row="0" Spacing="6">
+            <TextBlock Text="{l:Localize Restore.Seed.Title}" FontSize="22" FontWeight="Light" />
+            <TextBlock Text="{l:Localize Restore.Seed.Intro}" TextWrapping="Wrap" Foreground="#999" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="12" Margin="0,20,0,0" VerticalAlignment="Top">
+            <StackPanel Spacing="4">
+                <TextBlock Text="{l:Localize Restore.Seed.SeedLabel}" />
+                <TextBox AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         Height="72"
+                         IsEnabled="{Binding !IsBusy}"
+                         Text="{Binding Seed, Mode=TwoWay}" />
+            </StackPanel>
+
+            <StackPanel Spacing="4">
+                <TextBlock Text="{l:Localize Restore.Seed.NewPassword}" />
+                <TextBox PasswordChar="●"
+                         IsEnabled="{Binding !IsBusy}"
+                         Text="{Binding NewPassword, Mode=TwoWay}" />
+            </StackPanel>
+
+            <StackPanel Spacing="4">
+                <TextBlock Text="{l:Localize Restore.Seed.ConfirmPassword}" />
+                <TextBox PasswordChar="●"
+                         IsEnabled="{Binding !IsBusy}"
+                         Text="{Binding ConfirmPassword, Mode=TwoWay}" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="#D14"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding IsBusy}" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="2"
+                   Text="{l:Localize Restore.Seed.Note}"
+                   FontSize="12" Foreground="#999" TextWrapping="Wrap" Margin="0,8,0,0" />
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,16,0,0">
+            <Button Content="{l:Localize Restore.Seed.Cancel}"
+                    MinWidth="100"
+                    IsCancel="True"
+                    Click="OnCancel" />
+            <Button Content="{l:Localize Restore.Seed.Recover}"
+                    MinWidth="140"
+                    IsDefault="True"
+                    IsEnabled="{Binding !IsBusy}"
+                    Command="{Binding RecoverCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>
