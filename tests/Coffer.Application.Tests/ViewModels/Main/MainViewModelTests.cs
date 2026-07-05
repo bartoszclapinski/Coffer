@@ -229,6 +229,7 @@ public class MainViewModelTests
             new FakeRestoreDialogService(),
             new FakeSeedRecoveryService(),
             new FakeEnableSeedRecoveryDialog(),
+            new FakeChangeMasterPasswordDialog(),
             new FakeLocalizer(),
             new FakeLanguageStore(),
             NullLogger<SettingsViewModel>.Instance);
