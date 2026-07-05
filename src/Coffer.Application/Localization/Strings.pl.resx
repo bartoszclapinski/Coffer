@@ -1363,4 +1363,46 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="Settings.SeedRecovery.EnableFailed" xml:space="preserve">
     <value>Nie udało się włączyć odzyskiwania z frazy.</value>
   </data>
+  <data name="Settings.Password.Section" xml:space="preserve">
+    <value>Hasło główne</value>
+  </data>
+  <data name="Settings.Password.Change" xml:space="preserve">
+    <value>Zmień hasło główne</value>
+  </data>
+  <data name="Settings.Password.Hint" xml:space="preserve">
+    <value>Zmień hasło główne. Twoje dane i fraza odzyskiwania pozostają bez zmian.</value>
+  </data>
+  <data name="Settings.Password.Changed" xml:space="preserve">
+    <value>Zmieniono hasło główne.</value>
+  </data>
+  <data name="ChangePassword.Title" xml:space="preserve">
+    <value>Zmień hasło główne</value>
+  </data>
+  <data name="ChangePassword.Intro" xml:space="preserve">
+    <value>Podaj obecne hasło i wybierz nowe. Twoje dane nie są ponownie szyfrowane.</value>
+  </data>
+  <data name="ChangePassword.Current" xml:space="preserve">
+    <value>Obecne hasło</value>
+  </data>
+  <data name="ChangePassword.New" xml:space="preserve">
+    <value>Nowe hasło</value>
+  </data>
+  <data name="ChangePassword.Confirm" xml:space="preserve">
+    <value>Potwierdź nowe hasło</value>
+  </data>
+  <data name="ChangePassword.Note" xml:space="preserve">
+    <value>Zmienia się tylko zaszyfrowany plik klucza; sama baza pozostaje nietknięta.</value>
+  </data>
+  <data name="ChangePassword.Submit" xml:space="preserve">
+    <value>Zmień</value>
+  </data>
+  <data name="ChangePassword.Cancel" xml:space="preserve">
+    <value>Anuluj</value>
+  </data>
+  <data name="ChangePassword.Error.WrongCurrent" xml:space="preserve">
+    <value>Obecne hasło jest nieprawidłowe.</value>
+  </data>
+  <data name="ChangePassword.Error.Generic" xml:space="preserve">
+    <value>Nie udało się zmienić hasła. Spróbuj ponownie.</value>
+  </data>
 </root>

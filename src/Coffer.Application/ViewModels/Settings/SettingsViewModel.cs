@@ -34,6 +34,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IRestoreDialogService _restoreDialog;
     private readonly ISeedRecoveryService _seedRecovery;
     private readonly IEnableSeedRecoveryDialog _enableSeedRecoveryDialog;
+    private readonly IChangeMasterPasswordDialog _changeMasterPasswordDialog;
     private readonly ILocalizer _localizer;
     private readonly ILanguageStore _languageStore;
     private readonly ILogger<SettingsViewModel> _logger;
@@ -97,6 +98,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         IRestoreDialogService restoreDialog,
         ISeedRecoveryService seedRecovery,
         IEnableSeedRecoveryDialog enableSeedRecoveryDialog,
+        IChangeMasterPasswordDialog changeMasterPasswordDialog,
         ILocalizer localizer,
         ILanguageStore languageStore,
         ILogger<SettingsViewModel> logger)
@@ -112,6 +114,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(restoreDialog);
         ArgumentNullException.ThrowIfNull(seedRecovery);
         ArgumentNullException.ThrowIfNull(enableSeedRecoveryDialog);
+        ArgumentNullException.ThrowIfNull(changeMasterPasswordDialog);
         ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(languageStore);
         ArgumentNullException.ThrowIfNull(logger);
@@ -127,6 +130,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _restoreDialog = restoreDialog;
         _seedRecovery = seedRecovery;
         _enableSeedRecoveryDialog = enableSeedRecoveryDialog;
+        _changeMasterPasswordDialog = changeMasterPasswordDialog;
         _localizer = localizer;
         _languageStore = languageStore;
         _logger = logger;
@@ -393,6 +397,22 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             // The swap runs at the next startup, before the database opens — tell the owner to restart.
             StatusMessage = _localizer["Settings.Restore.Staged"];
+        }
+    }
+
+    [RelayCommand]
+    private async Task ChangeMasterPasswordAsync()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        StatusMessage = "";
+        var changed = await _changeMasterPasswordDialog.ShowAsync(CancellationToken.None).ConfigureAwait(true);
+        if (changed)
+        {
+            StatusMessage = _localizer["Settings.Password.Changed"];
         }
     }
 

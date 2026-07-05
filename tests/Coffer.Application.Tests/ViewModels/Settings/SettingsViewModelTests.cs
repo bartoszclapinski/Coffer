@@ -137,6 +137,7 @@ public class SettingsViewModelTests
             new FakeRestoreDialogService(),
             new FakeSeedRecoveryService(),
             new FakeEnableSeedRecoveryDialog(),
+            new FakeChangeMasterPasswordDialog(),
             localizer,
             store,
             NullLogger<SettingsViewModel>.Instance);
@@ -246,7 +247,8 @@ public class SettingsViewModelTests
         new(settings, planning, accounts, secrets, ledger,
             new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(),
             new FakeRestoreDialogService(), new FakeSeedRecoveryService(), new FakeEnableSeedRecoveryDialog(),
-            new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
+            new FakeChangeMasterPasswordDialog(), new FakeLocalizer(), new FakeLanguageStore(),
+            NullLogger<SettingsViewModel>.Instance);
 
     private static SettingsViewModel CreateWithBackup(
         FakeBackupService backup,
@@ -254,12 +256,14 @@ public class SettingsViewModelTests
         FakeFilePicker picker,
         FakeRestoreDialogService? restoreDialog = null,
         FakeSeedRecoveryService? seedRecovery = null,
-        FakeEnableSeedRecoveryDialog? enableDialog = null) =>
+        FakeEnableSeedRecoveryDialog? enableDialog = null,
+        FakeChangeMasterPasswordDialog? changePasswordDialog = null) =>
         new(new FakeAiSettings(), new FakePlanningSettings(), new FakeAccountService(),
             new FakeSecretStore(), new FakeAiUsageLedger(), backup, exporter, picker,
             restoreDialog ?? new FakeRestoreDialogService(),
             seedRecovery ?? new FakeSeedRecoveryService(),
             enableDialog ?? new FakeEnableSeedRecoveryDialog(),
+            changePasswordDialog ?? new FakeChangeMasterPasswordDialog(),
             new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
 
     [Fact]
@@ -372,5 +376,31 @@ public class SettingsViewModelTests
         await vm.EnableSeedRecoveryCommand.ExecuteAsync(null);
 
         vm.SeedRecoveryEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ChangeMasterPassword_WhenChanged_ReportsSuccess()
+    {
+        var dialog = new FakeChangeMasterPasswordDialog { ResultChanged = true };
+        var vm = CreateWithBackup(
+            new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(), changePasswordDialog: dialog);
+
+        await vm.ChangeMasterPasswordCommand.ExecuteAsync(null);
+
+        dialog.ShowCalls.Should().Be(1);
+        vm.StatusMessage.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task ChangeMasterPassword_WhenCancelled_ReportsNothing()
+    {
+        var dialog = new FakeChangeMasterPasswordDialog { ResultChanged = false };
+        var vm = CreateWithBackup(
+            new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(), changePasswordDialog: dialog);
+
+        await vm.ChangeMasterPasswordCommand.ExecuteAsync(null);
+
+        dialog.ShowCalls.Should().Be(1);
+        vm.StatusMessage.Should().BeEmpty();
     }
 }

@@ -1363,4 +1363,46 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="Settings.SeedRecovery.EnableFailed" xml:space="preserve">
     <value>Could not enable seed recovery.</value>
   </data>
+  <data name="Settings.Password.Section" xml:space="preserve">
+    <value>Master password</value>
+  </data>
+  <data name="Settings.Password.Change" xml:space="preserve">
+    <value>Change master password</value>
+  </data>
+  <data name="Settings.Password.Hint" xml:space="preserve">
+    <value>Rotate your master password. Your data and recovery seed are unaffected.</value>
+  </data>
+  <data name="Settings.Password.Changed" xml:space="preserve">
+    <value>Master password changed.</value>
+  </data>
+  <data name="ChangePassword.Title" xml:space="preserve">
+    <value>Change master password</value>
+  </data>
+  <data name="ChangePassword.Intro" xml:space="preserve">
+    <value>Enter your current password and choose a new one. Your data is not re-encrypted.</value>
+  </data>
+  <data name="ChangePassword.Current" xml:space="preserve">
+    <value>Current password</value>
+  </data>
+  <data name="ChangePassword.New" xml:space="preserve">
+    <value>New password</value>
+  </data>
+  <data name="ChangePassword.Confirm" xml:space="preserve">
+    <value>Confirm new password</value>
+  </data>
+  <data name="ChangePassword.Note" xml:space="preserve">
+    <value>Only the encrypted key file changes; the database itself is untouched.</value>
+  </data>
+  <data name="ChangePassword.Submit" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <data name="ChangePassword.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ChangePassword.Error.WrongCurrent" xml:space="preserve">
+    <value>The current password is incorrect.</value>
+  </data>
+  <data name="ChangePassword.Error.Generic" xml:space="preserve">
+    <value>Could not change the password. Please try again.</value>
+  </data>
 </root>

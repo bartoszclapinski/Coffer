@@ -1,7 +1,7 @@
 # Sprint 26 — Change master password
 
 **Phase:** — (roadmap-adjacent; `docs/architecture/09-security-key-management.md` — "change master password → re-encrypt DEK only, not the entire DB". The natural sibling of Sprint 25's seed recovery.)
-**Status:** Planned
+**Status:** Closed
 **Depends on:** sprint-25 (`DekFile` v2 + `DekFile.WriteReplaceAsync` + the dual-wrap model), sprint-2/3 (`AesGcmCrypto`, `Argon2KeyDerivation`, `IKeyVault`, `IDekHolder`, `IVaultPaths`), sprint-5/6 (login, `IPasswordStrengthChecker`), sprint-15 (i18n). No new database schema.
 
 ## Goal
@@ -36,16 +36,16 @@ Doc 09's decoupled-DEK design exists precisely so re-keying is cheap: "change ma
 
 ### 26-B — Settings "Change master password" dialog
 
-- [ ] 26.5 `ChangeMasterPasswordViewModel` (`Coffer.Application`): `CurrentPassword`, `NewPassword`, `ConfirmPassword`, a `ChangeCommand` gated on the strength rules (reused) calling `IMasterPasswordService.ChangeMasterPasswordAsync`, a `Completed` event + `CancelRequested`, distinct localized errors for `InvalidMasterPasswordException` vs weak/mismatched new password. Clears all fields on success.
-- [ ] 26.6 `ChangeMasterPasswordWindow` (`Coffer.Desktop`) + an `IChangeMasterPasswordDialog` seam (`ChangeMasterPasswordDialogService` shows it modally over the main window, returns whether changed); no screen-capture blocker needed (no seed shown).
-- [ ] 26.7 Settings wiring: a "Master password" row/card in `SettingsView.axaml` with a **"Change master password"** button; `SettingsViewModel` gains a `ChangeMasterPasswordCommand` that opens the dialog and reports success via `StatusMessage`. Injects `IChangeMasterPasswordDialog`.
-- [ ] 26.8 Localization + DI: `Settings.Password.*` / `ChangePassword.*` keys in both `.resx` (parity green); the VM/window/dialog registered.
-- [ ] 26.9 Tests (`Coffer.Application.Tests`): the VM cannot execute with a weak/mismatched new password, calls the service and raises `Completed`, maps `InvalidMasterPasswordException` to the wrong-current-password message; `SettingsViewModel` opens the dialog and reports success; resource-key parity. Fake `IMasterPasswordService` + `IChangeMasterPasswordDialog`.
+- [x] 26.5 `ChangeMasterPasswordViewModel` (`Coffer.Application`): `CurrentPassword`/`NewPassword`/`ConfirmPassword`, `ChangeCommand` gated on the strength rules (len ≥ 12, ≥ 3 classes, score ≥ 3, match, ≠ current) calling `ChangeMasterPasswordAsync`, `Completed` + `CancelRequested` events, distinct localized errors for `InvalidMasterPasswordException` vs weak/mismatched new password. Clears fields on success (and the current field on a wrong-password error, for a retry).
+- [x] 26.6 `ChangeMasterPasswordWindow` (`Coffer.Desktop`) + an `IChangeMasterPasswordDialog` seam (`ChangeMasterPasswordDialogService` shows it modally over the main window, returns whether changed); no screen-capture blocker (no seed shown); close blocked while busy.
+- [x] 26.7 Settings wiring: a "Master password" section in `SettingsView.axaml` with a **"Change master password"** button; `SettingsViewModel.ChangeMasterPasswordCommand` opens the dialog and reports `Settings.Password.Changed` via `StatusMessage`. Injects `IChangeMasterPasswordDialog`.
+- [x] 26.8 Localization + DI: `Settings.Password.*` / `ChangePassword.*` keys in both `.resx` (parity green); the VM/window/dialog registered in `AddCofferDesktopUi`.
+- [x] 26.9 Tests (`Coffer.Application.Tests`, +8): the VM cannot execute with a mismatched / weak / same-as-current new password, calls the service + raises `Completed` + clears sensitive, maps `InvalidMasterPasswordException` to the wrong-current message; `SettingsViewModel` opens the dialog and reports/omits success. Fakes `FakeMasterPasswordService` + `FakeChangeMasterPasswordDialog`. Parity green.
 
 ### Sweep
 
-- [ ] 26.10 No residual hardcoded user-facing literals; `dotnet format --verify-no-changes` clean. Security self-check (doc 09): no new plaintext key on disk, no sensitive logging, Argon2 params not weakened.
-- [ ] 26.11 Manual DoD click-through (below) — expected to defer to manual (needs a running app + a real vault).
+- [x] 26.10 No residual hardcoded user-facing literals; `dotnet format --verify-no-changes` clean (only pre-existing repo-wide CRLF/whitespace noise). Security self-check (doc 09): no new plaintext key on disk, no sensitive logging, Argon2 params unchanged.
+- [ ] 26.11 Manual DoD click-through (below) — deferred to manual (needs a running app + a real vault).
 
 ## Definition of Done
 

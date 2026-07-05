@@ -11,6 +11,7 @@ using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Planning;
 using Coffer.Application.ViewModels.Recovery;
 using Coffer.Application.ViewModels.Restore;
+using Coffer.Application.ViewModels.Security;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Setup;
 using Coffer.Application.ViewModels.Spending;
@@ -70,6 +71,11 @@ public static class DesktopServiceRegistration
         services.AddTransient<EnableSeedRecoveryViewModel>();
         services.AddTransient<EnableSeedRecoveryWindow>();
         services.AddSingleton<IEnableSeedRecoveryDialog, EnableSeedRecoveryDialogService>();
+
+        // Change-master-password — opened from Settings; behind IChangeMasterPasswordDialog.
+        services.AddTransient<ChangeMasterPasswordViewModel>();
+        services.AddTransient<ChangeMasterPasswordWindow>();
+        services.AddSingleton<IChangeMasterPasswordDialog, ChangeMasterPasswordDialogService>();
 
         services.AddTransient<SetupWizardViewModel>();
         services.AddTransient<SetupWizardWindow>();

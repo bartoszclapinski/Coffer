@@ -53,6 +53,40 @@ internal sealed class FakeSeedRecoveryService : ISeedRecoveryService
     }
 }
 
+/// <summary>In-memory <see cref="IMasterPasswordService"/>: records calls and can be made to throw.</summary>
+internal sealed class FakeMasterPasswordService : IMasterPasswordService
+{
+    public Exception? Throw { get; set; }
+
+    public int Calls { get; private set; }
+
+    public string? LastCurrent { get; private set; }
+
+    public string? LastNew { get; private set; }
+
+    public Task ChangeMasterPasswordAsync(string currentPassword, string newPassword, CancellationToken ct)
+    {
+        Calls++;
+        LastCurrent = currentPassword;
+        LastNew = newPassword;
+        return Throw is not null ? Task.FromException(Throw) : Task.CompletedTask;
+    }
+}
+
+/// <summary>In-memory <see cref="IChangeMasterPasswordDialog"/>: records opens and returns a set result.</summary>
+internal sealed class FakeChangeMasterPasswordDialog : IChangeMasterPasswordDialog
+{
+    public int ShowCalls { get; private set; }
+
+    public bool ResultChanged { get; set; }
+
+    public Task<bool> ShowAsync(CancellationToken ct)
+    {
+        ShowCalls++;
+        return Task.FromResult(ResultChanged);
+    }
+}
+
 /// <summary>Fake <see cref="ISeedManager"/> that treats one configured value as the only valid mnemonic.</summary>
 internal sealed class FakeSeedManager : ISeedManager
 {
