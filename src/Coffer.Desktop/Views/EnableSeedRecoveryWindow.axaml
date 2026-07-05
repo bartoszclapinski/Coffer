@@ -1,0 +1,70 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Recovery;assembly=Coffer.Application"
+        xmlns:l="clr-namespace:Coffer.Desktop.Localization"
+        mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="600"
+        x:Class="Coffer.Desktop.Views.EnableSeedRecoveryWindow"
+        x:DataType="vm:EnableSeedRecoveryViewModel"
+        x:CompileBindings="False"
+        Title="{l:Localize Settings.SeedRecovery.EnableTitle}"
+        Width="560" Height="600"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="28">
+        <StackPanel Grid.Row="0" Spacing="6">
+            <TextBlock Text="{l:Localize Settings.SeedRecovery.EnableTitle}" FontSize="20" FontWeight="Light" />
+            <TextBlock Text="{l:Localize Settings.SeedRecovery.EnableIntro}" TextWrapping="Wrap" Foreground="#8E8E93" />
+            <TextBlock Text="{l:Localize Setup.SeedDisplay.Warning}" TextWrapping="Wrap" Foreground="#E07B00" />
+        </StackPanel>
+
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding Display.Words}" Margin="0,16,0,0">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Columns="3" Rows="4" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border BorderBrush="#555" BorderThickness="1" CornerRadius="4" Margin="4" Padding="12,8">
+                        <TextBlock Text="{Binding}" FontFamily="Consolas, Menlo, monospace" FontSize="16" />
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Grid.Row="2" Spacing="8" Margin="0,20,0,0">
+            <TextBlock Text="{l:Localize Setup.Verification.Hint}" TextWrapping="Wrap" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="{l:Localize Setup.Verification.Word3}" />
+                    <TextBox IsEnabled="{Binding !IsBusy}" Text="{Binding Verification.Word3, Mode=TwoWay}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Text="{l:Localize Setup.Verification.Word7}" />
+                    <TextBox IsEnabled="{Binding !IsBusy}" Text="{Binding Verification.Word7, Mode=TwoWay}" />
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <TextBlock Grid.Row="3"
+                   Margin="0,12,0,0"
+                   Text="{Binding ErrorMessage}"
+                   Foreground="#D14"
+                   TextWrapping="Wrap"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,20,0,0">
+            <Button Content="{l:Localize Settings.SeedRecovery.Cancel}"
+                    MinWidth="100"
+                    IsCancel="True"
+                    Command="{Binding CancelCommand}" />
+            <Button Content="{l:Localize Settings.SeedRecovery.EnableConfirm}"
+                    MinWidth="160"
+                    IsDefault="True"
+                    IsEnabled="{Binding !IsBusy}"
+                    Command="{Binding EnableCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>

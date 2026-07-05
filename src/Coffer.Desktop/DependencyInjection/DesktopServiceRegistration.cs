@@ -65,6 +65,12 @@ public static class DesktopServiceRegistration
         services.AddTransient<RestoreFromSeedViewModel>();
         services.AddTransient<RestoreFromSeedWindow>();
 
+        // Enable-seed-recovery — opened from Settings; behind IEnableSeedRecoveryDialog so the
+        // Settings VM stays framework-free.
+        services.AddTransient<EnableSeedRecoveryViewModel>();
+        services.AddTransient<EnableSeedRecoveryWindow>();
+        services.AddSingleton<IEnableSeedRecoveryDialog, EnableSeedRecoveryDialogService>();
+
         services.AddTransient<SetupWizardViewModel>();
         services.AddTransient<SetupWizardWindow>();
 

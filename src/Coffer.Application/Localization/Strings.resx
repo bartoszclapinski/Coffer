@@ -1333,4 +1333,34 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="Restore.Seed.Error.Generic" xml:space="preserve">
     <value>Recovery failed. Please try again.</value>
   </data>
+  <data name="Settings.SeedRecovery.Section" xml:space="preserve">
+    <value>Recovery seed</value>
+  </data>
+  <data name="Settings.SeedRecovery.Hint" xml:space="preserve">
+    <value>Enable recovery from a 12-word seed so a forgotten master password isn't the end. Enabling shows a new seed to write down.</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnabledState" xml:space="preserve">
+    <value>Seed recovery is on.</value>
+  </data>
+  <data name="Settings.SeedRecovery.Enable" xml:space="preserve">
+    <value>Enable seed recovery</value>
+  </data>
+  <data name="Settings.SeedRecovery.Enabled" xml:space="preserve">
+    <value>Seed recovery enabled.</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnableTitle" xml:space="preserve">
+    <value>Enable seed recovery</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnableIntro" xml:space="preserve">
+    <value>Write down these 12 words and keep them safe. They let you recover this vault if you forget your master password. Any seed shown during setup no longer applies.</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnableConfirm" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="Settings.SeedRecovery.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Settings.SeedRecovery.EnableFailed" xml:space="preserve">
+    <value>Could not enable seed recovery.</value>
+  </data>
 </root>

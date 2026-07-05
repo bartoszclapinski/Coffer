@@ -135,6 +135,8 @@ public class SettingsViewModelTests
             new FakeArchiveExporter(),
             new FakeFilePicker(),
             new FakeRestoreDialogService(),
+            new FakeSeedRecoveryService(),
+            new FakeEnableSeedRecoveryDialog(),
             localizer,
             store,
             NullLogger<SettingsViewModel>.Instance);
@@ -243,18 +245,22 @@ public class SettingsViewModelTests
         FakeAccountService accounts) =>
         new(settings, planning, accounts, secrets, ledger,
             new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(),
-            new FakeRestoreDialogService(), new FakeLocalizer(), new FakeLanguageStore(),
-            NullLogger<SettingsViewModel>.Instance);
+            new FakeRestoreDialogService(), new FakeSeedRecoveryService(), new FakeEnableSeedRecoveryDialog(),
+            new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
 
     private static SettingsViewModel CreateWithBackup(
         FakeBackupService backup,
         FakeArchiveExporter exporter,
         FakeFilePicker picker,
-        FakeRestoreDialogService? restoreDialog = null) =>
+        FakeRestoreDialogService? restoreDialog = null,
+        FakeSeedRecoveryService? seedRecovery = null,
+        FakeEnableSeedRecoveryDialog? enableDialog = null) =>
         new(new FakeAiSettings(), new FakePlanningSettings(), new FakeAccountService(),
             new FakeSecretStore(), new FakeAiUsageLedger(), backup, exporter, picker,
-            restoreDialog ?? new FakeRestoreDialogService(), new FakeLocalizer(), new FakeLanguageStore(),
-            NullLogger<SettingsViewModel>.Instance);
+            restoreDialog ?? new FakeRestoreDialogService(),
+            seedRecovery ?? new FakeSeedRecoveryService(),
+            enableDialog ?? new FakeEnableSeedRecoveryDialog(),
+            new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
 
     [Fact]
     public async Task Load_PopulatesBackupStatus()
@@ -328,5 +334,43 @@ public class SettingsViewModelTests
 
         dialog.ShowCalls.Should().Be(1);
         vm.StatusMessage.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Load_ReflectsSeedRecoveryEnabledState()
+    {
+        var seed = new FakeSeedRecoveryService { Enabled = true };
+        var vm = CreateWithBackup(
+            new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(), seedRecovery: seed);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.SeedRecoveryEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task EnableSeedRecovery_WhenDialogEnables_SetsStateAndStatus()
+    {
+        var dialog = new FakeEnableSeedRecoveryDialog { ResultEnabled = true };
+        var vm = CreateWithBackup(
+            new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(), enableDialog: dialog);
+
+        await vm.EnableSeedRecoveryCommand.ExecuteAsync(null);
+
+        dialog.ShowCalls.Should().Be(1);
+        vm.SeedRecoveryEnabled.Should().BeTrue();
+        vm.StatusMessage.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task EnableSeedRecovery_WhenCancelled_LeavesStateFalse()
+    {
+        var dialog = new FakeEnableSeedRecoveryDialog { ResultEnabled = false };
+        var vm = CreateWithBackup(
+            new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(), enableDialog: dialog);
+
+        await vm.EnableSeedRecoveryCommand.ExecuteAsync(null);
+
+        vm.SeedRecoveryEnabled.Should().BeFalse();
     }
 }
