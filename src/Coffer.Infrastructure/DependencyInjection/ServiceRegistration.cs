@@ -69,15 +69,17 @@ public static class ServiceRegistration
             .AddCofferBackup();
 
     /// <summary>
-    /// Registers the Sprint-23 local backup (doc 08, Layer 1 + 3): the <see cref="IBackupService"/> that
-    /// writes rolling daily snapshots of the encrypted database (and prunes them plus the pre-migration
-    /// folder), and the <see cref="IArchiveExporter"/> that produces a portable disaster-recovery zip.
-    /// File I/O behind <see cref="Core.Security.IVaultPaths"/>; no schema, no AI, no network.
+    /// Registers the local backup and restore (doc 08): the <see cref="IBackupService"/> that writes rolling
+    /// daily snapshots of the encrypted database (and prunes them plus the pre-migration folder), the
+    /// <see cref="IArchiveExporter"/> that produces a portable disaster-recovery zip, and the Sprint-24
+    /// <see cref="IRestoreService"/> that stages and applies a restore from a chosen snapshot. File I/O behind
+    /// <see cref="Core.Security.IVaultPaths"/>; no schema, no AI, no network.
     /// </summary>
     public static IServiceCollection AddCofferBackup(this IServiceCollection services)
     {
         services.AddSingleton<IBackupService, BackupService>();
         services.AddSingleton<IArchiveExporter, ArchiveExporter>();
+        services.AddSingleton<IRestoreService, RestoreService>();
         return services;
     }
 
