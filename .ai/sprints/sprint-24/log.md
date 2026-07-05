@@ -1,0 +1,10 @@
+# Sprint 24 log
+
+## 2026-07-05
+
+- `--:--` sprint planned — restore from a local daily snapshot (doc-08 "Restore flow", local-snapshot branch only). Plan written to `sprint-24.md`.
+- `--:--` decision: **scope = local-snapshot restore only; restore-from-BIP39-seed is Sprint 25** — a snapshot restore is the same vault (same DEK, same password), so it is a pure file swap of already-encrypted bytes with zero key handling; seed restore needs a `dek.encrypted` format change (v1 stores only a password-wrapped DEK; the mnemonic is received at setup but never used) plus an upgrade path for the existing vault, so it is its own crypto sprint.
+- `--:--` decision: **deferred restore applied at next startup** — the DB opens lazily and holds a file lock while running, so restore is staged from Settings (a `restore-pending.json` marker) and the actual swap runs at the next startup, before the DB opens or login, against a closed file (the Windows pending-file-rename pattern); sidesteps the lock/WAL-consistency problem and keeps the swap deterministic and testable.
+- `--:--` decision: **swap is reversible** — `ApplyPendingRestoreAsync` copies the current `coffer.db` set to `backups/pre-restore/` (90-day rotation) before overwriting it, so restoring the wrong snapshot has an undo; the marker is deleted only after the `.db` is in place so an interrupted apply re-runs cleanly.
+- `--:--` decision: **restore composes with the existing startup migration** — a restored older-schema DB flows straight into the already-built `HasPendingMigrations` → confirm → pre-migration-backup → migrate path; restore only puts the right bytes in place.
+- `--:--` note: snapshot enumeration is new (`IBackupService.ListDailySnapshotsAsync`) since `BackupService` today exposes only aggregate status; it reuses the already-public pure `BackupRetention.ParseDailyDate` and the internal `BackupSnapshotWriter` (both from Sprint 23).
