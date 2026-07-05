@@ -28,6 +28,7 @@ public class SetupServiceTests
 
         var setupService = new SetupService(
             keyDerivation,
+            new Bip39SeedManager(),
             keyVault,
             dekHolder,
             paths,
@@ -65,6 +66,7 @@ public class SetupServiceTests
 
         var setupService = new SetupService(
             keyDerivation,
+            new Bip39SeedManager(),
             keyVault,
             dekHolder,
             paths,
@@ -95,6 +97,7 @@ public class SetupServiceTests
 
         var setupService = new SetupService(
             new Argon2KeyDerivation(),
+            new Bip39SeedManager(),
             new InMemoryKeyVault(),
             new DekHolder(),
             paths,

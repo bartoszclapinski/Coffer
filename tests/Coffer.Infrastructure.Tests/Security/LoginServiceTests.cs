@@ -204,8 +204,9 @@ public class LoginServiceTests
         var dek = RandomNumberGenerator.GetBytes(32);
         var encryption = AesGcmCrypto.Encrypt(dek, masterKey);
 
+        // A legacy password-only (v1) vault — LoginService must still open it after dual-wrap shipped.
         var file = new DekFile(
-            DekFile.CurrentVersion,
+            DekFile.PasswordOnlyVersion,
             parameters,
             salt,
             encryption.Iv,
