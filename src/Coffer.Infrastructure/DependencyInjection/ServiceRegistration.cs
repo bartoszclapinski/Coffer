@@ -349,6 +349,8 @@ public static class ServiceRegistration
         // Sprint-25 BIP39-seed recovery of the dual-wrapped DEK (doc 08/09): recover a forgotten
         // password from the seed, and enable the seed channel on an existing password-only vault.
         services.AddTransient<ISeedRecoveryService, SeedRecoveryService>();
+        // Sprint-26 master-password rotation: re-wrap the DEK's password blob under a new key.
+        services.AddTransient<IMasterPasswordService, MasterPasswordService>();
         return services;
     }
 
