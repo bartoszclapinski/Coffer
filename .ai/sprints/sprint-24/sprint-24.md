@@ -1,7 +1,7 @@
 # Sprint 24 — Restore from a local snapshot
 
 **Phase:** — (roadmap-adjacent; `docs/architecture/08-backup-and-recovery.md`, the "Restore flow" branch for a local daily snapshot. Restore-from-BIP39-seed and the DEK dual-wrap format it needs are explicitly out of scope — see Deferred; they are Sprint 25.)
-**Status:** Planned
+**Status:** Closed
 **Depends on:** sprint-23 (`IBackupService` / `BackupService` / `BackupSnapshotWriter` / `BackupRetention` — the snapshot files and their naming), sprint-4 (`MigrationRunner` + `IPreMigrationBackup` + startup migration orchestration in `App.axaml.cs`), sprint-2/3 (`IVaultPaths`, `coffer.db`), sprint-15 (i18n). No new schema.
 
 ## Goal
