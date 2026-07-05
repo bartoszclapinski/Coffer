@@ -16,6 +16,7 @@ namespace Coffer.Infrastructure.Security;
 public sealed class SetupService : ISetupService
 {
     private readonly IMasterKeyDerivation _keyDerivation;
+    private readonly ISeedManager _seedManager;
     private readonly IKeyVault _keyVault;
     private readonly IDekHolder _dekHolder;
     private readonly IVaultPaths _vaultPaths;
@@ -32,6 +33,7 @@ public sealed class SetupService : ISetupService
     /// </summary>
     public SetupService(
         IMasterKeyDerivation keyDerivation,
+        ISeedManager seedManager,
         IKeyVault keyVault,
         IDekHolder dekHolder,
         IVaultPaths vaultPaths,
@@ -39,6 +41,7 @@ public sealed class SetupService : ISetupService
         ILogger<SetupService> logger)
     {
         ArgumentNullException.ThrowIfNull(keyDerivation);
+        ArgumentNullException.ThrowIfNull(seedManager);
         ArgumentNullException.ThrowIfNull(keyVault);
         ArgumentNullException.ThrowIfNull(dekHolder);
         ArgumentNullException.ThrowIfNull(vaultPaths);
@@ -46,6 +49,7 @@ public sealed class SetupService : ISetupService
         ArgumentNullException.ThrowIfNull(logger);
 
         _keyDerivation = keyDerivation;
+        _seedManager = seedManager;
         _keyVault = keyVault;
         _dekHolder = dekHolder;
         _vaultPaths = vaultPaths;
@@ -114,7 +118,13 @@ public sealed class SetupService : ISetupService
                 }
             }
 
+            // Dual-wrap (doc 09): the DEK is wrapped by the Argon2 master key AND the PBKDF2 recovery key
+            // derived from the mnemonic, so a forgotten master password is recoverable from the seed.
+            var recoveryKey = await _seedManager
+                .DeriveRecoveryKeyAsync(mnemonic, VaultSeedDerivation.Passphrase, ct)
+                .ConfigureAwait(false);
             var encryptionResult = AesGcmCrypto.Encrypt(dek, masterKey);
+            var seedEncryptionResult = AesGcmCrypto.Encrypt(dek, recoveryKey);
             try
             {
                 var file = new DekFile(
@@ -123,7 +133,10 @@ public sealed class SetupService : ISetupService
                     Salt: salt,
                     Iv: encryptionResult.Iv,
                     Tag: encryptionResult.Tag,
-                    Ciphertext: encryptionResult.Ciphertext);
+                    Ciphertext: encryptionResult.Ciphertext,
+                    SeedIv: seedEncryptionResult.Iv,
+                    SeedTag: seedEncryptionResult.Tag,
+                    SeedCiphertext: seedEncryptionResult.Ciphertext);
 
                 await DekFile.WriteAsync(file, dekPath, ct).ConfigureAwait(false);
                 dekFileWasWritten = true;
@@ -133,9 +146,13 @@ public sealed class SetupService : ISetupService
             }
             finally
             {
+                Array.Clear(recoveryKey, 0, recoveryKey.Length);
                 Array.Clear(encryptionResult.Ciphertext, 0, encryptionResult.Ciphertext.Length);
                 Array.Clear(encryptionResult.Tag, 0, encryptionResult.Tag.Length);
                 Array.Clear(encryptionResult.Iv, 0, encryptionResult.Iv.Length);
+                Array.Clear(seedEncryptionResult.Ciphertext, 0, seedEncryptionResult.Ciphertext.Length);
+                Array.Clear(seedEncryptionResult.Tag, 0, seedEncryptionResult.Tag.Length);
+                Array.Clear(seedEncryptionResult.Iv, 0, seedEncryptionResult.Iv.Length);
             }
 
             _logger.LogInformation("Setup completed successfully");
