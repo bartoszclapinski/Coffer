@@ -226,6 +226,7 @@ public class MainViewModelTests
             new FakeBackupService(),
             new FakeArchiveExporter(),
             new FakeFilePicker(),
+            new FakeRestoreDialogService(),
             new FakeLocalizer(),
             new FakeLanguageStore(),
             NullLogger<SettingsViewModel>.Instance);

@@ -134,6 +134,7 @@ public class SettingsViewModelTests
             new FakeBackupService(),
             new FakeArchiveExporter(),
             new FakeFilePicker(),
+            new FakeRestoreDialogService(),
             localizer,
             store,
             NullLogger<SettingsViewModel>.Instance);
@@ -242,15 +243,18 @@ public class SettingsViewModelTests
         FakeAccountService accounts) =>
         new(settings, planning, accounts, secrets, ledger,
             new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(),
-            new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
+            new FakeRestoreDialogService(), new FakeLocalizer(), new FakeLanguageStore(),
+            NullLogger<SettingsViewModel>.Instance);
 
     private static SettingsViewModel CreateWithBackup(
         FakeBackupService backup,
         FakeArchiveExporter exporter,
-        FakeFilePicker picker) =>
+        FakeFilePicker picker,
+        FakeRestoreDialogService? restoreDialog = null) =>
         new(new FakeAiSettings(), new FakePlanningSettings(), new FakeAccountService(),
             new FakeSecretStore(), new FakeAiUsageLedger(), backup, exporter, picker,
-            new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
+            restoreDialog ?? new FakeRestoreDialogService(), new FakeLocalizer(), new FakeLanguageStore(),
+            NullLogger<SettingsViewModel>.Instance);
 
     [Fact]
     public async Task Load_PopulatesBackupStatus()
@@ -300,5 +304,29 @@ public class SettingsViewModelTests
 
         picker.SaveCalls.Should().Be(1);
         exporter.Calls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RestoreFromSnapshot_OpensDialog_AndWhenStaged_ReportsRestart()
+    {
+        var dialog = new FakeRestoreDialogService { ResultStaged = true };
+        var vm = CreateWithBackup(new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(), dialog);
+
+        await vm.RestoreFromSnapshotCommand.ExecuteAsync(null);
+
+        dialog.ShowCalls.Should().Be(1);
+        vm.StatusMessage.Should().NotBeNullOrEmpty("a staged restore tells the owner to restart");
+    }
+
+    [Fact]
+    public async Task RestoreFromSnapshot_WhenCancelled_ReportsNothing()
+    {
+        var dialog = new FakeRestoreDialogService { ResultStaged = false };
+        var vm = CreateWithBackup(new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(), dialog);
+
+        await vm.RestoreFromSnapshotCommand.ExecuteAsync(null);
+
+        dialog.ShowCalls.Should().Be(1);
+        vm.StatusMessage.Should().BeEmpty();
     }
 }

@@ -1,3 +1,4 @@
+using Coffer.Application.Dialogs;
 using Coffer.Core.Backup;
 
 namespace Coffer.Application.Tests.Fakes;
@@ -40,5 +41,65 @@ internal sealed class FakeArchiveExporter : IArchiveExporter
         Calls++;
         LastTarget = targetZipPath;
         return Throw is not null ? Task.FromException(Throw) : Task.CompletedTask;
+    }
+}
+
+/// <summary>In-memory <see cref="IRestoreService"/>: serves seeded snapshots and records stage calls.</summary>
+internal sealed class FakeRestoreService : IRestoreService
+{
+    public List<SnapshotInfo> Snapshots { get; } = [];
+
+    public int StageCalls { get; private set; }
+
+    public DateOnly? LastStagedDate { get; private set; }
+
+    public Exception? StageThrow { get; set; }
+
+    public PendingRestore? Pending { get; set; }
+
+    public Task<IReadOnlyList<SnapshotInfo>> ListSnapshotsAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<SnapshotInfo>>([.. Snapshots]);
+
+    public Task<PendingRestore> StageRestoreAsync(DateOnly snapshotDate, CancellationToken ct)
+    {
+        StageCalls++;
+        LastStagedDate = snapshotDate;
+        if (StageThrow is not null)
+        {
+            return Task.FromException<PendingRestore>(StageThrow);
+        }
+
+        var fileName = $"coffer-{snapshotDate:yyyy-MM-dd}.db";
+        Pending = new PendingRestore(snapshotDate, fileName, DateTime.UnixEpoch);
+        return Task.FromResult(Pending);
+    }
+
+    public Task<PendingRestore?> GetPendingRestoreAsync(CancellationToken ct) => Task.FromResult(Pending);
+
+    public Task CancelPendingRestoreAsync(CancellationToken ct)
+    {
+        Pending = null;
+        return Task.CompletedTask;
+    }
+
+    public Task<RestoreResult> ApplyPendingRestoreAsync(CancellationToken ct)
+    {
+        var date = Pending?.SnapshotDate;
+        Pending = null;
+        return Task.FromResult(new RestoreResult(date is not null, date, null));
+    }
+}
+
+/// <summary>In-memory <see cref="IRestoreDialogService"/>: records the open calls and returns a set result.</summary>
+internal sealed class FakeRestoreDialogService : IRestoreDialogService
+{
+    public int ShowCalls { get; private set; }
+
+    public bool ResultStaged { get; set; }
+
+    public Task<bool> ShowRestoreDialogAsync(CancellationToken ct)
+    {
+        ShowCalls++;
+        return Task.FromResult(ResultStaged);
     }
 }

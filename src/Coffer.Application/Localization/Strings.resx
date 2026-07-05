@@ -1237,8 +1237,14 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="Settings.Backup.Export" xml:space="preserve">
     <value>Export full archive</value>
   </data>
-  <data name="Settings.Backup.RestoreNote" xml:space="preserve">
-    <value>Guided restore is coming. For now, a snapshot can be restored by copying it back over the database file while logged out.</value>
+  <data name="Settings.Restore.Button" xml:space="preserve">
+    <value>Restore from snapshot…</value>
+  </data>
+  <data name="Settings.Restore.Note" xml:space="preserve">
+    <value>A safety copy of the current database is kept before restoring. Restore from a recovery seed is coming.</value>
+  </data>
+  <data name="Settings.Restore.Staged" xml:space="preserve">
+    <value>Restore staged. Restart the app to finish restoring.</value>
   </data>
   <data name="Settings.Backup.Status.Done" xml:space="preserve">
     <value>Backup created.</value>
@@ -1257,5 +1263,38 @@ To create a new vault, delete the existing files and restart the application.</v
   </data>
   <data name="FilePicker.SaveArchiveTitle" xml:space="preserve">
     <value>Export archive</value>
+  </data>
+  <data name="Restore.Title" xml:space="preserve">
+    <value>Restore from snapshot</value>
+  </data>
+  <data name="Restore.Intro" xml:space="preserve">
+    <value>Pick a snapshot to restore. This replaces your current data; a safety copy of the current database is kept first, and the restore is applied the next time you start the app.</value>
+  </data>
+  <data name="Restore.Empty" xml:space="preserve">
+    <value>No snapshots available yet.</value>
+  </data>
+  <data name="Restore.Restore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="Restore.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Restore.Status.LoadFailed" xml:space="preserve">
+    <value>Could not list the available snapshots.</value>
+  </data>
+  <data name="Restore.Status.StageFailed" xml:space="preserve">
+    <value>Could not stage the restore. The snapshot may no longer be available.</value>
+  </data>
+  <data name="App.Restore.Failed.Title" xml:space="preserve">
+    <value>Restore failed</value>
+  </data>
+  <data name="App.Restore.Failed.Message" xml:space="preserve">
+    <value>The snapshot staged for restore could not be applied — it may have been moved or deleted. You can discard the restore and continue with your current data, or quit.</value>
+  </data>
+  <data name="App.Restore.Failed.Continue" xml:space="preserve">
+    <value>Discard restore and continue</value>
+  </data>
+  <data name="App.Restore.Failed.Quit" xml:space="preserve">
+    <value>Quit</value>
   </data>
 </root>

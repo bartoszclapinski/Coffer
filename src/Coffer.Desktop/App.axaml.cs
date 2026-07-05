@@ -69,6 +69,13 @@ public partial class App : Avalonia.Application
 
     private Window ResolveStartupWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
+        // Apply any restore staged from Settings BEFORE touching the database — the swap must happen while
+        // the file is closed. A failure (e.g. the staged snapshot vanished) returns a recovery window.
+        if (ApplyPendingRestore(desktop) is { } restoreError)
+        {
+            return restoreError;
+        }
+
         var vaultPaths = Services.GetRequiredService<IVaultPaths>();
         var dekFilePath = vaultPaths.EncryptedDekFilePath;
         var databasePath = vaultPaths.DatabaseFile;
@@ -115,6 +122,121 @@ public partial class App : Avalonia.Application
         wizardWindow.AddHandler(BipSeedDisplayStepView.SeedDisplayReadyEvent, OnSeedDisplayReady);
         wizardVm.SetupCompleted += (_, args) => OnSetupCompleted(desktop, wizardWindow, args);
         return wizardWindow;
+    }
+
+    /// <summary>
+    /// Applies a restore staged from Settings (doc 08). Runs before the database is opened so the swap
+    /// happens against a closed file. Returns <c>null</c> when nothing is staged or the restore applied
+    /// cleanly (startup then continues normally against the restored database); returns a recovery window
+    /// when the staged snapshot can no longer be applied, so the failure is visible rather than swallowed.
+    /// </summary>
+    private Window? ApplyPendingRestore(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var restoreService = Services.GetRequiredService<IRestoreService>();
+
+        PendingRestore? pending;
+        try
+        {
+            pending = restoreService.GetPendingRestoreAsync(CancellationToken.None).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Could not read the restore marker; continuing without restoring");
+            return null;
+        }
+
+        if (pending is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var result = restoreService
+                .ApplyPendingRestoreAsync(CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            if (result.Applied)
+            {
+                Log.Information(
+                    "Applied pending restore from snapshot {Date}; safety copy at {Path}",
+                    result.RestoredFrom,
+                    result.SafetyCopyPath);
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Pending restore failed to apply at startup");
+            return BuildRestoreFailedWindow(desktop);
+        }
+    }
+
+    private Window BuildRestoreFailedWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var localizer = Services.GetRequiredService<ILocalizer>();
+
+        var message = new TextBlock
+        {
+            Text = localizer["App.Restore.Failed.Message"],
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+        };
+
+        var continueButton = new Button { Content = localizer["App.Restore.Failed.Continue"], IsDefault = true };
+        var quitButton = new Button { Content = localizer["App.Restore.Failed.Quit"], IsCancel = true };
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Children = { quitButton, continueButton },
+        };
+
+        var window = new Window
+        {
+            Title = localizer["App.Restore.Failed.Title"],
+            Width = 560,
+            Height = 300,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+            CanResize = false,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(24),
+                Spacing = 16,
+                Children = { message, buttons },
+            },
+        };
+
+        quitButton.Click += (_, _) =>
+        {
+            Log.Information("User quit after a failed restore");
+            desktop.Shutdown();
+        };
+
+        continueButton.Click += (_, _) =>
+        {
+            // Discard the unappliable restore request and continue into the normal startup path.
+            try
+            {
+                Services.GetRequiredService<IRestoreService>()
+                    .CancelPendingRestoreAsync(CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Could not clear the restore marker; continuing anyway");
+            }
+
+            var next = ResolveStartupWindow(desktop);
+            desktop.MainWindow = next;
+            next.Show();
+            window.Close();
+        };
+
+        return window;
     }
 
     private Window BuildLoginWindow(IClassicDesktopStyleApplicationLifetime desktop)

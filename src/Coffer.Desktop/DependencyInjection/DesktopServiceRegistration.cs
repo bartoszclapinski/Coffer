@@ -1,3 +1,4 @@
+using Coffer.Application.Dialogs;
 using Coffer.Application.ViewModels.Alerts;
 using Coffer.Application.ViewModels.Budgets;
 using Coffer.Application.ViewModels.Chat;
@@ -8,6 +9,7 @@ using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Login;
 using Coffer.Application.ViewModels.Main;
 using Coffer.Application.ViewModels.Planning;
+using Coffer.Application.ViewModels.Restore;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Application.ViewModels.Setup;
 using Coffer.Application.ViewModels.Spending;
@@ -15,6 +17,7 @@ using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Import;
 using Coffer.Core.Security;
 using Coffer.Desktop.Platform;
+using Coffer.Desktop.Views;
 using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +50,12 @@ public static class DesktopServiceRegistration
         // The OS file-open dialog sits behind IFilePicker so the import VM (in
         // Coffer.Application) stays free of Avalonia storage types (hard rule #4).
         services.AddSingleton<IFilePicker, AvaloniaFilePicker>();
+
+        // The restore-from-snapshot dialog sits behind IRestoreDialogService for the same reason,
+        // so SettingsViewModel can open it without referencing Avalonia windows.
+        services.AddTransient<RestoreViewModel>();
+        services.AddTransient<RestoreWindow>();
+        services.AddSingleton<IRestoreDialogService, RestoreDialogService>();
 
         services.AddTransient<LoginWindow>();
         services.AddTransient<LoginViewModel>();
