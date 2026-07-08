@@ -1,0 +1,142 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m="clr-namespace:Coffer.Desktop.Markup"
+        x:Class="Coffer.Desktop.Views.StyleGalleryWindow"
+        Title="Coffer — Style Gallery"
+        Width="960" Height="760"
+        Background="{DynamicResource Coffer.Bg}"
+        WindowStartupLocation="CenterScreen">
+    <!--
+        Dev-only design-system validation surface (28-A). Not part of the app flow — launched
+        via the COFFER_STYLE_GALLERY environment variable. Exercises every token + component
+        style in both themes so the foundation can be reviewed before any screen is rebuilt.
+    -->
+    <ScrollViewer Padding="22">
+        <StackPanel Spacing="16" MaxWidth="900">
+
+            <!-- Header + theme toggle -->
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="title" Text="Style gallery" FontSize="20" />
+                    <TextBlock Classes="muted" Text="Design tokens + component library — toggle the theme to verify both variants." />
+                </StackPanel>
+                <Button Grid.Column="1" Classes="accent" Content="Toggle theme" Click="OnToggleTheme"
+                        VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- KPI strip -->
+            <Border Classes="panel" Padding="0">
+                <Grid ColumnDefinitions="*,*,*,*">
+                    <StackPanel Grid.Column="0" Spacing="6" Margin="18">
+                        <TextBlock Classes="label" Text="BALANCE" />
+                        <TextBlock Classes="kpiFigure" Text="12 480,50 zł" />
+                        <TextBlock Classes="money pos" FontSize="12" Text="▲ 2,6% · +1 204 zł" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="6" Margin="18"
+                                Background="{DynamicResource Coffer.Panel}">
+                        <TextBlock Classes="label" Text="INCOME (MO)" />
+                        <TextBlock Classes="kpiFigure" Text="8 900,00 zł" />
+                        <TextBlock Classes="money pos" FontSize="12" Text="▲ 1,4%" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="6" Margin="18">
+                        <TextBlock Classes="label" Text="SPENDING (MO)" />
+                        <TextBlock Classes="kpiFigure" Text="4 180,00 zł" />
+                        <TextBlock Classes="money neg" FontSize="12" Text="▲ 18%" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Spacing="6" Margin="18">
+                        <TextBlock Classes="label" Text="NET (MO)" />
+                        <TextBlock Classes="kpiFigure" Text="4 720,00 zł" />
+                        <TextBlock Classes="money pos" FontSize="12" Text="▲ 3,1%" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Category icon tiles -->
+            <Border Classes="panel">
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="label" Text="CATEGORY TILES + ICONS" />
+                    <WrapPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,20,8" VerticalAlignment="Center">
+                            <Border Classes="iconTile" Background="{DynamicResource Cat.GroceriesTile}">
+                                <TextBlock Foreground="{DynamicResource Cat.Groceries}" Text="{m:PhosphorIcon shopping-cart}" />
+                            </Border>
+                            <TextBlock Foreground="{DynamicResource Cat.Groceries}" VerticalAlignment="Center" Text="Groceries" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,20,8" VerticalAlignment="Center">
+                            <Border Classes="iconTile" Background="{DynamicResource Cat.IncomeTile}">
+                                <TextBlock Foreground="{DynamicResource Cat.Income}" Text="{m:PhosphorIcon bank}" />
+                            </Border>
+                            <TextBlock Foreground="{DynamicResource Cat.Income}" VerticalAlignment="Center" Text="Income" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,20,8" VerticalAlignment="Center">
+                            <Border Classes="iconTile" Background="{DynamicResource Cat.DiningTile}">
+                                <TextBlock Foreground="{DynamicResource Cat.Dining}" Text="{m:PhosphorIcon fork-knife}" />
+                            </Border>
+                            <TextBlock Foreground="{DynamicResource Cat.Dining}" VerticalAlignment="Center" Text="Dining" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,20,8" VerticalAlignment="Center">
+                            <Border Classes="iconTile" Background="{DynamicResource Cat.TransportTile}">
+                                <TextBlock Foreground="{DynamicResource Cat.Transport}" Text="{m:PhosphorIcon car}" />
+                            </Border>
+                            <TextBlock Foreground="{DynamicResource Cat.Transport}" VerticalAlignment="Center" Text="Transport" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,20,8" VerticalAlignment="Center">
+                            <Border Classes="iconTile" Background="{DynamicResource Cat.SubscriptionsTile}">
+                                <TextBlock Foreground="{DynamicResource Cat.Subscriptions}" Text="{m:PhosphorIcon repeat}" />
+                            </Border>
+                            <TextBlock Foreground="{DynamicResource Cat.Subscriptions}" VerticalAlignment="Center" Text="Subscriptions" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,20,8" VerticalAlignment="Center">
+                            <Border Classes="iconTile" Background="{DynamicResource Cat.UtilitiesTile}">
+                                <TextBlock Foreground="{DynamicResource Cat.Utilities}" Text="{m:PhosphorIcon lightning}" />
+                            </Border>
+                            <TextBlock Foreground="{DynamicResource Cat.Utilities}" VerticalAlignment="Center" Text="Utilities" />
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Buttons + chips -->
+            <Border Classes="panel">
+                <StackPanel Spacing="14">
+                    <TextBlock Classes="label" Text="BUTTONS · CHIPS · RAIL · TOP BAR" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Classes="rail active" Content="{m:PhosphorIcon squares-four}" />
+                        <Button Classes="rail" Content="{m:PhosphorIcon arrows-left-right}" />
+                        <Button Classes="rail" Content="{m:PhosphorIcon chart-pie}" />
+                        <Button Classes="rail" Content="{m:PhosphorIcon target}" />
+                        <Button Classes="rail" Content="{m:PhosphorIcon gear}" />
+                        <Border Width="12" />
+                        <Button Classes="topbar" Content="{m:PhosphorIcon magnifying-glass}" />
+                        <Button Classes="topbar" Content="{m:PhosphorIcon sun}" />
+                        <Button Classes="topbar" Content="{m:PhosphorIcon eye}" />
+                        <Button Classes="accent" Content="＋ New" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Classes="chip active" Content="All" />
+                        <Button Classes="chip" Content="Income" />
+                        <Button Classes="chip" Content="Expenses" />
+                        <Button Classes="chip" Content="Subscriptions" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Progress bars + money/privacy -->
+            <Border Classes="panel">
+                <StackPanel Spacing="14">
+                    <TextBlock Classes="label" Text="PROGRESS · MONEY · PRIVACY BLUR" />
+                    <ProgressBar Classes="bar" Value="62" Foreground="{DynamicResource Cat.Groceries}" />
+                    <ProgressBar Classes="bar" Value="88" Foreground="{DynamicResource Cat.Dining}" />
+                    <ProgressBar Classes="bar over" Value="100" />
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <TextBlock Classes="money" FontSize="18" Text="1 860,00 zł" />
+                        <TextBlock Classes="money pos" FontSize="18" Text="+6 420,00 zł" />
+                        <TextBlock Classes="money neg" FontSize="18" Text="−4 180,00 zł" />
+                        <TextBlock Classes="money hidden" FontSize="18" Text="9 999,00 zł" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Window>
