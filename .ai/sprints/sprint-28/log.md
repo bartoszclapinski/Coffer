@@ -1,0 +1,10 @@
+# Sprint 28 log
+
+## 2026-07-08
+
+- `--:--` decision: the desktop UI redesign (`.ai/design/Coffer desktop project design/` — the "pro terminal" high-fidelity prototype) becomes the priority; Sprint 27 (disaster-recovery tail) is **paused** mid-plan and resumes after the redesign program.
+- `--:--` decision (owner): **full shell + remap onto real data**, not a literal rebuild. Adopt the visual language + UX (icon rail, top bar, ⌘K, light/dark tokens, panels, category colors) and map it onto Coffer's actual features/data. The mock's net worth / investments / debt / APY / credit-utilization / Plaid account-linking have no Coffer equivalent and are **not** built — that would violate "not a banking integration / not an investment advisor". **Currency stays PLN "zł"** (`pl-PL`), never `$`. No fabricated data.
+- `--:--` decision (owner): **longer icon rail + ⌘K** for the features outside the mock's six screens (Import, Assistant, Alerts, Cash-flow, Affordability, Forecast) — the rail carries more than six icons and the palette reaches everything; nothing is dropped.
+- `--:--` decision: ship as a **vertical slice** — foundation (tokens + light/dark + fonts/icons + style library) → shell (rail + top bar + `NavItem` nav refactor + privacy blur + ⌘K palette) → one full reference screen (**Overview** = Dashboard remapped to real PLN data). De-risks the whole program before the mechanical per-screen migration in Sprints 29+.
+- `--:--` finding: current state is the opposite of the target — `App.axaml` is **pinned to Light** and every one of ~20 `.axaml` views hardcodes light-only hex; no theming, no palette, no privacy blur; the shell is a 240px text sidebar with 12 bool-driven nav commands. Theme persistence will mirror `FileLanguageStore` (`theme.json`, pre-login readable); nav refactors to a data-driven `NavItem` list feeding both the rail and the palette.
+- `--:--` plan written (`sprint-28.md`), Status: Planned, three PRs (28-A foundation → 28-B shell → 28-C Overview) + a Sprints 29–32 redesign roadmap. Awaiting plan-PR review before implementation.
