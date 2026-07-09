@@ -21,6 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Embedded design-system fonts (Hanken Grotesk OFL, Phosphor MIT) + their licences. -->
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Coffer.Application\Coffer.Application.csproj" />
     <ProjectReference Include="..\Coffer.Infrastructure\Coffer.Infrastructure.csproj" />
   </ItemGroup>

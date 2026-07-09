@@ -1,0 +1,171 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Coffer component style library (the "pro terminal" vocabulary reused across the redesign).
+        Every colour is a {DynamicResource Coffer.X} token so light/dark and accent tweaks flow
+        through. Consumed by adding a class, e.g. <Border Classes="panel">.
+    -->
+
+    <!-- ===================== Surfaces ===================== -->
+    <Style Selector="Border.panel">
+        <Setter Property="Background" Value="{DynamicResource Coffer.Panel}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Coffer.Bd}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="18" />
+    </Style>
+
+    <!-- ===================== Typography ===================== -->
+    <!-- Uppercase muted label (KPI captions, group headers) -->
+    <Style Selector="TextBlock.label">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Mut}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LetterSpacing" Value="0.6" />
+    </Style>
+
+    <!-- Section / screen titles -->
+    <Style Selector="TextBlock.title">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Tx}" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <!-- Muted secondary text -->
+    <Style Selector="TextBlock.muted">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Mut2}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!-- Monetary figures: tabular numerals, weight 700. Add .hidden for the privacy blur. -->
+    <Style Selector="TextBlock.money">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Tx}" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="FontFeatures" Value="+tnum" />
+    </Style>
+    <Style Selector="TextBlock.money.pos">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Pos}" />
+    </Style>
+    <Style Selector="TextBlock.money.neg">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Neg}" />
+    </Style>
+    <!-- App-wide balance-privacy blur; the shell toggles the .hidden class on money figures. -->
+    <Style Selector="TextBlock.money.hidden">
+        <Setter Property="Effect">
+            <BlurEffect Radius="10" />
+        </Setter>
+    </Style>
+
+    <!-- ===================== KPI cell ===================== -->
+    <Style Selector="TextBlock.kpiFigure">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Tx}" />
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="FontFeatures" Value="+tnum" />
+    </Style>
+
+    <!-- ===================== Icon tile ===================== -->
+    <!-- Category-tinted rounded tile; set Background to a Cat.*Tile brush per instance. -->
+    <Style Selector="Border.iconTile">
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="CornerRadius" Value="11" />
+        <Setter Property="Background" Value="{DynamicResource Coffer.Panel2}" />
+    </Style>
+    <Style Selector="Border.iconTile > TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Coffer.Icons}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- ===================== Rail button (icon-only nav) ===================== -->
+    <Style Selector="Button.rail">
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="CornerRadius" Value="11" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Mut}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Coffer.Icons}" />
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.rail:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Coffer.Hover}" />
+    </Style>
+    <Style Selector="Button.rail.active">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Tx}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Coffer.IconsFill}" />
+    </Style>
+    <Style Selector="Button.rail.active /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Coffer.ActiveBg}" />
+    </Style>
+
+    <!-- ===================== Top-bar icon button ===================== -->
+    <Style Selector="Button.topbar">
+        <Setter Property="Height" Value="36" />
+        <Setter Property="MinWidth" Value="40" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Background" Value="{DynamicResource Coffer.Panel}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Coffer.Bd}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Mut2}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Coffer.Icons}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.topbar:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Coffer.Hover}" />
+    </Style>
+
+    <!-- ===================== Accent button (primary "New") ===================== -->
+    <Style Selector="Button.accent">
+        <Setter Property="Height" Value="36" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Background" Value="{DynamicResource Coffer.Accent}" />
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.OnAccent}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.accent /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Coffer.Accent}" />
+    </Style>
+    <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Coffer.Pos}" />
+    </Style>
+
+    <!-- ===================== Filter / segment chip ===================== -->
+    <Style Selector="Button.chip">
+        <Setter Property="Height" Value="34" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Background" Value="{DynamicResource Coffer.Panel}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Coffer.Bd}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Mut2}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.chip.active">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.OnAccent}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Coffer.Accent}" />
+    </Style>
+    <Style Selector="Button.chip.active /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Coffer.Accent}" />
+    </Style>
+
+    <!-- ===================== Progress bar ===================== -->
+    <!-- Base zone = accent fill over the track; override Foreground per category / over state. -->
+    <Style Selector="ProgressBar.bar">
+        <Setter Property="Height" Value="8" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Background" Value="{DynamicResource Coffer.Track}" />
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Accent}" />
+    </Style>
+    <Style Selector="ProgressBar.bar.over">
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Neg}" />
+    </Style>
+</Styles>

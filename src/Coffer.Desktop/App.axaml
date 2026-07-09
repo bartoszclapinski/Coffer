@@ -1,14 +1,28 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="Coffer.Desktop.App"
-             RequestedThemeVariant="Light">
-             <!-- Pinned to "Light": the UI is hand-styled with light-only hex colors (white cards,
-                  dark text) per the light mockups. "Default" would follow a dark OS theme and make
-                  text/inputs unreadable. -->
+             x:Class="Coffer.Desktop.App">
+             <!-- Theme variant is no longer pinned: it is applied at startup from IThemeStore
+                  (plaintext theme.json, readable pre-login) and toggled live from the top bar.
+                  Default stays Light until every screen consumes the design tokens (see
+                  .ai/sprints/sprint-28). -->
 
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Coffer.Desktop/Theme/Tokens.axaml" />
+                <ResourceInclude Source="avares://Coffer.Desktop/Theme/Fonts.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
 
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+        <StyleInclude Source="avares://Coffer.Desktop/Styles/Components.axaml" />
+
+        <!-- Default the whole UI to Hanken Grotesk (design system font). -->
+        <Style Selector="Window">
+            <Setter Property="FontFamily" Value="{DynamicResource Coffer.Font}" />
+        </Style>
     </Application.Styles>
 </Application>

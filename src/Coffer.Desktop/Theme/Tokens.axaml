@@ -1,0 +1,122 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Coffer design tokens (see .ai/design/.../Coffer - Build Spec.md).
+        Every component reads these via {DynamicResource Coffer.X} — never a hardcoded hex —
+        so the light/dark toggle and future accent tweaks keep working.
+
+        Each palette token is exposed as both a Color (Coffer.XColor) and a SolidColorBrush
+        (Coffer.X); charts that need SKColor read the Color, controls read the Brush.
+
+        Category tiles use the category colour at ~16% alpha (#29) so they composite over the
+        panel behind them — the design's colour-mix of the category at 16% over the panel token,
+        without a precomputed tint, and theme-correct automatically.
+    -->
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ===================== LIGHT (warm paper) ===================== -->
+        <ResourceDictionary x:Key="Light">
+            <Color x:Key="Coffer.BgColor">#F4F1EB</Color>
+            <Color x:Key="Coffer.PanelColor">#FFFFFF</Color>
+            <Color x:Key="Coffer.Panel2Color">#EFEBE3</Color>
+            <Color x:Key="Coffer.BdColor">#17000000</Color>
+            <Color x:Key="Coffer.TxColor">#201E1A</Color>
+            <Color x:Key="Coffer.MutColor">#9A948A</Color>
+            <Color x:Key="Coffer.Mut2Color">#6B655C</Color>
+            <Color x:Key="Coffer.PosColor">#2F6B4F</Color>
+            <Color x:Key="Coffer.NegColor">#A8552F</Color>
+            <Color x:Key="Coffer.TrackColor">#0F000000</Color>
+            <Color x:Key="Coffer.BlueColor">#3D5AA6</Color>
+            <Color x:Key="Coffer.ActiveBgColor">#EDE9E1</Color>
+            <Color x:Key="Coffer.HoverColor">#FBFAF6</Color>
+            <Color x:Key="Coffer.AccentColor">#2F6B4F</Color>
+
+            <SolidColorBrush x:Key="Coffer.Bg" Color="#F4F1EB" />
+            <SolidColorBrush x:Key="Coffer.Panel" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="Coffer.Panel2" Color="#EFEBE3" />
+            <SolidColorBrush x:Key="Coffer.Bd" Color="#17000000" />
+            <SolidColorBrush x:Key="Coffer.Tx" Color="#201E1A" />
+            <SolidColorBrush x:Key="Coffer.Mut" Color="#9A948A" />
+            <SolidColorBrush x:Key="Coffer.Mut2" Color="#6B655C" />
+            <SolidColorBrush x:Key="Coffer.Pos" Color="#2F6B4F" />
+            <SolidColorBrush x:Key="Coffer.Neg" Color="#A8552F" />
+            <SolidColorBrush x:Key="Coffer.Track" Color="#0F000000" />
+            <SolidColorBrush x:Key="Coffer.Blue" Color="#3D5AA6" />
+            <SolidColorBrush x:Key="Coffer.ActiveBg" Color="#EDE9E1" />
+            <SolidColorBrush x:Key="Coffer.Hover" Color="#FBFAF6" />
+            <SolidColorBrush x:Key="Coffer.Accent" Color="#2F6B4F" />
+            <SolidColorBrush x:Key="Coffer.OnAccent" Color="#FFFFFF" />
+
+            <!-- Category colours (light) + tiles (~16% alpha over panel) -->
+            <SolidColorBrush x:Key="Cat.Groceries" Color="#1C6E6A" />
+            <SolidColorBrush x:Key="Cat.GroceriesTile" Color="#291C6E6A" />
+            <SolidColorBrush x:Key="Cat.Income" Color="#2F6B4F" />
+            <SolidColorBrush x:Key="Cat.IncomeTile" Color="#292F6B4F" />
+            <SolidColorBrush x:Key="Cat.Dining" Color="#A8552F" />
+            <SolidColorBrush x:Key="Cat.DiningTile" Color="#29A8552F" />
+            <SolidColorBrush x:Key="Cat.Transport" Color="#3D5AA6" />
+            <SolidColorBrush x:Key="Cat.TransportTile" Color="#293D5AA6" />
+            <SolidColorBrush x:Key="Cat.Subscriptions" Color="#7A4A7E" />
+            <SolidColorBrush x:Key="Cat.SubscriptionsTile" Color="#297A4A7E" />
+            <SolidColorBrush x:Key="Cat.Housing" Color="#6B655C" />
+            <SolidColorBrush x:Key="Cat.HousingTile" Color="#296B655C" />
+            <SolidColorBrush x:Key="Cat.Shopping" Color="#8A6D3B" />
+            <SolidColorBrush x:Key="Cat.ShoppingTile" Color="#298A6D3B" />
+            <SolidColorBrush x:Key="Cat.Utilities" Color="#3D6E8C" />
+            <SolidColorBrush x:Key="Cat.UtilitiesTile" Color="#293D6E8C" />
+        </ResourceDictionary>
+
+        <!-- ===================== DARK (default target) ===================== -->
+        <ResourceDictionary x:Key="Dark">
+            <Color x:Key="Coffer.BgColor">#101317</Color>
+            <Color x:Key="Coffer.PanelColor">#161A20</Color>
+            <Color x:Key="Coffer.Panel2Color">#0C0E11</Color>
+            <Color x:Key="Coffer.BdColor">#23262D</Color>
+            <Color x:Key="Coffer.TxColor">#E7E9EC</Color>
+            <Color x:Key="Coffer.MutColor">#5C6470</Color>
+            <Color x:Key="Coffer.Mut2Color">#9AA3AE</Color>
+            <Color x:Key="Coffer.PosColor">#4ADE80</Color>
+            <Color x:Key="Coffer.NegColor">#F87171</Color>
+            <Color x:Key="Coffer.TrackColor">#23262D</Color>
+            <Color x:Key="Coffer.BlueColor">#93B4F0</Color>
+            <Color x:Key="Coffer.ActiveBgColor">#1B1F26</Color>
+            <Color x:Key="Coffer.HoverColor">#1A1D23</Color>
+            <Color x:Key="Coffer.AccentColor">#2F6B4F</Color>
+
+            <SolidColorBrush x:Key="Coffer.Bg" Color="#101317" />
+            <SolidColorBrush x:Key="Coffer.Panel" Color="#161A20" />
+            <SolidColorBrush x:Key="Coffer.Panel2" Color="#0C0E11" />
+            <SolidColorBrush x:Key="Coffer.Bd" Color="#23262D" />
+            <SolidColorBrush x:Key="Coffer.Tx" Color="#E7E9EC" />
+            <SolidColorBrush x:Key="Coffer.Mut" Color="#5C6470" />
+            <SolidColorBrush x:Key="Coffer.Mut2" Color="#9AA3AE" />
+            <SolidColorBrush x:Key="Coffer.Pos" Color="#4ADE80" />
+            <SolidColorBrush x:Key="Coffer.Neg" Color="#F87171" />
+            <SolidColorBrush x:Key="Coffer.Track" Color="#23262D" />
+            <SolidColorBrush x:Key="Coffer.Blue" Color="#93B4F0" />
+            <SolidColorBrush x:Key="Coffer.ActiveBg" Color="#1B1F26" />
+            <SolidColorBrush x:Key="Coffer.Hover" Color="#1A1D23" />
+            <SolidColorBrush x:Key="Coffer.Accent" Color="#2F6B4F" />
+            <SolidColorBrush x:Key="Coffer.OnAccent" Color="#FFFFFF" />
+
+            <!-- Category colours (dark-bright) + tiles (~16% alpha over panel) -->
+            <SolidColorBrush x:Key="Cat.Groceries" Color="#6EE7A8" />
+            <SolidColorBrush x:Key="Cat.GroceriesTile" Color="#296EE7A8" />
+            <SolidColorBrush x:Key="Cat.Income" Color="#4ADE80" />
+            <SolidColorBrush x:Key="Cat.IncomeTile" Color="#294ADE80" />
+            <SolidColorBrush x:Key="Cat.Dining" Color="#E0A579" />
+            <SolidColorBrush x:Key="Cat.DiningTile" Color="#29E0A579" />
+            <SolidColorBrush x:Key="Cat.Transport" Color="#93B4F0" />
+            <SolidColorBrush x:Key="Cat.TransportTile" Color="#2993B4F0" />
+            <SolidColorBrush x:Key="Cat.Subscriptions" Color="#C99BE0" />
+            <SolidColorBrush x:Key="Cat.SubscriptionsTile" Color="#29C99BE0" />
+            <SolidColorBrush x:Key="Cat.Housing" Color="#B8B0A4" />
+            <SolidColorBrush x:Key="Cat.HousingTile" Color="#29B8B0A4" />
+            <SolidColorBrush x:Key="Cat.Shopping" Color="#D6B36B" />
+            <SolidColorBrush x:Key="Cat.ShoppingTile" Color="#29D6B36B" />
+            <SolidColorBrush x:Key="Cat.Utilities" Color="#8FC4E0" />
+            <SolidColorBrush x:Key="Cat.UtilitiesTile" Color="#298FC4E0" />
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

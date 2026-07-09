@@ -60,12 +60,12 @@ Doing this as a **vertical slice** (foundation + shell + one full screen) de-ris
 
 ### 28-A — design-system foundation
 
-- [ ] 28.1 `Theme/Tokens.axaml` — a `ResourceDictionary` with `ThemeVariant` `Light`/`Dark` `ThemeDictionaries`, every spec token as keyed `Color` + `SolidColorBrush` (`Coffer.Bg` … `Coffer.Accent`) + the 8 category color pairs; merged in `App.axaml`.
-- [ ] 28.2 `IThemeStore` (`Coffer.Core`) + `FileThemeStore` (`Coffer.Infrastructure`, `theme.json`, Dark default, mirrors `FileLanguageStore`) + DI.
-- [ ] 28.3 `App.axaml` un-pinned from Light; `App.axaml.cs` applies `IThemeStore.Load()` as `RequestedThemeVariant` at startup (pre-login); a shared `IThemeSwitcher`/helper flips + persists at runtime.
-- [ ] 28.4 Embed **Hanken Grotesk** (400–800) + **Phosphor** (`ph` + `ph-fill`) as `avares://` fonts; shared `FontFamily` resources; a tabular-nums money style; a Phosphor glyph helper (name → glyph) so views reference icons by name.
-- [ ] 28.5 `Styles/Components.axaml` (+ split files as needed): `Border.panel`, KPI cell, chip/segment, progress bar (+ over state), category icon tile (precomputed tints per theme), rail button, top-bar button, sortable header. Merged in `App.axaml`.
-- [ ] 28.6 Both themes render on a validation surface (the existing shell or a scratch page); `dotnet format` clean; no CDN references.
+- [x] 28.1 `Theme/Tokens.axaml` — a `ResourceDictionary` with `ThemeVariant` `Light`/`Dark` `ThemeDictionaries`, every spec token as keyed `Color` + `SolidColorBrush` (`Coffer.Bg` … `Coffer.Accent`) + the 8 category color pairs; merged in `App.axaml`.
+- [x] 28.2 `IThemeStore` (`Coffer.Core`) + `FileThemeStore` (`Coffer.Infrastructure`, `theme.json`, Light default during migration, mirrors `FileLanguageStore`) + DI.
+- [x] 28.3 `App.axaml` un-pinned from Light; `App.axaml.cs` applies `IThemeStore.Load()` as `RequestedThemeVariant` at startup (pre-login); a shared `IThemeSwitcher`/helper flips + persists at runtime.
+- [x] 28.4 Embed **Hanken Grotesk** (400–800) + **Phosphor** (`ph` + `ph-fill`) as `avares://` fonts; shared `FontFamily` resources; a tabular-nums money style; a Phosphor glyph helper (name → glyph) so views reference icons by name.
+- [x] 28.5 `Styles/Components.axaml` (+ split files as needed): `Border.panel`, KPI cell, chip/segment, progress bar (+ over state), category icon tile (precomputed tints per theme), rail button, top-bar button, sortable header. Merged in `App.axaml`.
+- [x] 28.6 Both themes render on a validation surface (the existing shell or a scratch page); `dotnet format` clean; no CDN references.
 
 ### 28-B — terminal shell
 

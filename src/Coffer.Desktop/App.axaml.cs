@@ -14,6 +14,8 @@ using Coffer.Core.Categorization;
 using Coffer.Core.Goals;
 using Coffer.Core.Localization;
 using Coffer.Core.Security;
+using Coffer.Core.Theming;
+using Coffer.Desktop.Theme;
 using Coffer.Desktop.Views;
 using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
@@ -41,6 +43,7 @@ public partial class App : Avalonia.Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        ApplySavedTheme();
         ApplySavedLanguage();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -50,6 +53,22 @@ public partial class App : Avalonia.Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void ApplySavedTheme()
+    {
+        // Apply the persisted UI theme before any window is built so the first screen
+        // (setup/login/main) renders in the chosen variant. The store reads a plaintext
+        // file and never throws; a failure here must not block startup.
+        try
+        {
+            var themeStore = Services.GetRequiredService<IThemeStore>();
+            ThemeManager.Apply(themeStore.Load());
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to apply saved UI theme; continuing with the default");
+        }
     }
 
     private static void ApplySavedLanguage()
@@ -71,6 +90,13 @@ public partial class App : Avalonia.Application
 
     private Window ResolveStartupWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
+        // Dev-only: launch the design-system style gallery instead of the app (Sprint 28-A
+        // validation surface). Guarded by an environment variable; no effect in normal use.
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("COFFER_STYLE_GALLERY")))
+        {
+            return new StyleGalleryWindow();
+        }
+
         // Apply any restore staged from Settings BEFORE touching the database — the swap must happen while
         // the file is closed. A failure (e.g. the staged snapshot vanished) returns a recovery window.
         if (ApplyPendingRestore(desktop) is { } restoreError)

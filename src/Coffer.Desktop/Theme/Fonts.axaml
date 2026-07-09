@@ -1,0 +1,13 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Embedded fonts (offline-first — no CDN). Family names after '#' match each font's
+        internal name-table family:
+          Hanken Grotesk (OFL) — the whole UI; a variable font carrying weights 100–900.
+          Phosphor / Phosphor-Fill (MIT) — icon glyphs; 'ph' regular vs 'ph-fill' emphasis.
+        Licences live beside the .ttf files in Assets/Fonts/.
+    -->
+    <FontFamily x:Key="Coffer.Font">avares://Coffer.Desktop/Assets/Fonts/HankenGrotesk.ttf#Hanken Grotesk, system-ui</FontFamily>
+    <FontFamily x:Key="Coffer.Icons">avares://Coffer.Desktop/Assets/Fonts/Phosphor.ttf#Phosphor</FontFamily>
+    <FontFamily x:Key="Coffer.IconsFill">avares://Coffer.Desktop/Assets/Fonts/Phosphor-Fill.ttf#Phosphor-Fill</FontFamily>
+</ResourceDictionary>
