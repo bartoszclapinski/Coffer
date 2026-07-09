@@ -69,12 +69,12 @@ Doing this as a **vertical slice** (foundation + shell + one full screen) de-ris
 
 ### 28-B — terminal shell
 
-- [ ] 28.7 `NavItem` (`Coffer.Application`) + `MainViewModel` refactor: an ordered `NavItem` list (key/title/icon/section VM/`IsActive`) + a single `Navigate(key)` command replacing the 12 `Show…Command`s and bool props; `ActiveTitle` for the top bar. Existing tests updated.
-- [ ] 28.8 `MainWindow.axaml` rewritten to the chrome: 60px icon rail (logo mark, feature icons + gear pinned bottom, active = filled + `ActiveBg`) + 52px top bar (title, search, theme toggle, privacy eye, `New`) + content host; window 1400×880 (min 1180); `aria`/tooltip (`ToolTip`) on the icon-only rail.
-- [ ] 28.9 Theme toggle (sun/moon) wired to `IThemeSwitcher` (live + persisted); balance-privacy `HideBalances` shell flag + the `money`/`BlurEffect` style pattern.
-- [ ] 28.10 `CommandPaletteViewModel` (open/query/fuzzy items/selectedIndex, items from the `NavItem` list + Switch theme + Show/Hide balances + create placeholders) + `CommandPaletteView` overlay (dim/blur backdrop, autofocus, ↑/↓/↵/esc, hover-select, backdrop close); `Ctrl+K` global hotkey; `role="dialog"`-equivalent focus trapping.
-- [ ] 28.11 Top-bar search filters/jumps handled minimally (full live-ledger search lands with the Transactions sprint); the field + ⌘K chip render and the palette opens.
-- [ ] 28.12 Tests (`Coffer.Application.Tests`): `Navigate` switches the active item + title; the palette filters, moves selection, runs the selected command, and closes; the theme/privacy commands toggle their state.
+- [x] 28.7 `NavItem` (`Coffer.Application`) + `MainViewModel` refactor: an ordered `NavItem` list (key/title/icon/section VM/`IsActive`) + a single `Navigate(key)` command replacing the 12 `Show…Command`s and bool props; `ActiveTitle` for the top bar. Existing tests updated.
+- [x] 28.8 `MainWindow.axaml` rewritten to the chrome: 60px icon rail (logo mark, feature icons + gear pinned bottom, active = filled + `ActiveBg`) + 52px top bar (title, search, theme toggle, privacy eye, `New`) + content host; window 1400×880 (min 1180); `aria`/tooltip (`ToolTip`) on the icon-only rail.
+- [x] 28.9 Theme toggle (sun/moon) wired to `IThemeSwitcher` (live + persisted); balance-privacy `HideBalances` shell flag + the `money`/`BlurEffect` style pattern.
+- [x] 28.10 `CommandPaletteViewModel` (open/query/fuzzy items/selectedIndex, items from the `NavItem` list + Switch theme + Show/Hide balances + create placeholders) + `CommandPaletteView` overlay (dim/blur backdrop, autofocus, ↑/↓/↵/esc, hover-select, backdrop close); `Ctrl+K` global hotkey; `role="dialog"`-equivalent focus trapping.
+- [x] 28.11 Top-bar search filters/jumps handled minimally (full live-ledger search lands with the Transactions sprint); the field + ⌘K chip render and the palette opens.
+- [x] 28.12 Tests (`Coffer.Application.Tests`): `Navigate` switches the active item + title; the palette filters, moves selection, runs the selected command, and closes; the theme/privacy commands toggle their state.
 
 ### 28-C — Overview (Dashboard) rebuilt
 

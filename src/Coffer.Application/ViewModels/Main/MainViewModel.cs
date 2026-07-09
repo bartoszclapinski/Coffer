@@ -1,5 +1,6 @@
 using System.Reflection;
 using Coffer.Application.Localization;
+using Coffer.Application.Theming;
 using Coffer.Application.ViewModels.Alerts;
 using Coffer.Application.ViewModels.Budgets;
 using Coffer.Application.ViewModels.Chat;
@@ -9,9 +10,11 @@ using Coffer.Application.ViewModels.Goals;
 using Coffer.Application.ViewModels.Import;
 using Coffer.Application.ViewModels.Planning;
 using Coffer.Application.ViewModels.Settings;
+using Coffer.Application.ViewModels.Shell;
 using Coffer.Application.ViewModels.Spending;
 using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Security;
+using Coffer.Core.Theming;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -19,35 +22,29 @@ using Microsoft.Extensions.Logging;
 namespace Coffer.Application.ViewModels.Main;
 
 /// <summary>
-/// Shell view-model behind the post-login <c>MainWindow</c>. Hosts the sidebar
-/// navigation and swaps <see cref="CurrentPage"/> between the section view-models
-/// (Dashboard, Import, Transactions, Settings). Still owns the logout command and
-/// <see cref="LoggedOut"/> event that <c>App.axaml.cs</c> subscribes to in order to
-/// swap windows.
+/// Shell view-model behind the post-login <c>MainWindow</c> (the "pro terminal" chrome).
+/// Owns the data-driven <see cref="NavItems"/> model that powers both the icon rail and the
+/// <see cref="Palette"/>, swaps <see cref="CurrentPage"/> via a single <see cref="NavigateCommand"/>,
+/// and holds the app-wide theme toggle + balance-privacy state. Still owns the logout command
+/// and <see cref="LoggedOut"/> event that <c>App.axaml.cs</c> subscribes to.
 /// </summary>
 public sealed partial class MainViewModel : ObservableObject
 {
     private readonly ILoginService _loginService;
     private readonly ILocalizer _localizer;
+    private readonly IThemeSwitcher _themeSwitcher;
     private readonly ILogger<MainViewModel> _logger;
+    private readonly List<NavItem> _allNav;
+    private NavItem? _activeItem;
 
     [ObservableProperty]
     private bool _isBusy;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsDashboardActive))]
-    [NotifyPropertyChangedFor(nameof(IsImportActive))]
-    [NotifyPropertyChangedFor(nameof(IsTransactionsActive))]
-    [NotifyPropertyChangedFor(nameof(IsChatActive))]
-    [NotifyPropertyChangedFor(nameof(IsAlertsActive))]
-    [NotifyPropertyChangedFor(nameof(IsAdvisorActive))]
-    [NotifyPropertyChangedFor(nameof(IsPlanningActive))]
-    [NotifyPropertyChangedFor(nameof(IsAffordabilityActive))]
-    [NotifyPropertyChangedFor(nameof(IsSpendingActive))]
-    [NotifyPropertyChangedFor(nameof(IsBudgetsActive))]
-    [NotifyPropertyChangedFor(nameof(IsForecastActive))]
-    [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     private ObservableObject? _currentPage;
+
+    [ObservableProperty]
+    private bool _hideBalances;
 
     public MainViewModel(
         DashboardViewModel dashboardViewModel,
@@ -64,6 +61,7 @@ public sealed partial class MainViewModel : ObservableObject
         SettingsViewModel settingsViewModel,
         ILoginService loginService,
         ILocalizer localizer,
+        IThemeSwitcher themeSwitcher,
         ILogger<MainViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(dashboardViewModel);
@@ -80,6 +78,7 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(loginService);
         ArgumentNullException.ThrowIfNull(localizer);
+        ArgumentNullException.ThrowIfNull(themeSwitcher);
         ArgumentNullException.ThrowIfNull(logger);
 
         Dashboard = dashboardViewModel;
@@ -96,16 +95,34 @@ public sealed partial class MainViewModel : ObservableObject
         Settings = settingsViewModel;
         _loginService = loginService;
         _localizer = localizer;
+        _themeSwitcher = themeSwitcher;
         _logger = logger;
         AppVersion = ResolveAppVersion();
 
-        CurrentPage = Dashboard;
-        Dashboard.LoadCommand.Execute(null);
+        // The single navigation model — rail order, with Settings pinned to the rail bottom.
+        NavItems =
+        [
+            Item("dashboard", "Nav.Dashboard", "squares-four", Dashboard, () => Dashboard.LoadCommand.Execute(null)),
+            Item("transactions", "Nav.Transactions", "arrows-left-right", Transactions, () => Transactions.LoadCommand.Execute(null)),
+            Item("spending", "Nav.Spending", "chart-pie-slice", Spending, () => Spending.LoadCommand.Execute(null)),
+            Item("budgets", "Nav.Budgets", "chart-pie", Budgets, () => Budgets.LoadCommand.Execute(null)),
+            Item("forecast", "Nav.Forecast", "chart-line-up", Forecast, () => Forecast.LoadCommand.Execute(null)),
+            Item("advisor", "Nav.Advisor", "target", Advisor, () => Advisor.LoadCommand.Execute(null)),
+            Item("planning", "Nav.CashFlow", "calendar-blank", Planning, () => Planning.LoadCommand.Execute(null)),
+            Item("affordability", "Nav.Affordability", "scales", Affordability, () => Affordability.LoadCommand.Execute(null)),
+            Item("import", "Nav.Import", "file-arrow-down", Import, () => Import.LoadAccountsCommand.Execute(null)),
+            Item("alerts", "Nav.Alerts", "bell", Alerts, () => Alerts.LoadCommand.Execute(null)),
+            Item("chat", "Nav.Assistant", "chat-circle-dots", Chat, static () => { }),
+        ];
+        SettingsItem = Item("settings", "Nav.Settings", "gear", Settings, () => Settings.LoadCommand.Execute(null));
+
+        _allNav = [.. NavItems, SettingsItem];
+
+        _localizer.LanguageChanged += OnLanguageChanged;
+        _themeSwitcher.Changed += OnThemeChanged;
+
+        Navigate(NavItems[0]);
     }
-
-    public string AppVersion { get; }
-
-    public string VersionText => _localizer.Format("Nav.Version", AppVersion);
 
     public DashboardViewModel Dashboard { get; }
 
@@ -131,173 +148,80 @@ public sealed partial class MainViewModel : ObservableObject
 
     public SettingsViewModel Settings { get; }
 
-    public bool IsDashboardActive => ReferenceEquals(CurrentPage, Dashboard);
+    /// <summary>Rail items (Settings excluded — it is pinned to the rail bottom via <see cref="SettingsItem"/>).</summary>
+    public IReadOnlyList<NavItem> NavItems { get; }
 
-    public bool IsImportActive => ReferenceEquals(CurrentPage, Import);
+    public NavItem SettingsItem { get; }
 
-    public bool IsTransactionsActive => ReferenceEquals(CurrentPage, Transactions);
+    public CommandPaletteViewModel Palette { get; } = new();
 
-    public bool IsChatActive => ReferenceEquals(CurrentPage, Chat);
+    public string AppVersion { get; }
 
-    public bool IsAlertsActive => ReferenceEquals(CurrentPage, Alerts);
+    public string VersionText => _localizer.Format("Nav.Version", AppVersion);
 
-    public bool IsAdvisorActive => ReferenceEquals(CurrentPage, Advisor);
+    /// <summary>Title of the active screen, shown in the top bar (re-resolved on language change).</summary>
+    public string ActiveTitle => _activeItem?.Title ?? "";
 
-    public bool IsPlanningActive => ReferenceEquals(CurrentPage, Planning);
-
-    public bool IsAffordabilityActive => ReferenceEquals(CurrentPage, Affordability);
-
-    public bool IsSpendingActive => ReferenceEquals(CurrentPage, Spending);
-
-    public bool IsBudgetsActive => ReferenceEquals(CurrentPage, Budgets);
-
-    public bool IsForecastActive => ReferenceEquals(CurrentPage, Forecast);
-
-    public bool IsSettingsActive => ReferenceEquals(CurrentPage, Settings);
+    public bool IsDarkTheme => _themeSwitcher.Current == AppTheme.Dark;
 
     public event EventHandler? LoggedOut;
 
     [RelayCommand]
-    private void ShowDashboard()
+    private void Navigate(NavItem? item)
     {
-        if (IsDashboardActive)
+        if (item is null || ReferenceEquals(CurrentPage, item.Page))
         {
             return;
         }
 
-        CurrentPage = Dashboard;
-        Dashboard.LoadCommand.Execute(null);
+        CurrentPage = item.Page;
+        _activeItem = item;
+        foreach (var nav in _allNav)
+        {
+            nav.IsActive = ReferenceEquals(nav, item);
+        }
+
+        OnPropertyChanged(nameof(ActiveTitle));
+        item.Load();
+    }
+
+    /// <summary>Navigates by <see cref="NavItem.Key"/> (used by the command palette).</summary>
+    public void NavigateToKey(string key)
+    {
+        var item = _allNav.FirstOrDefault(n => n.Key == key);
+        if (item is not null)
+        {
+            Navigate(item);
+        }
     }
 
     [RelayCommand]
-    private void ShowImport()
-    {
-        if (IsImportActive)
-        {
-            return;
-        }
-
-        CurrentPage = Import;
-        Import.LoadAccountsCommand.Execute(null);
-    }
+    private void ToggleBalances() => HideBalances = !HideBalances;
 
     [RelayCommand]
-    private void ShowTransactions()
-    {
-        if (IsTransactionsActive)
-        {
-            return;
-        }
-
-        CurrentPage = Transactions;
-        Transactions.LoadCommand.Execute(null);
-    }
+    private void ToggleTheme() => _themeSwitcher.Toggle();
 
     [RelayCommand]
-    private void ShowChat()
+    private void OpenCommandPalette() => Palette.Open(BuildPaletteCommands());
+
+    private IReadOnlyList<PaletteCommand> BuildPaletteCommands()
     {
-        if (IsChatActive)
+        var commands = new List<PaletteCommand>(_allNav.Count + 2);
+        foreach (var nav in _allNav)
         {
-            return;
+            var target = nav;
+            commands.Add(new PaletteCommand(
+                _localizer.Format("Palette.GoTo", nav.Title),
+                _localizer["Palette.CatNavigate"],
+                nav.Icon,
+                () => Navigate(target)));
         }
 
-        CurrentPage = Chat;
-    }
-
-    [RelayCommand]
-    private void ShowAlerts()
-    {
-        if (IsAlertsActive)
-        {
-            return;
-        }
-
-        CurrentPage = Alerts;
-        Alerts.LoadCommand.Execute(null);
-    }
-
-    [RelayCommand]
-    private void ShowAdvisor()
-    {
-        if (IsAdvisorActive)
-        {
-            return;
-        }
-
-        CurrentPage = Advisor;
-        Advisor.LoadCommand.Execute(null);
-    }
-
-    [RelayCommand]
-    private void ShowPlanning()
-    {
-        if (IsPlanningActive)
-        {
-            return;
-        }
-
-        CurrentPage = Planning;
-        Planning.LoadCommand.Execute(null);
-    }
-
-    [RelayCommand]
-    private void ShowAffordability()
-    {
-        if (IsAffordabilityActive)
-        {
-            return;
-        }
-
-        CurrentPage = Affordability;
-        Affordability.LoadCommand.Execute(null);
-    }
-
-    [RelayCommand]
-    private void ShowSpending()
-    {
-        if (IsSpendingActive)
-        {
-            return;
-        }
-
-        CurrentPage = Spending;
-        Spending.LoadCommand.Execute(null);
-    }
-
-    [RelayCommand]
-    private void ShowBudgets()
-    {
-        if (IsBudgetsActive)
-        {
-            return;
-        }
-
-        CurrentPage = Budgets;
-        Budgets.LoadCommand.Execute(null);
-    }
-
-    [RelayCommand]
-    private void ShowForecast()
-    {
-        if (IsForecastActive)
-        {
-            return;
-        }
-
-        CurrentPage = Forecast;
-        Forecast.LoadCommand.Execute(null);
-    }
-
-    [RelayCommand]
-    private void ShowSettings()
-    {
-        if (IsSettingsActive)
-        {
-            return;
-        }
-
-        CurrentPage = Settings;
-        Settings.LoadCommand.Execute(null);
+        commands.Add(new PaletteCommand(
+            _localizer["Palette.SwitchTheme"], _localizer["Palette.CatSetting"], "sun", ToggleTheme));
+        commands.Add(new PaletteCommand(
+            _localizer["Palette.ToggleBalances"], _localizer["Palette.CatSetting"], "eye", ToggleBalances));
+        return commands;
     }
 
     [RelayCommand]
@@ -328,6 +252,22 @@ public sealed partial class MainViewModel : ObservableObject
             LoggedOut?.Invoke(this, EventArgs.Empty);
         }
     }
+
+    private NavItem Item(string key, string titleKey, string icon, ObservableObject page, Action load) =>
+        new(key, titleKey, icon, page, load, _localizer);
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        foreach (var nav in _allNav)
+        {
+            nav.RefreshTitle();
+        }
+
+        OnPropertyChanged(nameof(ActiveTitle));
+        OnPropertyChanged(nameof(VersionText));
+    }
+
+    private void OnThemeChanged(object? sender, EventArgs e) => OnPropertyChanged(nameof(IsDarkTheme));
 
     private static string ResolveAppVersion()
     {

@@ -1,4 +1,5 @@
 using Coffer.Application.Dialogs;
+using Coffer.Application.Theming;
 using Coffer.Application.ViewModels.Alerts;
 using Coffer.Application.ViewModels.Budgets;
 using Coffer.Application.ViewModels.Chat;
@@ -19,6 +20,7 @@ using Coffer.Application.ViewModels.Transactions;
 using Coffer.Core.Import;
 using Coffer.Core.Security;
 using Coffer.Desktop.Platform;
+using Coffer.Desktop.Theme;
 using Coffer.Desktop.Views;
 using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
@@ -31,6 +33,9 @@ public static class DesktopServiceRegistration
 {
     public static IServiceCollection AddCofferDesktopUi(this IServiceCollection services)
     {
+        // Runtime theme switching (applies the Avalonia variant + persists via IThemeStore).
+        services.AddSingleton<IThemeSwitcher, ThemeSwitcher>();
+
         // MainWindow is Transient — App rebuilds it after every logout so the
         // top-level event subscriptions and the VM state start fresh. Sprint 1's
         // Singleton registration would have reused a torn-down window.
