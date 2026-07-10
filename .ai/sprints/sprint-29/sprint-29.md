@@ -37,9 +37,9 @@ Sprint 28 shipped the substrate + shell + one reference screen (Overview). The o
 - [x] 29.3 Preview harnesses (`COFFER_TX_PREVIEW`, `COFFER_SPENDING_PREVIEW`) + canned stub queries; captured in both themes.
 
 ### 29-B — budgets & forecast
-- [ ] 29.4 `BudgetsView` on tokens: summary panel, per-category rows with zone-coloured `ProgressBar.bar` (+ `over`), remaining/over labels, unbudgeted lines.
-- [ ] 29.5 `ForecastView` on tokens: per-category fixed/variable/total, suggested vs current, set-as-budget button.
-- [ ] 29.6 Preview harnesses + captures (both themes).
+- [x] 29.4 `BudgetsView` on tokens: summary panel, per-category rows with zone-coloured `ProgressBar.bar` (+ `over`), remaining/over labels, unbudgeted lines.
+- [x] 29.5 `ForecastView` on tokens: per-category fixed/variable/total, suggested vs current, set-as-budget button.
+- [x] 29.6 Preview harnesses + captures (both themes).
 
 ### 29-C — advisor & planning
 - [ ] 29.7 `GoalsView` (Advisor) on tokens: goal cards (% funded, saved/target, target date, progress bar, add-money), simulator, projection chart.
