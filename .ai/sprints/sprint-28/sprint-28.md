@@ -1,7 +1,7 @@
 # Sprint 28 — Redesign foundation: terminal shell + theming (Overview slice)
 
 **Phase:** — (cross-cutting UI redesign, like Sprint 15's i18n — not a roadmap phase. Driven by `.ai/design/Coffer desktop project design/` — the "pro terminal" high-fidelity prototype: `README.md` + `Coffer - Build Spec.md` + `Coffer Terminal.dc.html` + `screenshots/`.)
-**Status:** Planned
+**Status:** Closed (2026-07-10; three PRs — 28-A #216, 28-B #218, 28-C #220. Only 28.18 manual click-through remains, needing a login.)
 **Depends on:** sprint-15 (i18n `ILocalizer` + `{l:Localize}` + the `FileLanguageStore` plaintext-persistence pattern to mirror for the theme), sprint-11 (LiveCharts2 charts to restyle), sprint-6 (the `MainWindow` shell + `MainViewModel` nav this replaces). No database schema, no AI, no network.
 **Note:** Sprint 27 (disaster-recovery tail) is **paused** mid-plan at the owner's request — this redesign is the priority; we return to 27 after.
 
