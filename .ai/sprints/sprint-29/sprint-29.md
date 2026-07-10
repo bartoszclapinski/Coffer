@@ -32,9 +32,9 @@ Sprint 28 shipped the substrate + shell + one reference screen (Overview). The o
 ## Steps
 
 ### 29-A — ledgers
-- [ ] 29.1 `TransactionsView` on tokens + components: filter chips, sortable headers (active column brightens + arrow), category dots, In/Out totals, `money` + privacy blur; DataGrid (or item rows) restyled.
-- [ ] 29.2 `SpendingExplorerView` on tokens: breadcrumb, drill-down rows, category/merchant/amount, `money` + blur.
-- [ ] 29.3 Preview harnesses (`COFFER_TX_PREVIEW`, `COFFER_SPENDING_PREVIEW`) + canned stub queries; captured in both themes.
+- [x] 29.1 `TransactionsView` on tokens + components: filter chips, sortable headers (active column brightens + arrow), category dots, In/Out totals, `money` + privacy blur; DataGrid (or item rows) restyled.
+- [x] 29.2 `SpendingExplorerView` on tokens: breadcrumb, drill-down rows, category/merchant/amount, `money` + blur.
+- [x] 29.3 Preview harnesses (`COFFER_TX_PREVIEW`, `COFFER_SPENDING_PREVIEW`) + canned stub queries; captured in both themes.
 
 ### 29-B — budgets & forecast
 - [ ] 29.4 `BudgetsView` on tokens: summary panel, per-category rows with zone-coloured `ProgressBar.bar` (+ `over`), remaining/over labels, unbudgeted lines.

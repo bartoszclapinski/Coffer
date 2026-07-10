@@ -57,8 +57,9 @@
                         <StackPanel Spacing="6" Margin="18">
                             <TextBlock Classes="label" Text="{l:Localize Dashboard.Net}" />
                             <TextBlock Classes="money" FontSize="24"
-                                       Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}"
-                                       Foreground="{Binding Net, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
+                                       Classes.pos="{Binding Net, Converter={x:Static m:AmountConverters.IsPositive}}"
+                                       Classes.neg="{Binding Net, Converter={x:Static m:AmountConverters.IsNegative}}"
+                                       Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}">
                                 <TextBlock.Text>
                                     <MultiBinding StringFormat="{}{0:N2} {1}">
                                         <Binding Path="Net" />
@@ -106,8 +107,8 @@
                                             <TextBlock Classes="muted" FontSize="11" Text="{Binding CategoryName}" />
                                         </StackPanel>
                                         <TextBlock Grid.Column="3" Classes="money" VerticalAlignment="Center"
-                                                   Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}"
-                                                   Foreground="{Binding Amount, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
+                                                   Classes.pos="{Binding Amount, Converter={x:Static m:AmountConverters.IsPositive}}"
+                                                   Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}">
                                             <TextBlock.Text>
                                                 <MultiBinding StringFormat="{}{0:N2} {1}">
                                                     <Binding Path="Amount" />
