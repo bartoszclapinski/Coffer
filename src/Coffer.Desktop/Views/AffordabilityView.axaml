@@ -8,47 +8,13 @@
              x:Class="Coffer.Desktop.Views.AffordabilityView"
              x:DataType="vm:AffordabilityViewModel"
              x:CompileBindings="False">
-    <UserControl.Styles>
-        <Style Selector="Border.card">
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="BorderBrush" Value="#E5E5EA" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="20,16" />
-        </Style>
-        <Style Selector="TextBlock.sectionTitle">
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#1D1D1F" />
-        </Style>
-        <Style Selector="TextBlock.metricLabel">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="Foreground" Value="#8E8E93" />
-        </Style>
-        <Style Selector="TextBlock.metricValue">
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#1D1D1F" />
-        </Style>
-    </UserControl.Styles>
-
     <ScrollViewer>
-        <StackPanel Margin="40,32" Spacing="20" MaxWidth="620" HorizontalAlignment="Left">
-            <StackPanel Spacing="4">
-                <TextBlock Text="{l:Localize Affordability.Title}"
-                           FontSize="26"
-                           FontWeight="Light"
-                           Foreground="#1D1D1F" />
-                <TextBlock Text="{l:Localize Affordability.Subtitle}"
-                           Foreground="#8E8E93"
-                           TextWrapping="Wrap" />
-            </StackPanel>
-
+        <StackPanel Margin="22" Spacing="20" MaxWidth="620" HorizontalAlignment="Left">
             <!-- Input -->
-            <Border Classes="card">
+            <Border Classes="panel">
                 <StackPanel Spacing="16">
                     <StackPanel Spacing="6">
-                        <TextBlock Text="{l:Localize Affordability.Account}" Classes="metricLabel" />
+                        <TextBlock Text="{l:Localize Affordability.Account}" Classes="muted" />
                         <ComboBox HorizontalAlignment="Stretch"
                                   ItemsSource="{Binding Accounts}"
                                   SelectedItem="{Binding SelectedAccount, Mode=TwoWay}"
@@ -56,7 +22,7 @@
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="{l:Localize Affordability.Amount}" Classes="metricLabel" />
+                        <TextBlock Text="{l:Localize Affordability.Amount}" Classes="muted" />
                         <NumericUpDown Minimum="0"
                                        Increment="50"
                                        FormatString="N2"
@@ -64,107 +30,114 @@
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="{l:Localize Affordability.Date}" Classes="metricLabel" />
+                        <TextBlock Text="{l:Localize Affordability.Date}" Classes="muted" />
                         <DatePicker SelectedDate="{Binding SpendDate, Mode=TwoWay}" />
                     </StackPanel>
 
                     <Button Content="{l:Localize Affordability.Check}"
+                            Classes="accent"
                             HorizontalAlignment="Left"
                             IsEnabled="{Binding !IsLoading}"
                             Command="{Binding CheckCommand}" />
                 </StackPanel>
             </Border>
 
-            <ProgressBar IsIndeterminate="True" Height="4"
+            <ProgressBar Classes="bar" IsIndeterminate="True" Height="4"
                          IsVisible="{Binding IsLoading}" />
 
             <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="#D14"
+                       Foreground="{DynamicResource Coffer.Neg}"
                        TextWrapping="Wrap"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
             <TextBlock Text="{l:Localize Affordability.Empty}"
-                       Foreground="#8E8E93"
+                       Classes="muted"
                        TextWrapping="Wrap"
                        IsVisible="{Binding !HasResult}" />
 
             <!-- Result -->
             <StackPanel Spacing="16" IsVisible="{Binding HasResult}">
                 <!-- Verdict banner -->
-                <Border CornerRadius="10" Padding="20,16"
-                        Background="#F0FDF4" BorderBrush="#86EFAC" BorderThickness="1"
+                <Border Classes="panel" Background="{DynamicResource Coffer.PosTint}"
+                        BorderBrush="{DynamicResource Coffer.Pos}"
                         IsVisible="{Binding CanAfford}">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="{Binding VerdictText}" FontSize="18" FontWeight="SemiBold" Foreground="#15803D" />
-                        <TextBlock Foreground="#15803D" TextWrapping="Wrap"
+                        <TextBlock Text="{Binding VerdictText}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Coffer.Pos}" />
+                        <TextBlock Foreground="{DynamicResource Coffer.Pos}" TextWrapping="Wrap"
                                    Text="{Binding AmountText, StringFormat={}{0}}" />
                     </StackPanel>
                 </Border>
-                <Border CornerRadius="10" Padding="20,16"
-                        Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1"
+                <Border Classes="panel" Background="{DynamicResource Coffer.NegTint}"
+                        BorderBrush="{DynamicResource Coffer.Neg}"
                         IsVisible="{Binding !CanAfford}">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="{Binding VerdictText}" FontSize="18" FontWeight="SemiBold" Foreground="#B91C1C" />
-                        <TextBlock Foreground="#B91C1C" TextWrapping="Wrap"
+                        <TextBlock Text="{Binding VerdictText}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Coffer.Neg}" />
+                        <TextBlock Foreground="{DynamicResource Coffer.Neg}" TextWrapping="Wrap"
                                    Text="{Binding AmountText, StringFormat={}{0}}" />
                     </StackPanel>
                 </Border>
 
                 <!-- Relative / uncertain warnings -->
-                <Border Classes="card" Background="#FFF7ED" BorderBrush="#FED7AA"
+                <Border Classes="panel"
                         IsVisible="{Binding IsRelative}">
                     <StackPanel Spacing="4">
                         <TextBlock Text="{l:Localize Affordability.Relative.Title}"
-                                   FontWeight="SemiBold" Foreground="#C2410C" TextWrapping="Wrap" />
+                                   FontWeight="SemiBold" Foreground="{DynamicResource Coffer.Neg}" TextWrapping="Wrap" />
                         <TextBlock Text="{l:Localize Affordability.Relative.Hint}"
-                                   Foreground="#C2410C" FontSize="12" TextWrapping="Wrap" />
+                                   Classes="muted" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
-                <Border Classes="card" Background="#FDECEA" BorderBrush="#F5C2BC"
+                <Border Classes="panel"
                         IsVisible="{Binding IsUncertain}">
                     <StackPanel Spacing="4">
                         <TextBlock Text="{l:Localize Affordability.Uncertain.Title}"
-                                   FontWeight="SemiBold" Foreground="#B42318" TextWrapping="Wrap" />
+                                   FontWeight="SemiBold" Foreground="{DynamicResource Coffer.Neg}" TextWrapping="Wrap" />
                         <TextBlock Text="{Binding UncertaintyText}"
-                                   Foreground="#B42318" FontSize="12" TextWrapping="Wrap" />
+                                   Classes="muted" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
 
                 <!-- Metrics -->
-                <Border Classes="card">
+                <Border Classes="panel">
                     <StackPanel Spacing="16">
-                        <TextBlock Classes="sectionTitle" Text="{l:Localize Affordability.Section.Details}" />
+                        <TextBlock Classes="label" Text="{l:Localize Affordability.Section.Details}" />
                         <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
                             <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,0,12">
-                                <TextBlock Classes="metricLabel" Text="{l:Localize Affordability.Summary.Opening}" />
-                                <TextBlock Classes="metricValue" Text="{Binding OpeningBalanceText}" />
+                                <TextBlock Classes="muted" Text="{l:Localize Affordability.Summary.Opening}" />
+                                <TextBlock Classes="money" Text="{Binding OpeningBalanceText}"
+                                           Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}" />
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,0,12">
-                                <TextBlock Classes="metricLabel" Text="{l:Localize Affordability.Summary.SafetyFloor}" />
-                                <TextBlock Classes="metricValue" Text="{Binding SafetyFloorText}" />
+                                <TextBlock Classes="muted" Text="{l:Localize Affordability.Summary.SafetyFloor}" />
+                                <TextBlock Classes="money" Text="{Binding SafetyFloorText}"
+                                           Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}" />
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,0,0,12">
-                                <TextBlock Classes="metricLabel" Text="{l:Localize Affordability.Summary.Lowest}" />
-                                <TextBlock Classes="metricValue" Text="{Binding LowestBalanceText}" />
-                                <TextBlock Classes="metricLabel" Text="{Binding LowestBalanceDateText}" />
+                                <TextBlock Classes="muted" Text="{l:Localize Affordability.Summary.Lowest}" />
+                                <TextBlock Classes="money" Text="{Binding LowestBalanceText}"
+                                           Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}" />
+                                <TextBlock Classes="muted" Text="{Binding LowestBalanceDateText}" />
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,0,0,12">
-                                <TextBlock Classes="metricLabel" Text="{l:Localize Affordability.Summary.Headroom}" />
-                                <TextBlock Classes="metricValue" Text="{Binding HeadroomText}" />
+                                <TextBlock Classes="muted" Text="{l:Localize Affordability.Summary.Headroom}" />
+                                <TextBlock Classes="money" Text="{Binding HeadroomText}"
+                                           Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}" />
                             </StackPanel>
                             <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
-                                <TextBlock Classes="metricLabel" Text="{l:Localize Affordability.Summary.DailyBurn}" />
-                                <TextBlock Classes="metricValue" Text="{Binding DailyBurnText}" />
+                                <TextBlock Classes="muted" Text="{l:Localize Affordability.Summary.DailyBurn}" />
+                                <TextBlock Classes="money" Text="{Binding DailyBurnText}"
+                                           Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}" />
                             </StackPanel>
                             <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
-                                <TextBlock Classes="metricLabel" Text="{l:Localize Affordability.Summary.NextInflow}" />
-                                <TextBlock Classes="metricValue" Text="{Binding NextInflowText}" />
+                                <TextBlock Classes="muted" Text="{l:Localize Affordability.Summary.NextInflow}" />
+                                <TextBlock Classes="money" Text="{Binding NextInflowText}"
+                                           Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}" />
                             </StackPanel>
                         </Grid>
 
                         <StackPanel Spacing="2" IsVisible="{Binding HasDriver}">
-                            <TextBlock Classes="metricLabel" Text="{l:Localize Affordability.Driver.Label}" />
-                            <TextBlock Classes="metricValue" Text="{Binding DriverText}" TextWrapping="Wrap" />
+                            <TextBlock Classes="muted" Text="{l:Localize Affordability.Driver.Label}" />
+                            <TextBlock Classes="money" Text="{Binding DriverText}" TextWrapping="Wrap" />
                         </StackPanel>
                     </StackPanel>
                 </Border>

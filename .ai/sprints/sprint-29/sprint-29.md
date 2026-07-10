@@ -42,10 +42,10 @@ Sprint 28 shipped the substrate + shell + one reference screen (Overview). The o
 - [x] 29.6 Preview harnesses + captures (both themes).
 
 ### 29-C — advisor & planning
-- [ ] 29.7 `GoalsView` (Advisor) on tokens: goal cards (% funded, saved/target, target date, progress bar, add-money), simulator, projection chart.
-- [ ] 29.8 `CashFlowPlanningView` on tokens: dated timeline, running-balance chart, tight-window/accrual badges.
-- [ ] 29.9 `AffordabilityView` on tokens: afford/not verdict, headroom, safety floor, what-pushes-under.
-- [ ] 29.10 Preview harnesses + captures (both themes).
+- [x] 29.7 `GoalsView` (Advisor) on tokens: goal cards (% funded, saved/target, target date, progress bar, add-money), simulator, projection chart.
+- [x] 29.8 `CashFlowPlanningView` on tokens: dated timeline, running-balance chart, tight-window/accrual badges.
+- [x] 29.9 `AffordabilityView` on tokens: afford/not verdict, headroom, safety floor, what-pushes-under.
+- [x] 29.10 Preview harnesses + captures (both themes).
 
 ### 29-D — the rest
 - [ ] 29.11 `ImportView` on tokens: drag-and-drop zone, 5-step progress, account picker, review banners.
