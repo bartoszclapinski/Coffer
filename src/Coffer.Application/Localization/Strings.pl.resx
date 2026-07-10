@@ -1405,4 +1405,31 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="ChangePassword.Error.Generic" xml:space="preserve">
     <value>Nie udało się zmienić hasła. Spróbuj ponownie.</value>
   </data>
+  <data name="Palette.Placeholder" xml:space="preserve">
+    <value>Szukaj ekranów i akcji…</value>
+  </data>
+  <data name="Palette.GoTo" xml:space="preserve">
+    <value>Przejdź do {0}</value>
+  </data>
+  <data name="Palette.SwitchTheme" xml:space="preserve">
+    <value>Przełącz motyw</value>
+  </data>
+  <data name="Palette.ToggleBalances" xml:space="preserve">
+    <value>Pokaż / ukryj salda</value>
+  </data>
+  <data name="Palette.CatNavigate" xml:space="preserve">
+    <value>NAWIGACJA</value>
+  </data>
+  <data name="Palette.CatSetting" xml:space="preserve">
+    <value>USTAWIENIA</value>
+  </data>
+  <data name="Palette.Hint" xml:space="preserve">
+    <value>↑↓ nawigacja · ↵ wybór · esc zamknij</value>
+  </data>
+  <data name="TopBar.Search" xml:space="preserve">
+    <value>Szukaj…</value>
+  </data>
+  <data name="TopBar.New" xml:space="preserve">
+    <value>Nowy</value>
+  </data>
 </root>

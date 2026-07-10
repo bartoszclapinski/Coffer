@@ -1405,4 +1405,31 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="ChangePassword.Error.Generic" xml:space="preserve">
     <value>Could not change the password. Please try again.</value>
   </data>
+  <data name="Palette.Placeholder" xml:space="preserve">
+    <value>Search screens and actions…</value>
+  </data>
+  <data name="Palette.GoTo" xml:space="preserve">
+    <value>Go to {0}</value>
+  </data>
+  <data name="Palette.SwitchTheme" xml:space="preserve">
+    <value>Switch theme</value>
+  </data>
+  <data name="Palette.ToggleBalances" xml:space="preserve">
+    <value>Show / hide balances</value>
+  </data>
+  <data name="Palette.CatNavigate" xml:space="preserve">
+    <value>NAVIGATE</value>
+  </data>
+  <data name="Palette.CatSetting" xml:space="preserve">
+    <value>SETTING</value>
+  </data>
+  <data name="Palette.Hint" xml:space="preserve">
+    <value>↑↓ navigate · ↵ select · esc close</value>
+  </data>
+  <data name="TopBar.Search" xml:space="preserve">
+    <value>Search…</value>
+  </data>
+  <data name="TopBar.New" xml:space="preserve">
+    <value>New</value>
+  </data>
 </root>

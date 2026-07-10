@@ -64,125 +64,108 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public void StartsOnDashboardPage()
+    public void StartsOnDashboard_WithFirstNavItemActive()
     {
         var vm = CreateViewModel(new RecordingLoginService());
 
-        vm.IsDashboardActive.Should().BeTrue();
         vm.CurrentPage.Should().BeSameAs(vm.Dashboard);
+        vm.NavItems[0].Key.Should().Be("dashboard");
+        vm.NavItems[0].IsActive.Should().BeTrue();
+        vm.ActiveTitle.Should().Be(vm.NavItems[0].Title);
     }
 
     [Fact]
-    public void ShowImport_SwitchesActivePage()
+    public void NavItems_CoverEverySectionPlusSettings()
     {
         var vm = CreateViewModel(new RecordingLoginService());
 
-        vm.ShowImportCommand.Execute(null);
-
-        vm.IsImportActive.Should().BeTrue();
-        vm.CurrentPage.Should().BeSameAs(vm.Import);
+        var keys = vm.NavItems.Select(n => n.Key).ToArray();
+        keys.Should().BeEquivalentTo(new[]
+        {
+            "dashboard", "transactions", "spending", "budgets", "forecast", "advisor",
+            "planning", "affordability", "import", "alerts", "chat",
+        });
+        vm.SettingsItem.Key.Should().Be("settings");
     }
 
     [Fact]
-    public void ShowTransactions_SwitchesActivePage()
+    public void Navigate_SwitchesActivePageTitleAndFlags()
     {
         var vm = CreateViewModel(new RecordingLoginService());
+        var target = vm.NavItems.Single(n => n.Key == "transactions");
 
-        vm.ShowTransactionsCommand.Execute(null);
+        vm.NavigateCommand.Execute(target);
 
-        vm.IsTransactionsActive.Should().BeTrue();
         vm.CurrentPage.Should().BeSameAs(vm.Transactions);
+        vm.ActiveTitle.Should().Be(target.Title);
+        target.IsActive.Should().BeTrue();
+        vm.NavItems.Single(n => n.Key == "dashboard").IsActive.Should().BeFalse();
     }
 
     [Fact]
-    public void ShowChat_SwitchesActivePage()
+    public void Navigate_ToSettingsItem_ActivatesSettings()
     {
         var vm = CreateViewModel(new RecordingLoginService());
 
-        vm.ShowChatCommand.Execute(null);
+        vm.NavigateCommand.Execute(vm.SettingsItem);
 
-        vm.IsChatActive.Should().BeTrue();
-        vm.CurrentPage.Should().BeSameAs(vm.Chat);
+        vm.CurrentPage.Should().BeSameAs(vm.Settings);
+        vm.SettingsItem.IsActive.Should().BeTrue();
     }
 
     [Fact]
-    public void ShowAlerts_SwitchesActivePage()
+    public void ToggleBalances_FlipsHideBalances()
     {
         var vm = CreateViewModel(new RecordingLoginService());
+        vm.HideBalances.Should().BeFalse();
 
-        vm.ShowAlertsCommand.Execute(null);
+        vm.ToggleBalancesCommand.Execute(null);
 
-        vm.IsAlertsActive.Should().BeTrue();
-        vm.CurrentPage.Should().BeSameAs(vm.Alerts);
+        vm.HideBalances.Should().BeTrue();
     }
 
     [Fact]
-    public void ShowAdvisor_SwitchesActivePage()
+    public void ToggleTheme_InvokesSwitcherAndUpdatesIsDarkTheme()
     {
-        var vm = CreateViewModel(new RecordingLoginService());
+        var switcher = new FakeThemeSwitcher();
+        var vm = CreateViewModel(new RecordingLoginService(), switcher);
+        vm.IsDarkTheme.Should().BeFalse();
 
-        vm.ShowAdvisorCommand.Execute(null);
+        vm.ToggleThemeCommand.Execute(null);
 
-        vm.IsAdvisorActive.Should().BeTrue();
-        vm.CurrentPage.Should().BeSameAs(vm.Advisor);
+        switcher.ToggleCalls.Should().Be(1);
+        vm.IsDarkTheme.Should().BeTrue();
     }
 
     [Fact]
-    public void ShowPlanning_SwitchesActivePage()
+    public void OpenCommandPalette_OpensWithNavAndActionCommands()
     {
         var vm = CreateViewModel(new RecordingLoginService());
 
-        vm.ShowPlanningCommand.Execute(null);
+        vm.OpenCommandPaletteCommand.Execute(null);
 
-        vm.IsPlanningActive.Should().BeTrue();
-        vm.CurrentPage.Should().BeSameAs(vm.Planning);
+        vm.Palette.IsOpen.Should().BeTrue();
+        // 11 rail items + Settings + Switch-theme + Show/hide-balances.
+        vm.Palette.Results.Should().HaveCount(vm.NavItems.Count + 3);
     }
 
     [Fact]
-    public void ShowAffordability_SwitchesActivePage()
+    public void PaletteNavigationCommand_SwitchesPage()
     {
         var vm = CreateViewModel(new RecordingLoginService());
+        vm.OpenCommandPaletteCommand.Execute(null);
 
-        vm.ShowAffordabilityCommand.Execute(null);
+        // Nav commands come first, in NavItems order (fake localizer echoes keys, so
+        // resolve the budgets command by index rather than by its display title).
+        var budgetsIndex = vm.NavItems.ToList().FindIndex(n => n.Key == "budgets");
+        vm.Palette.SelectedIndex = budgetsIndex;
+        vm.Palette.ExecuteSelected();
 
-        vm.IsAffordabilityActive.Should().BeTrue();
-        vm.CurrentPage.Should().BeSameAs(vm.Affordability);
-    }
-
-    [Fact]
-    public void ShowSpending_SwitchesActivePage()
-    {
-        var vm = CreateViewModel(new RecordingLoginService());
-
-        vm.ShowSpendingCommand.Execute(null);
-
-        vm.IsSpendingActive.Should().BeTrue();
-        vm.CurrentPage.Should().BeSameAs(vm.Spending);
-    }
-
-    [Fact]
-    public void ShowBudgets_SwitchesActivePage()
-    {
-        var vm = CreateViewModel(new RecordingLoginService());
-
-        vm.ShowBudgetsCommand.Execute(null);
-
-        vm.IsBudgetsActive.Should().BeTrue();
         vm.CurrentPage.Should().BeSameAs(vm.Budgets);
+        vm.Palette.IsOpen.Should().BeFalse();
     }
 
-    [Fact]
-    public void ShowForecast_SwitchesActivePage()
-    {
-        var vm = CreateViewModel(new RecordingLoginService());
-
-        vm.ShowForecastCommand.Execute(null);
-
-        vm.IsForecastActive.Should().BeTrue();
-        vm.CurrentPage.Should().BeSameAs(vm.Forecast);
-    }
-
-    private static MainViewModel CreateViewModel(ILoginService loginService)
+    private static MainViewModel CreateViewModel(ILoginService loginService, FakeThemeSwitcher? themeSwitcher = null)
     {
         var dashboard = new DashboardViewModel(
             new FakeDashboardQuery(),
@@ -271,7 +254,8 @@ public class MainViewModelTests
             NullLogger<ForecastViewModel>.Instance);
 
         return new MainViewModel(
-            dashboard, import, transactions, chat, alerts, advisor, planning, affordability, spending, budgets, forecast, settings, loginService, new FakeLocalizer(), NullLogger<MainViewModel>.Instance);
+            dashboard, import, transactions, chat, alerts, advisor, planning, affordability, spending, budgets, forecast, settings,
+            loginService, new FakeLocalizer(), themeSwitcher ?? new FakeThemeSwitcher(), NullLogger<MainViewModel>.Instance);
     }
 
     private sealed class StubChatService : IChatService

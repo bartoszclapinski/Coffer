@@ -15,14 +15,21 @@
         xmlns:forecastVm="clr-namespace:Coffer.Application.ViewModels.Forecast;assembly=Coffer.Application"
         xmlns:settingsVm="clr-namespace:Coffer.Application.ViewModels.Settings;assembly=Coffer.Application"
         xmlns:views="clr-namespace:Coffer.Desktop.Views"
+        xmlns:m="clr-namespace:Coffer.Desktop.Markup"
         xmlns:l="clr-namespace:Coffer.Desktop.Localization"
-        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
+        mc:Ignorable="d" d:DesignWidth="1400" d:DesignHeight="880"
         x:Class="Coffer.Desktop.MainWindow"
         x:DataType="vm:MainViewModel"
         x:CompileBindings="False"
         Title="Coffer"
-        Width="1000" Height="640"
+        Width="1400" Height="880"
+        MinWidth="1180" MinHeight="740"
+        Background="{DynamicResource Coffer.Bg}"
         WindowStartupLocation="CenterScreen">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+K" Command="{Binding OpenCommandPaletteCommand}" />
+    </Window.KeyBindings>
 
     <Window.DataTemplates>
         <DataTemplate DataType="dashboardVm:DashboardViewModel">
@@ -63,134 +70,152 @@
         </DataTemplate>
     </Window.DataTemplates>
 
-    <Grid ColumnDefinitions="240,*">
-        <!-- Sidebar -->
-        <Border Grid.Column="0" Background="#FFFFFF" BorderBrush="#E5E5EA" BorderThickness="0,0,1,0">
-            <Grid RowDefinitions="Auto,*,Auto" Margin="0">
-                <StackPanel Grid.Row="0" Margin="24,28,24,24" Spacing="2">
-                    <TextBlock Text="Coffer"
-                               FontSize="22"
-                               FontWeight="SemiBold"
-                               Foreground="#1D4ED8" />
-                    <TextBlock Text="{l:Localize App.Tagline}"
-                               FontSize="12"
-                               Foreground="#8E8E93" />
-                </StackPanel>
+    <Panel>
+        <!-- ===================== Shell ===================== -->
+        <Grid ColumnDefinitions="60,*">
 
-                <StackPanel Grid.Row="1" Margin="12,8,12,8" Spacing="4">
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsDashboardActive}"
-                            Content="{l:Localize Nav.Dashboard}"
-                            Command="{Binding ShowDashboardCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsImportActive}"
-                            Content="{l:Localize Nav.Import}"
-                            Command="{Binding ShowImportCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsTransactionsActive}"
-                            Content="{l:Localize Nav.Transactions}"
-                            Command="{Binding ShowTransactionsCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsSpendingActive}"
-                            Content="{l:Localize Nav.Spending}"
-                            Command="{Binding ShowSpendingCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsBudgetsActive}"
-                            Content="{l:Localize Nav.Budgets}"
-                            Command="{Binding ShowBudgetsCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsForecastActive}"
-                            Content="{l:Localize Nav.Forecast}"
-                            Command="{Binding ShowForecastCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsChatActive}"
-                            Content="{l:Localize Nav.Assistant}"
-                            Command="{Binding ShowChatCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsAlertsActive}"
-                            Content="{l:Localize Nav.Alerts}"
-                            Command="{Binding ShowAlertsCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsAdvisorActive}"
-                            Content="{l:Localize Nav.Advisor}"
-                            Command="{Binding ShowAdvisorCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsPlanningActive}"
-                            Content="{l:Localize Nav.CashFlow}"
-                            Command="{Binding ShowPlanningCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsAffordabilityActive}"
-                            Content="{l:Localize Nav.Affordability}"
-                            Command="{Binding ShowAffordabilityCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                    <Button Classes="nav"
-                            Classes.active="{Binding IsSettingsActive}"
-                            Content="{l:Localize Nav.Settings}"
-                            Command="{Binding ShowSettingsCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left" />
-                </StackPanel>
+            <!-- Icon rail -->
+            <Border Grid.Column="0" Background="{DynamicResource Coffer.Panel2}"
+                    BorderBrush="{DynamicResource Coffer.Bd}" BorderThickness="0,0,1,0">
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <Border Grid.Row="0" Width="34" Height="34" CornerRadius="9"
+                            Background="{DynamicResource Coffer.Accent}"
+                            Margin="0,14,0,12" HorizontalAlignment="Center">
+                        <TextBlock Text="C" Foreground="White" FontWeight="Bold" FontSize="18"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
 
-                <Border Grid.Row="2" Margin="12,8,12,16" Padding="12"
-                        Background="#F5F5F7" CornerRadius="8">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="{Binding VersionText}"
-                                   FontSize="11"
-                                   Foreground="#8E8E93"
-                                   TextTrimming="CharacterEllipsis" />
-                        <Button Content="{l:Localize Nav.Logout}"
-                                HorizontalAlignment="Stretch"
-                                IsEnabled="{Binding !IsBusy}"
-                                Command="{Binding LogoutCommand}" />
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding NavItems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Spacing="4" HorizontalAlignment="Center" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="rail" Classes.active="{Binding IsActive}"
+                                            ToolTip.Tip="{Binding Title}"
+                                            Content="{Binding Icon, Converter={x:Static m:PhosphorGlyphConverter.Instance}}"
+                                            Command="{Binding $parent[ItemsControl].DataContext.NavigateCommand}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Button Grid.Row="2" Classes="rail" Margin="0,12,0,14" HorizontalAlignment="Center"
+                            Classes.active="{Binding SettingsItem.IsActive}"
+                            ToolTip.Tip="{Binding SettingsItem.Title}"
+                            Content="{Binding SettingsItem.Icon, Converter={x:Static m:PhosphorGlyphConverter.Instance}}"
+                            Command="{Binding NavigateCommand}" CommandParameter="{Binding SettingsItem}" />
+                </Grid>
+            </Border>
+
+            <!-- Main area -->
+            <Grid Grid.Column="1" RowDefinitions="52,*">
+
+                <!-- Top bar -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                    <Border Grid.ColumnSpan="2" BorderBrush="{DynamicResource Coffer.Bd}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Column="0" Classes="title" Text="{Binding ActiveTitle}"
+                               VerticalAlignment="Center" Margin="22,0" />
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"
+                                Margin="0,0,22,0" VerticalAlignment="Center">
+                        <!-- Search / command-palette affordance -->
+                        <Button Command="{Binding OpenCommandPaletteCommand}" Width="250" Height="36"
+                                Padding="10,0" CornerRadius="10" HorizontalContentAlignment="Stretch"
+                                Background="{DynamicResource Coffer.Panel}"
+                                BorderBrush="{DynamicResource Coffer.Bd}" BorderThickness="1">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Grid.Column="0" FontFamily="{DynamicResource Coffer.Icons}"
+                                           Foreground="{DynamicResource Coffer.Mut}" VerticalAlignment="Center"
+                                           Text="{m:PhosphorIcon magnifying-glass}" />
+                                <TextBlock Grid.Column="1" Margin="8,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Coffer.Mut}"
+                                           Text="{l:Localize TopBar.Search}" />
+                                <Border Grid.Column="2" Background="{DynamicResource Coffer.Panel2}"
+                                        CornerRadius="5" Padding="6,2" VerticalAlignment="Center">
+                                    <TextBlock Text="⌘K" FontSize="11" Foreground="{DynamicResource Coffer.Mut}" />
+                                </Border>
+                            </Grid>
+                        </Button>
+
+                        <Button Classes="topbar" Command="{Binding ToggleThemeCommand}"
+                                ToolTip.Tip="{l:Localize Palette.SwitchTheme}"
+                                Content="{Binding IsDarkTheme, Converter={x:Static m:ShellIconConverters.Theme}}" />
+                        <Button Classes="topbar" Command="{Binding ToggleBalancesCommand}"
+                                ToolTip.Tip="{l:Localize Palette.ToggleBalances}"
+                                Content="{Binding HideBalances, Converter={x:Static m:ShellIconConverters.Privacy}}" />
+                        <Button Classes="accent" Command="{Binding OpenCommandPaletteCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock FontFamily="{DynamicResource Coffer.Icons}" Text="{m:PhosphorIcon plus}" />
+                                <TextBlock Text="{l:Localize TopBar.New}" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
+                </Grid>
+
+                <!-- Content -->
+                <Border Grid.Row="1" Background="{DynamicResource Coffer.Bg}">
+                    <ContentControl Content="{Binding CurrentPage}" />
                 </Border>
             </Grid>
-        </Border>
+        </Grid>
 
-        <!-- Content -->
-        <Border Grid.Column="1" Background="#F5F5F7">
-            <ContentControl Content="{Binding CurrentPage}" />
-        </Border>
-    </Grid>
+        <!-- ===================== Command palette overlay ===================== -->
+        <Border Name="PaletteBackdrop" IsVisible="{Binding Palette.IsOpen}" Background="#99000000"
+                PointerPressed="OnBackdropPressed">
+            <Border Classes="panel" Padding="0" Width="580" MaxHeight="460"
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    PointerPressed="OnPalettePressed">
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="16,14">
+                        <TextBlock Grid.Column="0" FontFamily="{DynamicResource Coffer.Icons}" FontSize="18"
+                                   Foreground="{DynamicResource Coffer.Mut}" VerticalAlignment="Center"
+                                   Text="{m:PhosphorIcon magnifying-glass}" />
+                        <TextBox Name="PaletteInput" Grid.Column="1" Margin="10,0" BorderThickness="0"
+                                 Background="Transparent" FontSize="16"
+                                 Text="{Binding Palette.Query, Mode=TwoWay}"
+                                 Watermark="{l:Localize Palette.Placeholder}"
+                                 KeyDown="OnPaletteKeyDown" />
+                        <Border Grid.Column="2" Background="{DynamicResource Coffer.Panel2}" CornerRadius="5"
+                                Padding="6,2" VerticalAlignment="Center">
+                            <TextBlock Text="esc" FontSize="11" Foreground="{DynamicResource Coffer.Mut}" />
+                        </Border>
+                    </Grid>
 
-    <Window.Styles>
-        <Style Selector="Button.nav">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#1D1D1F" />
-            <Setter Property="Padding" Value="12,10" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="CornerRadius" Value="8" />
-        </Style>
-        <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#ECECF1" />
-        </Style>
-        <Style Selector="Button.nav.active">
-            <Setter Property="Background" Value="#1D4ED8" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-        </Style>
-        <Style Selector="Button.nav.active /template/ ContentPresenter">
-            <Setter Property="Background" Value="#1D4ED8" />
-        </Style>
-    </Window.Styles>
+                    <Border Grid.Row="1" BorderBrush="{DynamicResource Coffer.Bd}" BorderThickness="0,1,0,0">
+                        <ListBox ItemsSource="{Binding Palette.Results}"
+                                 SelectedIndex="{Binding Palette.SelectedIndex, Mode=TwoWay}"
+                                 Background="Transparent" BorderThickness="0"
+                                 Tapped="OnPaletteItemTapped">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="Auto,*,Auto" Height="30">
+                                        <TextBlock Grid.Column="0" FontFamily="{DynamicResource Coffer.Icons}"
+                                                   FontSize="16" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource Coffer.Mut2}"
+                                                   Text="{Binding Icon, Converter={x:Static m:PhosphorGlyphConverter.Instance}}" />
+                                        <TextBlock Grid.Column="1" Margin="12,0" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource Coffer.Tx}" Text="{Binding Title}" />
+                                        <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="10.5"
+                                                   Foreground="{DynamicResource Coffer.Mut}" Text="{Binding Category}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                    <Border Grid.Row="2" BorderBrush="{DynamicResource Coffer.Bd}" BorderThickness="0,1,0,0"
+                            Padding="16,10">
+                        <TextBlock Text="{l:Localize Palette.Hint}" FontSize="11"
+                                   Foreground="{DynamicResource Coffer.Mut}" />
+                    </Border>
+                </Grid>
+            </Border>
+        </Border>
+    </Panel>
 </Window>
