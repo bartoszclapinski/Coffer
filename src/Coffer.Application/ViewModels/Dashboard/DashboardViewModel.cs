@@ -22,9 +22,12 @@ namespace Coffer.Application.ViewModels.Dashboard;
 /// </summary>
 public sealed partial class DashboardViewModel : ObservableObject
 {
-    private static readonly SKColor _spendStroke = SKColor.Parse("#1D4ED8");
-    private static readonly SKColor _spendFill = SKColor.Parse("#1D4ED8").WithAlpha(40);
-    private static readonly SKColor _monthlyFill = SKColor.Parse("#1D4ED8");
+    // Pine-green accent family (matches the design's --pos stroke + --accent 14% area fill).
+    // A fixed brand green rather than a theme token: the VM is framework-free and can't resolve
+    // DynamicResource; the green reads on both the light-paper and dark panels.
+    private static readonly SKColor _spendStroke = SKColor.Parse("#2F6B4F");
+    private static readonly SKColor _spendFill = SKColor.Parse("#2F6B4F").WithAlpha(36);
+    private static readonly SKColor _monthlyFill = SKColor.Parse("#2F6B4F");
 
     private readonly IDashboardQuery _query;
     private readonly ILocalizer _localizer;

@@ -4,90 +4,33 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Dashboard;assembly=Coffer.Application"
              xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:m="clr-namespace:Coffer.Desktop.Markup"
              xmlns:l="clr-namespace:Coffer.Desktop.Localization"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
-             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
+             mc:Ignorable="d" d:DesignWidth="980" d:DesignHeight="820"
              x:Class="Coffer.Desktop.Views.DashboardView"
              x:DataType="vm:DashboardViewModel"
              x:CompileBindings="False">
-    <UserControl.Styles>
-        <Style Selector="Border.card">
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="BorderBrush" Value="#E5E5EA" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="20,16" />
-        </Style>
-        <Style Selector="TextBlock.kpiLabel">
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="Foreground" Value="#8E8E93" />
-        </Style>
-        <Style Selector="TextBlock.kpiValue">
-            <Setter Property="FontSize" Value="26" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#1D1D1F" />
-            <Setter Property="Margin" Value="0,6,0,0" />
-        </Style>
-        <Style Selector="TextBlock.sectionTitle">
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#1D1D1F" />
-            <Setter Property="Margin" Value="0,0,0,12" />
-        </Style>
-    </UserControl.Styles>
 
     <ScrollViewer>
-        <Grid Margin="40,32" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
-            <!-- Header -->
-            <StackPanel Grid.Row="0" Spacing="4">
-                <TextBlock Text="{l:Localize Dashboard.Title}"
-                           FontSize="26"
-                           FontWeight="Light"
-                           Foreground="#1D1D1F" />
-                <TextBlock Text="{Binding SubtitleText}"
-                           Foreground="#8E8E93" />
-            </StackPanel>
+        <StackPanel Margin="22" Spacing="16">
 
-            <ProgressBar Grid.Row="0" IsIndeterminate="True" Height="4"
-                         VerticalAlignment="Bottom"
-                         IsVisible="{Binding IsLoading}" />
+            <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoading}" />
 
-            <TextBlock Grid.Row="1"
-                       Margin="0,20,0,0"
-                       Text="{Binding ErrorMessage}"
-                       Foreground="#D14"
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource Coffer.Neg}"
                        TextWrapping="Wrap"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-            <TextBlock Grid.Row="1"
-                       Margin="0,40,0,0"
-                       Text="{l:Localize Dashboard.Empty}"
-                       Foreground="#8E8E93"
-                       TextWrapping="Wrap"
-                       HorizontalAlignment="Center"
-                       IsVisible="{Binding IsEmpty}" />
+            <TextBlock Text="{l:Localize Dashboard.Empty}" Classes="muted" Margin="0,40,0,0"
+                       HorizontalAlignment="Center" IsVisible="{Binding IsEmpty}" />
 
-            <!-- KPI cards -->
-            <Grid Grid.Row="2" Margin="0,24,0,0"
-                  ColumnDefinitions="*,16,*,16,*"
-                  IsVisible="{Binding HasData}">
-                <Border Grid.Column="0" Classes="card">
-                    <StackPanel>
-                        <TextBlock Classes="kpiLabel" Text="{l:Localize Dashboard.Spend}" />
-                        <TextBlock Classes="kpiValue">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}{0:N2} {1}">
-                                    <Binding Path="Spend" />
-                                    <Binding Path="Currency" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="2" Classes="card">
-                    <StackPanel>
-                        <TextBlock Classes="kpiLabel" Text="{l:Localize Dashboard.Income}" />
-                        <TextBlock Classes="kpiValue">
+            <!-- KPI strip: one panel, four cells divided by the border token -->
+            <Border Classes="panel" Padding="0" IsVisible="{Binding HasData}">
+                <Grid ColumnDefinitions="*,*,*,*">
+                    <StackPanel Grid.Column="0" Spacing="6" Margin="18">
+                        <TextBlock Classes="label" Text="{l:Localize Dashboard.Income}" />
+                        <TextBlock Classes="money" FontSize="24"
+                                   Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}">
                             <TextBlock.Text>
                                 <MultiBinding StringFormat="{}{0:N2} {1}">
                                     <Binding Path="Income" />
@@ -96,96 +39,121 @@
                             </TextBlock.Text>
                         </TextBlock>
                     </StackPanel>
-                </Border>
-                <Border Grid.Column="4" Classes="card">
-                    <StackPanel>
-                        <TextBlock Classes="kpiLabel" Text="{l:Localize Dashboard.Balance}" />
-                        <TextBlock Classes="kpiValue"
-                                   Foreground="{Binding Net, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}{0:N2} {1}">
-                                    <Binding Path="Net" />
-                                    <Binding Path="Currency" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                    </StackPanel>
-                </Border>
-            </Grid>
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource Coffer.Bd}" BorderThickness="1,0,0,0">
+                        <StackPanel Spacing="6" Margin="18">
+                            <TextBlock Classes="label" Text="{l:Localize Dashboard.Spend}" />
+                            <TextBlock Classes="money" FontSize="24"
+                                       Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0:N2} {1}">
+                                        <Binding Path="Spend" />
+                                        <Binding Path="Currency" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" BorderBrush="{DynamicResource Coffer.Bd}" BorderThickness="1,0,0,0">
+                        <StackPanel Spacing="6" Margin="18">
+                            <TextBlock Classes="label" Text="{l:Localize Dashboard.Net}" />
+                            <TextBlock Classes="money" FontSize="24"
+                                       Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}"
+                                       Foreground="{Binding Net, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0:N2} {1}">
+                                        <Binding Path="Net" />
+                                        <Binding Path="Currency" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="3" BorderBrush="{DynamicResource Coffer.Bd}" BorderThickness="1,0,0,0">
+                        <StackPanel Spacing="6" Margin="18">
+                            <TextBlock Classes="label" Text="{l:Localize Dashboard.Transactions}" />
+                            <TextBlock Classes="money" FontSize="24" Text="{Binding TransactionCount}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
 
-            <!-- Trends + categories -->
-            <Grid Grid.Row="3" Margin="0,16,0,0"
-                  ColumnDefinitions="2*,16,*"
-                  RowDefinitions="Auto,16,Auto"
-                  IsVisible="{Binding HasData}">
-                <Border Grid.Row="0" Grid.Column="0" Classes="card">
-                    <StackPanel>
-                        <TextBlock Classes="sectionTitle" Text="{l:Localize Dashboard.Spend30}" />
-                        <lvc:CartesianChart Height="220"
-                                            Series="{Binding DailySpendSeries}"
-                                            XAxes="{Binding DailyXAxes}" />
-                    </StackPanel>
-                </Border>
-                <Border Grid.Row="0" Grid.Column="2" Classes="card">
-                    <StackPanel>
-                        <TextBlock Classes="sectionTitle" Text="{l:Localize Dashboard.Categories}" />
-                        <lvc:PieChart Height="220"
-                                      Series="{Binding CategorySeries}" />
-                    </StackPanel>
-                </Border>
-                <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Classes="card">
-                    <StackPanel>
-                        <TextBlock Classes="sectionTitle" Text="{l:Localize Dashboard.Spend12}" />
-                        <lvc:CartesianChart Height="200"
-                                            Series="{Binding MonthlySpendSeries}"
-                                            XAxes="{Binding MonthlyXAxes}" />
-                    </StackPanel>
-                </Border>
-            </Grid>
+            <!-- Trend area chart (last 30 days) -->
+            <Border Classes="panel" IsVisible="{Binding HasData}">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="label" Text="{l:Localize Dashboard.Spend30}" />
+                    <lvc:CartesianChart Height="180" Series="{Binding DailySpendSeries}" XAxes="{Binding DailyXAxes}" />
+                </StackPanel>
+            </Border>
 
-            <!-- Recent transactions -->
-            <Border Grid.Row="4" Margin="0,16,0,0" Classes="card"
-                    IsVisible="{Binding HasData}">
-                <StackPanel>
-                    <TextBlock Classes="sectionTitle" Text="{l:Localize Dashboard.Recent}" />
-                    <ItemsControl ItemsSource="{Binding RecentTransactions}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,6">
-                                    <Ellipse Grid.Column="0" Width="10" Height="10" Margin="0,0,12,0"
-                                             VerticalAlignment="Center"
-                                             IsVisible="{Binding CategoryColor, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                             Fill="{Binding CategoryColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
-                                    <StackPanel Grid.Column="1" Spacing="2">
-                                        <TextBlock Text="{Binding Description}"
-                                                   Foreground="#1D1D1F"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Foreground="#8E8E93" FontSize="12">
+            <!-- Recent activity + allocation -->
+            <Grid ColumnDefinitions="1.6*,16,*" IsVisible="{Binding HasData}">
+                <Border Grid.Column="0" Classes="panel">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="label" Text="{l:Localize Dashboard.Recent}" />
+                        <ItemsControl ItemsSource="{Binding RecentTransactions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="66,Auto,*,Auto" Margin="0,7">
+                                        <TextBlock Grid.Column="0" Classes="muted" VerticalAlignment="Center"
+                                                   Text="{Binding Date, StringFormat='{}{0:dd.MM}'}" />
+                                        <Ellipse Grid.Column="1" Width="10" Height="10" Margin="0,0,12,0"
+                                                 VerticalAlignment="Center"
+                                                 IsVisible="{Binding CategoryColor, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                 Fill="{Binding CategoryColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                        <StackPanel Grid.Column="2" Spacing="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Description}" Foreground="{DynamicResource Coffer.Tx}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Classes="muted" FontSize="11" Text="{Binding CategoryName}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="3" Classes="money" VerticalAlignment="Center"
+                                                   Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}"
+                                                   Foreground="{Binding Amount, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
                                             <TextBlock.Text>
-                                                <MultiBinding StringFormat="{}{0:yyyy-MM-dd} · {1}">
-                                                    <Binding Path="Date" />
-                                                    <Binding Path="CategoryName" />
+                                                <MultiBinding StringFormat="{}{0:N2} {1}">
+                                                    <Binding Path="Amount" />
+                                                    <Binding Path="Currency" />
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="2"
-                                               VerticalAlignment="Center"
-                                               FontWeight="SemiBold"
-                                               Foreground="{Binding Amount, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0:N2} {1}">
-                                                <Binding Path="Amount" />
-                                                <Binding Path="Currency" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Classes="panel">
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="label" Text="{l:Localize Dashboard.Categories}" />
+                        <lvc:PieChart Height="170" Series="{Binding CategorySeries}" />
+                        <ItemsControl ItemsSource="{Binding TopCategories}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,3">
+                                        <Ellipse Grid.Column="0" Width="8" Height="8" Margin="0,0,8,0"
+                                                 VerticalAlignment="Center"
+                                                 Fill="{Binding Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                        <TextBlock Grid.Column="1" Classes="muted" VerticalAlignment="Center"
+                                                   Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="2" Classes="money" FontSize="12" VerticalAlignment="Center"
+                                                   Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}"
+                                                   Text="{Binding Total, StringFormat='{}{0:N0}'}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 12-month spend -->
+            <Border Classes="panel" IsVisible="{Binding HasData}">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="label" Text="{l:Localize Dashboard.Spend12}" />
+                    <lvc:CartesianChart Height="170" Series="{Binding MonthlySpendSeries}" XAxes="{Binding MonthlyXAxes}" />
                 </StackPanel>
             </Border>
-        </Grid>
+
+        </StackPanel>
     </ScrollViewer>
 </UserControl>

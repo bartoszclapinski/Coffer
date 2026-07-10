@@ -97,6 +97,11 @@ public partial class App : Avalonia.Application
             return new StyleGalleryWindow();
         }
 
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("COFFER_OVERVIEW_PREVIEW")))
+        {
+            return new OverviewPreviewWindow();
+        }
+
         // Apply any restore staged from Settings BEFORE touching the database — the swap must happen while
         // the file is closed. A failure (e.g. the staged snapshot vanished) returns a recovery window.
         if (ApplyPendingRestore(desktop) is { } restoreError)
