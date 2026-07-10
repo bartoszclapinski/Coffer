@@ -4,29 +4,16 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Coffer.Application.ViewModels.Transactions;assembly=Coffer.Application"
              xmlns:conv="clr-namespace:Coffer.Desktop.Converters"
+             xmlns:m="clr-namespace:Coffer.Desktop.Markup"
              xmlns:l="clr-namespace:Coffer.Desktop.Localization"
-             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="640"
+             mc:Ignorable="d" d:DesignWidth="980" d:DesignHeight="700"
              x:Class="Coffer.Desktop.Views.TransactionsView"
              x:DataType="vm:TransactionsViewModel"
              x:CompileBindings="False">
-    <Grid Margin="40,32" RowDefinitions="Auto,Auto,*">
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-            <StackPanel Grid.Column="0" Spacing="4">
-                <TextBlock Text="{l:Localize Transactions.Title}"
-                           FontSize="26"
-                           FontWeight="Light"
-                           Foreground="#1D1D1F" />
-                <TextBlock Text="{l:Localize Transactions.Subtitle}"
-                           Foreground="#8E8E93" />
-            </StackPanel>
-            <Button Grid.Column="1"
-                    VerticalAlignment="Center"
-                    Content="{l:Localize Transactions.Recategorize}"
-                    Command="{Binding RecategorizeExistingCommand}" />
-        </Grid>
+    <Grid Margin="22" RowDefinitions="Auto,Auto,*">
 
-        <!-- Filter bar -->
-        <Grid Grid.Row="1" Margin="0,20,0,0" ColumnDefinitions="*,12,170,12,170,12,150">
+        <!-- Toolbar: filters + recategorise -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,12,170,12,170,12,150,12,Auto">
             <TextBox Grid.Column="0"
                      Text="{Binding SearchText, Mode=TwoWay}"
                      Watermark="{l:Localize Transactions.SearchWatermark}" />
@@ -39,7 +26,7 @@
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="{Binding Name, Converter={x:Static conv:LocalizeKeyConverter.Instance}}" />
-                            <TextBlock Text="{Binding BankCode}" Foreground="#8E8E93" />
+                            <TextBlock Text="{Binding BankCode}" Foreground="{DynamicResource Coffer.Mut}" />
                         </StackPanel>
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
@@ -69,97 +56,98 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
+            <Button Grid.Column="8" Classes="chip" VerticalAlignment="Center"
+                    Content="{l:Localize Transactions.Recategorize}"
+                    Command="{Binding RecategorizeExistingCommand}" />
         </Grid>
 
-        <Panel Grid.Row="2" Margin="0,20,0,0">
-            <ProgressBar IsIndeterminate="True" Height="4"
-                         VerticalAlignment="Top"
-                         IsVisible="{Binding IsLoading}" />
+        <ProgressBar Grid.Row="1" IsIndeterminate="True" Height="4" Margin="0,10,0,0"
+                     IsVisible="{Binding IsLoading}" />
 
+        <Panel Grid.Row="2" Margin="0,14,0,0">
             <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="#D14"
+                       Foreground="{DynamicResource Coffer.Neg}"
                        TextWrapping="Wrap"
                        VerticalAlignment="Top"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-            <TextBlock Text="{l:Localize Transactions.Empty}"
-                       Foreground="#8E8E93"
+            <TextBlock Text="{l:Localize Transactions.Empty}" Classes="muted"
                        TextWrapping="Wrap"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        IsVisible="{Binding IsEmpty}" />
 
-            <DataGrid ItemsSource="{Binding Transactions}"
-                      IsVisible="{Binding !IsEmpty}"
-                      IsReadOnly="True"
-                      CanUserResizeColumns="True"
-                      CanUserReorderColumns="False"
-                      GridLinesVisibility="Horizontal"
-                      HeadersVisibility="Column"
-                      Background="#FFFFFF"
-                      BorderBrush="#E5E5EA"
-                      BorderThickness="1"
-                      CornerRadius="8">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="{l:Localize Transactions.Column.Date}"
-                                        Binding="{Binding Date, StringFormat=\{0:yyyy-MM-dd\}}"
-                                        Width="110" />
-                    <DataGridTextColumn Header="{l:Localize Transactions.Column.Description}"
-                                        Binding="{Binding Description}"
-                                        Width="2*" />
-                    <DataGridTextColumn Header="{l:Localize Transactions.Column.Merchant}"
-                                        Binding="{Binding Merchant}"
-                                        Width="*" />
-                    <DataGridTextColumn Header="{l:Localize Transactions.Column.Account}"
-                                        Binding="{Binding AccountName}"
-                                        Width="*" />
-                    <DataGridTemplateColumn Header="{l:Localize Transactions.Column.Category}" Width="1.6*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="6,0">
-                                    <Ellipse Grid.Column="0" Width="10" Height="10" Margin="0,0,8,0"
-                                             VerticalAlignment="Center"
-                                             IsVisible="{Binding SelectedCategory, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                             Fill="{Binding SelectedCategory.Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
-                                    <ComboBox Grid.Column="1"
-                                              HorizontalAlignment="Stretch"
-                                              PlaceholderText="{l:Localize Transactions.Uncategorized}"
-                                              ItemsSource="{Binding Categories}"
-                                              SelectedItem="{Binding SelectedCategory, Mode=TwoWay}">
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                                    <Ellipse Width="10" Height="10" VerticalAlignment="Center"
-                                                             Fill="{Binding Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
-                                                    <TextBlock Text="{Binding Name}" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
-                                </Grid>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="{l:Localize Transactions.Column.Amount}" Width="140">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock HorizontalAlignment="Right"
-                                           Margin="0,0,12,0"
-                                           VerticalAlignment="Center"
-                                           FontWeight="SemiBold"
-                                           Foreground="{Binding Amount, Converter={x:Static conv:AmountToBrushConverter.Instance}}">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="{}{0:N2} {1}">
-                                            <Binding Path="Amount" />
-                                            <Binding Path="Currency" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+            <Border Classes="panel" Padding="0" IsVisible="{Binding !IsEmpty}">
+                <DataGrid ItemsSource="{Binding Transactions}"
+                          IsReadOnly="True"
+                          CanUserResizeColumns="True"
+                          CanUserReorderColumns="False"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          CornerRadius="14">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{l:Localize Transactions.Column.Date}"
+                                            Binding="{Binding Date, StringFormat=\{0:yyyy-MM-dd\}}"
+                                            Width="110" />
+                        <DataGridTextColumn Header="{l:Localize Transactions.Column.Description}"
+                                            Binding="{Binding Description}"
+                                            Width="2*" />
+                        <DataGridTextColumn Header="{l:Localize Transactions.Column.Merchant}"
+                                            Binding="{Binding Merchant}"
+                                            Width="*" />
+                        <DataGridTextColumn Header="{l:Localize Transactions.Column.Account}"
+                                            Binding="{Binding AccountName}"
+                                            Width="*" />
+                        <DataGridTemplateColumn Header="{l:Localize Transactions.Column.Category}" Width="1.6*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="6,0">
+                                        <Ellipse Grid.Column="0" Width="10" Height="10" Margin="0,0,8,0"
+                                                 VerticalAlignment="Center"
+                                                 IsVisible="{Binding SelectedCategory, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                 Fill="{Binding SelectedCategory.Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                        <ComboBox Grid.Column="1"
+                                                  HorizontalAlignment="Stretch"
+                                                  PlaceholderText="{l:Localize Transactions.Uncategorized}"
+                                                  ItemsSource="{Binding Categories}"
+                                                  SelectedItem="{Binding SelectedCategory, Mode=TwoWay}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <Ellipse Width="10" Height="10" VerticalAlignment="Center"
+                                                                 Fill="{Binding Color, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+                                                        <TextBlock Text="{Binding Name}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="{l:Localize Transactions.Column.Amount}" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Classes="money" HorizontalAlignment="Right"
+                                               Margin="0,0,12,0"
+                                               VerticalAlignment="Center"
+                                               Classes.pos="{Binding Amount, Converter={x:Static m:AmountConverters.IsPositive}}"
+                                               Classes.hidden="{Binding $parent[Window].DataContext.HideBalances}">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:N2} {1}">
+                                                <Binding Path="Amount" />
+                                                <Binding Path="Currency" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
         </Panel>
     </Grid>
 </UserControl>
