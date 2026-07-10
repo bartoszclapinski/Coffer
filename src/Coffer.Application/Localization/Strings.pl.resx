@@ -1432,4 +1432,10 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   <data name="TopBar.New" xml:space="preserve">
     <value>Nowy</value>
   </data>
+  <data name="Dashboard.Transactions" xml:space="preserve">
+    <value>Transakcje</value>
+  </data>
+  <data name="Dashboard.Net" xml:space="preserve">
+    <value>Bilans</value>
+  </data>
 </root>

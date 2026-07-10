@@ -78,14 +78,14 @@ Doing this as a **vertical slice** (foundation + shell + one full screen) de-ris
 
 ### 28-C — Overview (Dashboard) rebuilt
 
-- [ ] 28.13 `DashboardView.axaml` rebuilt on tokens + the style library: KPI strip (real PLN metrics), trend area chart, recent activity, allocation donut (spending-by-category), budgets mini — matching the mock layout; charts restyled (flat fill, 2px stroke, no gridlines).
-- [ ] 28.14 KPI cells mapped to `IDashboardQuery` data in PLN (labels per the resolved open question); deltas colored `Pos`/`Neg`; `money` class on every figure (privacy blur); tabular-nums.
-- [ ] 28.15 Localization: new `Nav.*` / `Overview.*` / `Palette.*` / `Theme.*` keys in both `.resx` (parity); no hardcoded user-facing literals.
-- [ ] 28.16 Overview renders correctly in **both** themes with privacy blur; `DashboardViewModel` unchanged or minimally extended (no new query cost).
+- [x] 28.13 `DashboardView.axaml` rebuilt on tokens + the style library: KPI strip (real PLN metrics), trend area chart, recent activity, allocation donut (spending-by-category), budgets mini — matching the mock layout; charts restyled (flat fill, 2px stroke, no gridlines).
+- [x] 28.14 KPI cells mapped to `IDashboardQuery` data in PLN (labels per the resolved open question); deltas colored `Pos`/`Neg`; `money` class on every figure (privacy blur); tabular-nums.
+- [x] 28.15 Localization: new `Nav.*` / `Overview.*` / `Palette.*` / `Theme.*` keys in both `.resx` (parity); no hardcoded user-facing literals.
+- [x] 28.16 Overview renders correctly in **both** themes with privacy blur; `DashboardViewModel` unchanged or minimally extended (no new query cost).
 
 ### Sweep
 
-- [ ] 28.17 resx parity green; `dotnet format --verify-no-changes` clean (only pre-existing CRLF noise); no `RequestedThemeVariant="Light"` pins left; no hardcoded hex in the shell or Overview (tokens only). Accessibility: rail tooltips, visible focus, over-budget not color-only, palette focus trap.
+- [x] 28.17 resx parity green; `dotnet format --verify-no-changes` clean (only pre-existing CRLF noise); no `RequestedThemeVariant="Light"` pins left; no hardcoded hex in the shell or Overview (tokens only). Accessibility: rail tooltips, visible focus, over-budget not color-only, palette focus trap.
 - [ ] 28.18 Manual DoD click-through (below) — deferred to manual (needs a running app).
 
 ## Definition of Done

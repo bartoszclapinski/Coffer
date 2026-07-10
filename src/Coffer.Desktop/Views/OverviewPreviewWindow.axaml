@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:Coffer.Desktop.Views"
+        x:Class="Coffer.Desktop.Views.OverviewPreviewWindow"
+        x:CompileBindings="False"
+        Title="Coffer — Overview Preview"
+        Width="1000" Height="820"
+        Background="{DynamicResource Coffer.Bg}"
+        WindowStartupLocation="CenterScreen">
+    <!--
+        Dev-only Overview validation surface (Sprint 28-C). Launched via the
+        COFFER_OVERVIEW_PREVIEW environment variable; hosts DashboardView with canned data
+        so the screen can be reviewed in both themes without a database or a login. The
+        window's DataContext carries HideBalances so the money privacy-blur binding resolves.
+    -->
+    <Grid RowDefinitions="Auto,*">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="22,14"
+                    HorizontalAlignment="Right">
+            <Button Classes="chip" Content="Toggle theme" Click="OnToggleTheme" />
+            <Button Classes="chip" Content="Toggle blur" Click="OnToggleBlur" />
+        </StackPanel>
+        <views:DashboardView Grid.Row="1" Name="Dash" />
+    </Grid>
+</Window>

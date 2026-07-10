@@ -1432,4 +1432,10 @@ To create a new vault, delete the existing files and restart the application.</v
   <data name="TopBar.New" xml:space="preserve">
     <value>New</value>
   </data>
+  <data name="Dashboard.Transactions" xml:space="preserve">
+    <value>Transactions</value>
+  </data>
+  <data name="Dashboard.Net" xml:space="preserve">
+    <value>Net</value>
+  </data>
 </root>
