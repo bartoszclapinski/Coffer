@@ -47,6 +47,10 @@
             <SolidColorBrush x:Key="Coffer.Accent" Color="#2F6B4F" />
             <SolidColorBrush x:Key="Coffer.OnAccent" Color="#FFFFFF" />
 
+            <!-- Semantic alert/verdict surfaces: pos/neg at ~13% alpha over the panel. -->
+            <SolidColorBrush x:Key="Coffer.PosTint" Color="#222F6B4F" />
+            <SolidColorBrush x:Key="Coffer.NegTint" Color="#22A8552F" />
+
             <!-- Category colours (light) + tiles (~16% alpha over panel) -->
             <SolidColorBrush x:Key="Cat.Groceries" Color="#1C6E6A" />
             <SolidColorBrush x:Key="Cat.GroceriesTile" Color="#291C6E6A" />
@@ -98,6 +102,10 @@
             <SolidColorBrush x:Key="Coffer.Hover" Color="#1A1D23" />
             <SolidColorBrush x:Key="Coffer.Accent" Color="#2F6B4F" />
             <SolidColorBrush x:Key="Coffer.OnAccent" Color="#FFFFFF" />
+
+            <!-- Semantic alert/verdict surfaces: pos/neg at ~13% alpha over the panel. -->
+            <SolidColorBrush x:Key="Coffer.PosTint" Color="#224ADE80" />
+            <SolidColorBrush x:Key="Coffer.NegTint" Color="#22F87171" />
 
             <!-- Category colours (dark-bright) + tiles (~16% alpha over panel) -->
             <SolidColorBrush x:Key="Cat.Groceries" Color="#6EE7A8" />
