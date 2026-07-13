@@ -9,57 +9,51 @@
              x:DataType="vm:ChatViewModel"
              x:CompileBindings="False">
     <UserControl.Styles>
+        <!-- Chat bubbles: user speaks in the accent, the assistant on a panel surface. -->
         <Style Selector="Border.userBubble">
-            <Setter Property="Background" Value="#1D4ED8" />
+            <Setter Property="Background" Value="{DynamicResource Coffer.Accent}" />
             <Setter Property="CornerRadius" Value="12,12,2,12" />
             <Setter Property="Padding" Value="14,10" />
             <Setter Property="MaxWidth" Value="460" />
         </Style>
         <Style Selector="Border.assistantBubble">
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="Background" Value="{DynamicResource Coffer.Panel}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Coffer.Bd}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="12,12,12,2" />
             <Setter Property="Padding" Value="14,10" />
             <Setter Property="MaxWidth" Value="460" />
         </Style>
         <Style Selector="Button.suggestion">
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="BorderBrush" Value="#E5E5EA" />
+            <Setter Property="Background" Value="{DynamicResource Coffer.Panel}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Coffer.Bd}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="16" />
             <Setter Property="Padding" Value="14,8" />
-            <Setter Property="Foreground" Value="#1D1D1F" />
+            <Setter Property="Foreground" Value="{DynamicResource Coffer.Mut2}" />
             <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="Button.suggestion:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Coffer.Hover}" />
         </Style>
         <Style Selector="Button.trace">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#1D4ED8" />
+            <Setter Property="Foreground" Value="{DynamicResource Coffer.Accent}" />
             <Setter Property="Padding" Value="0,2" />
             <Setter Property="FontSize" Value="12" />
         </Style>
     </UserControl.Styles>
 
-    <Grid Margin="40,32" RowDefinitions="Auto,*,Auto,Auto">
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Spacing="4">
-            <TextBlock Text="{l:Localize Chat.Title}"
-                       FontSize="26"
-                       FontWeight="Light"
-                       Foreground="#1D1D1F" />
-            <TextBlock Text="{l:Localize Chat.Subtitle}"
-                       Foreground="#8E8E93" />
-        </StackPanel>
-
+    <Grid Margin="22" RowDefinitions="*,Auto,Auto">
         <!-- Transcript -->
-        <ScrollViewer Grid.Row="1" Margin="0,20,0,0">
+        <ScrollViewer Grid.Row="0">
             <Grid>
                 <!-- Empty state: suggested prompts -->
                 <StackPanel IsVisible="{Binding IsEmpty}" Spacing="14" Margin="0,24,0,0"
                             HorizontalAlignment="Center" VerticalAlignment="Top" MaxWidth="520">
                     <TextBlock Text="{l:Localize Chat.EmptyPrompt}"
                                FontSize="16"
-                               Foreground="#1D1D1F"
+                               Foreground="{DynamicResource Coffer.Tx}"
                                HorizontalAlignment="Center" />
                     <ItemsControl ItemsSource="{Binding SuggestedPrompts}">
                         <ItemsControl.ItemsPanel>
@@ -90,7 +84,7 @@
                                         IsVisible="{Binding IsUser}">
                                     <TextBlock Text="{Binding Text}"
                                                TextWrapping="Wrap"
-                                               Foreground="#FFFFFF" />
+                                               Foreground="{DynamicResource Coffer.OnAccent}" />
                                 </Border>
 
                                 <!-- Assistant -->
@@ -100,13 +94,13 @@
                                     <Border Classes="assistantBubble">
                                         <TextBlock Text="{Binding Text}"
                                                    TextWrapping="Wrap"
-                                                   Foreground="#1D1D1F" />
+                                                   Foreground="{DynamicResource Coffer.Tx}" />
                                     </Border>
                                     <StackPanel Spacing="4" IsVisible="{Binding HasToolTraces}">
                                         <Button Classes="trace"
                                                 Content="{l:Localize Chat.ShowTools}"
                                                 Command="{Binding ToggleToolTraceCommand}" />
-                                        <Border Background="#F5F5F7"
+                                        <Border Background="{DynamicResource Coffer.Panel2}"
                                                 CornerRadius="8"
                                                 Padding="12,8"
                                                 IsVisible="{Binding IsToolTraceExpanded}">
@@ -116,7 +110,7 @@
                                                         <TextBlock Text="{Binding}"
                                                                    FontFamily="Consolas, monospace"
                                                                    FontSize="12"
-                                                                   Foreground="#48484A"
+                                                                   Foreground="{DynamicResource Coffer.Mut2}"
                                                                    TextWrapping="Wrap"
                                                                    Margin="0,2" />
                                                     </DataTemplate>
@@ -133,29 +127,29 @@
         </ScrollViewer>
 
         <!-- Status banners -->
-        <StackPanel Grid.Row="2" Spacing="8" Margin="0,12,0,0">
-            <ProgressBar IsIndeterminate="True" Height="4"
+        <StackPanel Grid.Row="1" Spacing="8" Margin="0,12,0,0">
+            <ProgressBar Classes="bar" IsIndeterminate="True" Height="4"
                          IsVisible="{Binding IsBusy}" />
-            <Border Background="#FFF4E5" CornerRadius="8" Padding="14,10"
+            <Border Background="{DynamicResource Coffer.NegTint}" CornerRadius="8" Padding="14,10"
                     IsVisible="{Binding MissingApiKey}">
                 <TextBlock Text="{l:Localize Chat.MissingApiKey}"
-                           Foreground="#8A5A00"
+                           Foreground="{DynamicResource Coffer.Neg}"
                            TextWrapping="Wrap" />
             </Border>
-            <Border Background="#FFF4E5" CornerRadius="8" Padding="14,10"
+            <Border Background="{DynamicResource Coffer.NegTint}" CornerRadius="8" Padding="14,10"
                     IsVisible="{Binding BudgetExceeded}">
                 <TextBlock Text="{l:Localize Chat.BudgetExceeded}"
-                           Foreground="#8A5A00"
+                           Foreground="{DynamicResource Coffer.Neg}"
                            TextWrapping="Wrap" />
             </Border>
             <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="#D14"
+                       Foreground="{DynamicResource Coffer.Neg}"
                        TextWrapping="Wrap"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </StackPanel>
 
         <!-- Input -->
-        <Grid Grid.Row="3" Margin="0,12,0,0" ColumnDefinitions="*,12,Auto">
+        <Grid Grid.Row="2" Margin="0,12,0,0" ColumnDefinitions="*,12,Auto">
             <TextBox Grid.Column="0"
                      Text="{Binding InputText}"
                      Watermark="{l:Localize Chat.InputWatermark}"
@@ -166,10 +160,9 @@
                 </TextBox.KeyBindings>
             </TextBox>
             <Button Grid.Column="2"
+                    Classes="accent"
                     Content="{l:Localize Chat.Send}"
                     Padding="20,10"
-                    Background="#1D4ED8"
-                    Foreground="#FFFFFF"
                     Command="{Binding SendCommand}" />
         </Grid>
     </Grid>

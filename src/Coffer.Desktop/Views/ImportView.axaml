@@ -9,21 +9,12 @@
              x:DataType="vm:ImportViewModel"
              x:CompileBindings="False">
     <ScrollViewer>
-        <StackPanel Margin="40,32" Spacing="24" MaxWidth="640" HorizontalAlignment="Left">
-            <StackPanel Spacing="4">
-                <TextBlock Text="{l:Localize Import.Title}"
-                           FontSize="26"
-                           FontWeight="Light"
-                           Foreground="#1D1D1F" />
-                <TextBlock Text="{l:Localize Import.Subtitle}"
-                           TextWrapping="Wrap"
-                           Foreground="#8E8E93" />
-            </StackPanel>
+        <StackPanel Margin="22" Spacing="24" MaxWidth="640" HorizontalAlignment="Left">
 
             <!-- Account -->
-            <Border Background="#FFFFFF" CornerRadius="10" Padding="20" BorderBrush="#E5E5EA" BorderThickness="1">
+            <Border Classes="panel">
                 <StackPanel Spacing="12">
-                    <TextBlock Text="{l:Localize Import.Account}" FontWeight="SemiBold" Foreground="#1D1D1F" />
+                    <TextBlock Text="{l:Localize Import.Account}" Classes="title" />
 
                     <ComboBox HorizontalAlignment="Stretch"
                               PlaceholderText="{l:Localize Import.Account.Placeholder}"
@@ -34,7 +25,7 @@
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBlock Text="{Binding Name}" />
-                                    <TextBlock Text="{Binding BankCode}" Foreground="#8E8E93" />
+                                    <TextBlock Text="{Binding BankCode}" Foreground="{DynamicResource Coffer.Mut}" />
                                 </StackPanel>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
@@ -45,22 +36,22 @@
 
                     <StackPanel Spacing="10" IsVisible="{Binding IsCreatingNewAccount}">
                         <StackPanel Spacing="4">
-                            <TextBlock Text="{l:Localize Import.Account.Name}" Foreground="#8E8E93" />
+                            <TextBlock Text="{l:Localize Import.Account.Name}" Classes="muted" />
                             <TextBox Text="{Binding NewAccountName, Mode=TwoWay}"
                                      Watermark="{l:Localize Import.Account.NameWatermark}" />
                         </StackPanel>
                         <StackPanel Spacing="4">
-                            <TextBlock Text="{l:Localize Import.Account.Number}" Foreground="#8E8E93" />
+                            <TextBlock Text="{l:Localize Import.Account.Number}" Classes="muted" />
                             <TextBox Text="{Binding NewAccountNumber, Mode=TwoWay}"
                                      Watermark="{l:Localize Import.Account.NumberWatermark}" />
                         </StackPanel>
                         <Grid ColumnDefinitions="*,12,*">
                             <StackPanel Grid.Column="0" Spacing="4">
-                                <TextBlock Text="{l:Localize Import.Account.Currency}" Foreground="#8E8E93" />
+                                <TextBlock Text="{l:Localize Import.Account.Currency}" Classes="muted" />
                                 <TextBox Text="{Binding NewAccountCurrency, Mode=TwoWay}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2" Spacing="4">
-                                <TextBlock Text="{l:Localize Import.Account.Type}" Foreground="#8E8E93" />
+                                <TextBlock Text="{l:Localize Import.Account.Type}" Classes="muted" />
                                 <ComboBox HorizontalAlignment="Stretch"
                                           ItemsSource="{Binding AccountTypes}"
                                           SelectedItem="{Binding NewAccountType, Mode=TwoWay}" />
@@ -71,20 +62,20 @@
             </Border>
 
             <!-- File -->
-            <Border Background="#FFFFFF" CornerRadius="10" Padding="20" BorderBrush="#E5E5EA" BorderThickness="1">
+            <Border Classes="panel">
                 <StackPanel Spacing="12">
-                    <TextBlock Text="{l:Localize Import.File}" FontWeight="SemiBold" Foreground="#1D1D1F" />
+                    <TextBlock Text="{l:Localize Import.File}" Classes="title" />
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <Button Content="{l:Localize Import.File.Browse}"
+                                Classes="chip"
                                 IsEnabled="{Binding !IsImporting}"
                                 Command="{Binding BrowseCommand}" />
                         <TextBlock Text="{Binding PickedFileName}"
                                    VerticalAlignment="Center"
-                                   Foreground="#1D1D1F"
                                    IsVisible="{Binding HasPickedFile}" />
                         <TextBlock Text="{l:Localize Import.File.None}"
                                    VerticalAlignment="Center"
-                                   Foreground="#8E8E93"
+                                   Classes="muted"
                                    IsVisible="{Binding !HasPickedFile}" />
                     </StackPanel>
                 </StackPanel>
@@ -93,49 +84,47 @@
             <!-- Action + progress -->
             <StackPanel Spacing="12">
                 <Button Content="{l:Localize Import.Action}"
+                        Classes="accent"
                         MinWidth="140"
                         HorizontalAlignment="Left"
                         IsDefault="True"
                         Command="{Binding ImportCommand}" />
 
                 <StackPanel Spacing="6" IsVisible="{Binding IsImporting}">
-                    <TextBlock Text="{Binding StageLabel}" Foreground="#1D1D1F" />
+                    <TextBlock Text="{Binding StageLabel}" />
                     <ProgressBar IsIndeterminate="True" Height="4" />
                 </StackPanel>
 
                 <TextBlock Text="{Binding ErrorMessage}"
-                           Foreground="#D14"
+                           Foreground="{DynamicResource Coffer.Neg}"
                            TextWrapping="Wrap"
                            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             </StackPanel>
 
             <!-- Summary -->
-            <Border Background="#FFFFFF" CornerRadius="10" Padding="20"
-                    BorderBrush="#E5E5EA" BorderThickness="1"
+            <Border Classes="panel"
                     IsVisible="{Binding HasSummary}">
                 <StackPanel Spacing="10">
-                    <TextBlock Text="{l:Localize Import.Summary.Title}" FontWeight="SemiBold" Foreground="#1D1D1F" />
-                    <TextBlock Text="{Binding SummaryAddedText}"
-                               Foreground="#1D1D1F" />
-                    <TextBlock Text="{Binding SummarySkippedText}"
-                               Foreground="#1D1D1F" />
+                    <TextBlock Text="{l:Localize Import.Summary.Title}" Classes="title" />
+                    <TextBlock Text="{Binding SummaryAddedText}" />
+                    <TextBlock Text="{Binding SummarySkippedText}" />
                     <TextBlock Text="{l:Localize Import.Summary.AlreadyImported}"
-                               Foreground="#8E8E93"
+                               Classes="muted"
                                IsVisible="{Binding SummaryAlreadyImported}" />
-                    <Border Background="#FFF7ED" CornerRadius="6" Padding="10"
+                    <Border Background="{DynamicResource Coffer.Panel2}" CornerRadius="6" Padding="10"
                             IsVisible="{Binding AiFallbackUsed}">
                         <TextBlock Text="{l:Localize Import.Summary.AiFallback}"
-                                   Foreground="#B26A00" TextWrapping="Wrap" />
+                                   Foreground="{DynamicResource Coffer.Mut2}" TextWrapping="Wrap" />
                     </Border>
-                    <Border Background="#FEF2F2" CornerRadius="6" Padding="10"
+                    <Border Background="{DynamicResource Coffer.NegTint}" CornerRadius="6" Padding="10"
                             IsVisible="{Binding OwnerNameUnredacted}">
                         <TextBlock Text="{l:Localize Import.Summary.OwnerNameUnredacted}"
-                                   Foreground="#B91C1C" TextWrapping="Wrap" />
+                                   Foreground="{DynamicResource Coffer.Neg}" TextWrapping="Wrap" />
                     </Border>
                     <ItemsControl ItemsSource="{Binding Warnings}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding}" Foreground="#B26A00" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding}" Foreground="{DynamicResource Coffer.Neg}" TextWrapping="Wrap" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

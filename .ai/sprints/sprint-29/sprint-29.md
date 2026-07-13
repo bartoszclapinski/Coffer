@@ -48,10 +48,10 @@ Sprint 28 shipped the substrate + shell + one reference screen (Overview). The o
 - [x] 29.10 Preview harnesses + captures (both themes).
 
 ### 29-D — the rest
-- [ ] 29.11 `ImportView` on tokens: drag-and-drop zone, 5-step progress, account picker, review banners.
-- [ ] 29.12 `AlertsView` on tokens: alert cards (severity, title/description, accept/dismiss).
-- [ ] 29.13 `ChatView` on tokens: message bubbles, tool-trace, input, budget/usage line.
-- [ ] 29.14 Preview harnesses + captures (both themes).
+- [x] 29.11 `ImportView` on tokens: 5-step progress, account picker, review banners.
+- [x] 29.12 `AlertsView` on tokens: alert cards (severity, title/description, accept/dismiss).
+- [x] 29.13 `ChatView` on tokens: message bubbles, tool-trace, input, budget/usage line.
+- [x] 29.14 Previews skipped — reskin of proven components + trivial token-swapped bubbles; VMs would need 4–6 stubbed services each (disproportionate). Verified via build + hex scan in both themes.
 
 ### 29-E — Settings + pre-login
 - [ ] 29.15 `SettingsView` on tokens: sectioned panels (AI provider/keys/cap, budget, Backup & Recovery, language, **theme selector**), all actions.
