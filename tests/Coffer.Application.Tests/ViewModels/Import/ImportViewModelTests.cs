@@ -1,5 +1,6 @@
 using Coffer.Application.Tests.Fakes;
 using Coffer.Application.ViewModels.Import;
+using Coffer.Core.Ai;
 using Coffer.Core.Domain;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
@@ -172,6 +173,22 @@ public class ImportViewModelTests
 
         accounts.CreateCalls.Should().Be(0, "Currency is non-null on every monetary entity (rule #9)");
         useCase.Calls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Import_AiProviderUnavailable_ShowsLocalizedMessage()
+    {
+        var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
+        await vm.LoadAccountsCommand.ExecuteAsync(null);
+        await vm.BrowseCommand.ExecuteAsync(null);
+        useCase.Throw = new AiProviderUnavailableException(
+            AiDefaults.OllamaProvider, AiDefaults.OllamaEndpoint, "qwen3.5:latest", AiProviderUnavailableReason.Unreachable);
+
+        await vm.ImportCommand.ExecuteAsync(null);
+
+        vm.HasSummary.Should().BeFalse();
+        vm.ErrorMessage.Should().Be("Import.Error.AiUnavailable");
+        vm.IsImporting.Should().BeFalse();
     }
 
     [Fact]

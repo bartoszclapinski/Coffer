@@ -290,6 +290,15 @@ public sealed class HybridCategorizer : ICategorizer
             {
                 throw;
             }
+            catch (AiProviderUnavailableException ex)
+            {
+                // Ollama down, too slow or without the model: a retry would fail the same way (or wait out
+                // the long timeout again), so the batch stays uncategorised and the import carries on.
+                _logger.LogWarning(
+                    "AI provider unavailable ({Reason}); leaving a batch of {Count} uncategorised.",
+                    ex.Reason, batch.Count);
+                return null;
+            }
             catch (Exception ex) when (ex is MissingAiKeyException or UnknownAiProviderException)
             {
                 // Not configured, not transient: a retry would fail the same way.

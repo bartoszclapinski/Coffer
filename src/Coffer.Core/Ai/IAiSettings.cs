@@ -29,6 +29,18 @@ public interface IAiSettings
     Task SetRouteAsync(AiRole role, AiRoute route, CancellationToken ct);
 
     /// <summary>
+    /// The Ollama endpoint every Ollama call goes to. Nothing stored, or a stored value that is not a valid
+    /// endpoint (<see cref="OllamaEndpoint.IsValid"/>), reads as <see cref="OllamaEndpoint.Default"/>.
+    /// </summary>
+    Task<Uri> GetOllamaEndpointAsync(CancellationToken ct);
+
+    /// <summary>
+    /// Saves the Ollama endpoint. Throws <see cref="ArgumentException"/> unless it is a valid endpoint
+    /// (absolute <c>http</c> / <c>https</c>, no user info, query or fragment).
+    /// </summary>
+    Task SetOllamaEndpointAsync(Uri endpoint, CancellationToken ct);
+
+    /// <summary>
     /// Whether the AI-assisted fallback parser may run for statements from banks with no
     /// deterministic parser. Off by default: it sends statement text to the AI provider, the
     /// most data-exposing AI feature in the app, so the owner must opt in explicitly.

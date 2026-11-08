@@ -127,6 +127,12 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
         {
             throw;
         }
+        catch (AiProviderUnavailableException ex)
+        {
+            // E.g. Ollama not running or the model not pulled: degrade like a missing key.
+            _logger.LogWarning("AI provider unavailable ({Reason}) for the cash-flow explanation; using engine-only summary.", ex.Reason);
+            return EngineOnly(projection);
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(

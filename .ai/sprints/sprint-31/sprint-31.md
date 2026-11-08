@@ -65,10 +65,10 @@ The owner can run every AI feature on a **local Ollama model** — nothing leave
 
 ### 31-C — Ollama provider
 
-- [ ] 31.9 `OllamaProvider : IAiProvider` over `/api/chat` (text, JSON, tool turn; `num_ctx`, `num_predict`, `temperature`, thinking handling, usage, generated tool-call ids).
-- [ ] 31.10 Endpoint setting (default `http://localhost:11434`); `AiProviderUnavailableException` for connection failures / unknown model; consumers degrade the same way as for a missing key.
-- [ ] 31.11 Model catalog + connection test (`/api/tags`, `/api/version`) behind an interface for the Settings screen.
-- [ ] 31.12 Unit tests over a fake `HttpMessageHandler` (request shape, JSON, tool calls in and out, errors, cancellation); live check against a local Ollama, skipped by default.
+- [x] 31.9 `OllamaProvider : IAiProvider` over `/api/chat` (text, JSON, tool turn; `num_ctx`, `num_predict`, `temperature`, thinking handling, usage, generated tool-call ids).
+- [x] 31.10 Endpoint setting (default `http://localhost:11434`); `AiProviderUnavailableException` for connection failures / unknown model; consumers degrade the same way as for a missing key.
+- [x] 31.11 Model catalog + connection test (`/api/tags`, `/api/version`) behind an interface for the Settings screen.
+- [x] 31.12 Unit tests over a fake `HttpMessageHandler` (request shape, JSON, tool calls in and out, errors, cancellation); live check against a local Ollama, skipped by default.
 
 ### 31-D — Settings UI, docs, close
 

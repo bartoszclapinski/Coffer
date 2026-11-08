@@ -192,6 +192,20 @@ public class ChatServiceTests
     }
 
     [Fact]
+    public async Task Ask_ProviderUnavailable_ReturnsFriendlyTurnWithoutRetrying()
+    {
+        var provider = new ScriptedProvider { ThrowUnavailable = true };
+        var service = Service(provider, []);
+
+        var turn = await service.AskAsync("pytanie", [], CancellationToken.None);
+
+        turn.Answer.Should().Contain("niedostępny");
+        turn.MissingApiKey.Should().BeFalse();
+        turn.BudgetExceeded.Should().BeFalse();
+        provider.Attempts.Should().Be(1, "an unreachable provider is not retried");
+    }
+
+    [Fact]
     public async Task Ask_RouteWithoutModel_ReturnsNotConfiguredTurnWithoutCallingTheProvider()
     {
         var provider = new ScriptedProvider();
@@ -278,6 +292,7 @@ public class ChatServiceTests
         public List<AiToolRequest> Requests { get; } = [];
         public bool ThrowMissingKey { get; init; }
         public bool ThrowUnknownProvider { get; init; }
+        public bool ThrowUnavailable { get; init; }
         public int Attempts { get; private set; }
 
         public void Enqueue(AiToolTurn turn) => _turns.Enqueue(turn);
@@ -293,6 +308,12 @@ public class ChatServiceTests
             if (ThrowUnknownProvider)
             {
                 throw new UnknownAiProviderException(request.Provider);
+            }
+
+            if (ThrowUnavailable)
+            {
+                throw new AiProviderUnavailableException(
+                    AiDefaults.OllamaProvider, AiDefaults.OllamaEndpoint, request.Model, AiProviderUnavailableReason.Timeout);
             }
 
             Requests.Add(request);

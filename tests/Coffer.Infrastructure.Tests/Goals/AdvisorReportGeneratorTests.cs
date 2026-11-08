@@ -98,6 +98,19 @@ public class AdvisorReportGeneratorTests
     }
 
     [Fact]
+    public async Task Generate_ProviderUnavailable_FallsBackToEngineOnly()
+    {
+        var generator = Generator(new ScriptedProvider(new AiProviderUnavailableException(
+                AiDefaults.OllamaProvider, AiDefaults.OllamaEndpoint, "qwen2.5:3b", AiProviderUnavailableReason.Unreachable)));
+
+        var report = await generator.GenerateAsync(
+            [Result()], Ctx(), [Spend()], _day, CancellationToken.None);
+
+        report.GeneratedByAi.Should().BeFalse();
+        report.Entries.Should().Contain(e => e.Kind == AdvisorEntryKind.Risk && e.Description == "Napięty termin.");
+    }
+
+    [Fact]
     public async Task Generate_MalformedJson_FallsBackToEngineOnly()
     {
         var generator = Generator(new ScriptedProvider("{ this is not valid json"));
@@ -303,11 +316,18 @@ public class AdvisorReportGeneratorTests
     {
         private readonly string? _json;
         private readonly bool _throws;
+        private readonly Exception? _exception;
         private readonly Func<AiRequest, string>? _respond;
 
         public ScriptedProvider(string json) => _json = json;
 
         public ScriptedProvider(bool throws) => _throws = throws;
+
+        public ScriptedProvider(Exception exception)
+        {
+            _throws = true;
+            _exception = exception;
+        }
 
         public ScriptedProvider(Func<AiRequest, string> respond) => _respond = respond;
 
@@ -320,7 +340,7 @@ public class AdvisorReportGeneratorTests
             Requests.Add(request);
             if (_throws)
             {
-                throw new InvalidOperationException("provider boom");
+                throw _exception ?? new InvalidOperationException("provider boom");
             }
 
             var value = System.Text.Json.JsonSerializer.Deserialize<TResult>(

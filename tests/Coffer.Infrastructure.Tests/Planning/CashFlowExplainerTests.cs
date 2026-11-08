@@ -73,6 +73,18 @@ public class CashFlowExplainerTests
     }
 
     [Fact]
+    public async Task Explain_ProviderUnavailable_FallsBackToEngineOnly()
+    {
+        var explainer = Explainer(new ScriptedProvider(new AiProviderUnavailableException(
+                AiDefaults.OllamaProvider, AiDefaults.OllamaEndpoint, "qwen2.5:3b", AiProviderUnavailableReason.Unreachable)));
+
+        var result = await explainer.ExplainAsync(Projection(), CancellationToken.None);
+
+        result.GeneratedByAi.Should().BeFalse();
+        result.Narrative.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
     public async Task Explain_EmptyReply_FallsBackToEngineOnly()
     {
         var explainer = Explainer(new ScriptedProvider("   "));
@@ -176,10 +188,17 @@ public class CashFlowExplainerTests
     {
         private readonly string? _text;
         private readonly bool _throws;
+        private readonly Exception? _exception;
 
         public ScriptedProvider(string text) => _text = text;
 
         public ScriptedProvider(bool throws) => _throws = throws;
+
+        public ScriptedProvider(Exception exception)
+        {
+            _throws = true;
+            _exception = exception;
+        }
 
         public string ProviderName => "Scripted";
 
@@ -190,7 +209,7 @@ public class CashFlowExplainerTests
             Requests.Add(request);
             if (_throws)
             {
-                throw new InvalidOperationException("provider boom");
+                throw _exception ?? new InvalidOperationException("provider boom");
             }
 
             var usage = new AiUsage(ProviderName, request.Model, 100, 20);

@@ -197,6 +197,50 @@ public class AppSettingsStoreTests : CategorizationDbTest
         db.AppSettings.Count(s => s.Key == "ai.monthlyCapPln").Should().Be(1);
     }
 
+    [Fact]
+    public async Task OllamaEndpoint_BeforeAnySet_IsTheLocalDefault()
+    {
+        var store = await StoreAsync();
+
+        (await store.GetOllamaEndpointAsync(CancellationToken.None)).Should().Be(new Uri("http://localhost:11434"));
+    }
+
+    [Fact]
+    public async Task OllamaEndpoint_SetThenGet_RoundTripsWithoutTrailingSlash()
+    {
+        var store = await StoreAsync();
+
+        await store.SetOllamaEndpointAsync(new Uri("http://192.168.1.20:11434/"), CancellationToken.None);
+
+        (await store.GetOllamaEndpointAsync(CancellationToken.None)).Should().Be(new Uri("http://192.168.1.20:11434"));
+        await using var db = Factory.CreateDbContext();
+        db.AppSettings.Single(s => s.Key == "ai.ollamaEndpoint").Value.Should().Be("http://192.168.1.20:11434");
+    }
+
+    [Theory]
+    [InlineData("ftp://localhost:11434")]
+    [InlineData("http://user:secret@localhost:11434")]
+    [InlineData("http://localhost:11434/?x=1")]
+    public async Task OllamaEndpoint_SetInvalid_Throws(string endpoint)
+    {
+        var store = await StoreAsync();
+
+        var act = () => store.SetOllamaEndpointAsync(new Uri(endpoint), CancellationToken.None);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData("not a url")]
+    [InlineData("file:///c:/ollama")]
+    [InlineData("")]
+    public async Task OllamaEndpoint_StoredInvalid_ReadsAsTheDefault(string stored)
+    {
+        var store = await StoreAsync(("ai.ollamaEndpoint", stored));
+
+        (await store.GetOllamaEndpointAsync(CancellationToken.None)).Should().Be(OllamaEndpoint.Default);
+    }
+
     // Seeds raw key/value rows (bypassing SetRouteAsync's validation, as an older or newer build might
     // have written them) and returns a store over the migrated DB.
     private async Task<AppSettingsStore> StoreAsync(params (string Key, string Value)[] rows)

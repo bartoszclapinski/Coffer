@@ -49,6 +49,16 @@ internal sealed class FakeAiSettings : IAiSettings
         return Task.CompletedTask;
     }
 
+    public Uri OllamaEndpoint { get; set; } = Coffer.Core.Ai.OllamaEndpoint.Default;
+
+    public Task<Uri> GetOllamaEndpointAsync(CancellationToken ct) => Task.FromResult(OllamaEndpoint);
+
+    public Task SetOllamaEndpointAsync(Uri endpoint, CancellationToken ct)
+    {
+        OllamaEndpoint = endpoint;
+        return Task.CompletedTask;
+    }
+
     public bool AiFallbackParsingEnabled { get; set; } = AiDefaults.AiFallbackParsingEnabled;
 
     public string? OwnerIdentityNames { get; set; }

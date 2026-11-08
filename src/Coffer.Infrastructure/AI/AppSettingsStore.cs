@@ -18,6 +18,7 @@ namespace Coffer.Infrastructure.AI;
 /// <c>ai.activeProvider</c> / <c>ai.categorizationModel</c> keep meaning the
 /// <see cref="AiRole.Categorization"/> route, and <c>ai.analysisProvider</c> / <c>ai.analysisModel</c>
 /// hold the <see cref="AiRole.Analysis"/> route. Absent keys read as Claude with the role's default model.
+/// <c>ai.ollamaEndpoint</c> holds the Ollama endpoint (absent or invalid reads as the local default).
 /// </para>
 /// </summary>
 public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
@@ -27,6 +28,7 @@ public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
     private const string CategorizationModelKey = "ai.categorizationModel";
     private const string AnalysisProviderKey = "ai.analysisProvider";
     private const string AnalysisModelKey = "ai.analysisModel";
+    private const string OllamaEndpointKey = "ai.ollamaEndpoint";
     private const string AiFallbackParsingEnabledKey = "ai.fallbackParsingEnabled";
     private const string OwnerIdentityNamesKey = "privacy.ownerIdentityNames";
     private const string SafetyFloorKey = "planning.safetyFloorPln";
@@ -93,6 +95,25 @@ public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
         await UpsertAsync(db, ProviderKey(role), provider, ct).ConfigureAwait(false);
         await UpsertAsync(db, ModelKey(role), route.Model.Trim(), ct).ConfigureAwait(false);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+    }
+
+    public async Task<Uri> GetOllamaEndpointAsync(CancellationToken ct)
+    {
+        var raw = await GetValueAsync(OllamaEndpointKey, ct).ConfigureAwait(false);
+        return OllamaEndpoint.TryParse(raw, out var endpoint) ? endpoint : OllamaEndpoint.Default;
+    }
+
+    public Task SetOllamaEndpointAsync(Uri endpoint, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(endpoint);
+        if (!OllamaEndpoint.IsValid(endpoint))
+        {
+            throw new ArgumentException(
+                "The Ollama endpoint must be an absolute http or https URL without credentials, query or fragment.",
+                nameof(endpoint));
+        }
+
+        return SetValueAsync(OllamaEndpointKey, OllamaEndpoint.Format(endpoint), ct);
     }
 
     // Nothing stored, or the retired "OpenAI" (offered before Sprint 31 but never implemented, so every

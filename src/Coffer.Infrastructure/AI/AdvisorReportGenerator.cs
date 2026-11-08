@@ -143,6 +143,12 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
         {
             throw;
         }
+        catch (AiProviderUnavailableException ex)
+        {
+            // E.g. Ollama not running or the model not pulled: degrade like a missing key.
+            _logger.LogWarning("AI provider unavailable ({Reason}) for the advisor report; using engine-only risks.", ex.Reason);
+            return EngineOnlyReport(results, date);
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(

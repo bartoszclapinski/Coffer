@@ -310,5 +310,9 @@ public class AiAssistedParserTests
             Task.FromResult(new AiRoute(AiDefaults.ClaudeProvider, AiDefaults.DefaultModel(role)));
 
         public Task SetRouteAsync(AiRole role, AiRoute route, CancellationToken ct) => Task.CompletedTask;
+
+        public Task<Uri> GetOllamaEndpointAsync(CancellationToken ct) => Task.FromResult(OllamaEndpoint.Default);
+
+        public Task SetOllamaEndpointAsync(Uri endpoint, CancellationToken ct) => Task.CompletedTask;
     }
 }

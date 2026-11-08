@@ -195,6 +195,18 @@ public class HybridCategorizerTests : CategorizationDbTest
     }
 
     [Fact]
+    public async Task Categorize_ProviderUnavailable_LeavesUncategorisedWithoutRetrying()
+    {
+        await SeedCategoryAsync("Inne");
+        var ai = new FakeAiProvider { ThrowUnavailable = true };
+
+        var result = await Categorizer(ai).CategorizeAsync(["cokolwiek", "cos innego"], CancellationToken.None);
+
+        result.Values.Should().OnlyContain(id => id == null);
+        ai.CallCount.Should().Be(1, "an unreachable Ollama would fail the retry the same way (or wait out the timeout again)");
+    }
+
+    [Fact]
     public async Task Categorize_RouteWithoutModel_LeavesUncategorisedWithoutThrowing()
     {
         // A local provider picked before any model was chosen: the real pricing rejects the empty
@@ -287,6 +299,7 @@ public class HybridCategorizerTests : CategorizationDbTest
         public List<AiRequest> Requests { get; } = [];
         public bool Throw { get; init; }
         public bool ThrowUnknownProvider { get; init; }
+        public bool ThrowUnavailable { get; init; }
 
         public void Enqueue(int[] indexes) => _responses.Enqueue(indexes);
 
@@ -302,6 +315,12 @@ public class HybridCategorizerTests : CategorizationDbTest
             if (ThrowUnknownProvider)
             {
                 throw new UnknownAiProviderException(request.Provider);
+            }
+
+            if (ThrowUnavailable)
+            {
+                throw new AiProviderUnavailableException(
+                    AiDefaults.OllamaProvider, AiDefaults.OllamaEndpoint, request.Model, AiProviderUnavailableReason.Unreachable);
             }
 
             var indexes = _responses.Count > 0 ? _responses.Dequeue() : [];

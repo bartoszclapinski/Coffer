@@ -304,6 +304,9 @@
   <data name="Import.Error.Generic" xml:space="preserve">
     <value>Import failed. Please try again.</value>
   </data>
+  <data name="Import.Error.AiUnavailable" xml:space="preserve">
+    <value>The AI model needed to read this statement is not available (for example, Ollama is not running or the chosen model is not installed). Check the AI settings and try again.</value>
+  </data>
   <data name="Transactions.Title" xml:space="preserve">
     <value>Transactions</value>
   </data>

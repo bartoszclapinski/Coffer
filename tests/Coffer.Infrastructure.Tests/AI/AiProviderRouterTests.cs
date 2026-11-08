@@ -1,6 +1,7 @@
 using Coffer.Core.Ai;
 using Coffer.Core.Security;
 using Coffer.Infrastructure.AI;
+using Coffer.Infrastructure.AI.Ollama;
 using Coffer.Infrastructure.DependencyInjection;
 using Coffer.Infrastructure.Security;
 using FluentAssertions;
@@ -104,7 +105,7 @@ public class AiProviderRouterTests
     }
 
     [Fact]
-    public void AddCofferAi_ResolvesTheRouterOverTheClaudeBackend()
+    public void AddCofferAi_ResolvesTheRouterOverTheClaudeAndOllamaBackends()
     {
         var services = new ServiceCollection();
         services.AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(NullLogger<>));
@@ -116,7 +117,11 @@ public class AiProviderRouterTests
         using var provider = services.BuildServiceProvider();
 
         provider.GetRequiredService<IAiProvider>().Should().BeOfType<AiProviderRouter>();
-        provider.GetServices<IAiProviderBackend>().Should().ContainSingle().Which.Should().BeOfType<ClaudeProvider>();
+        provider.GetServices<IAiProviderBackend>().Select(b => b.GetType()).Should()
+            .BeEquivalentTo([typeof(ClaudeProvider), typeof(OllamaProvider)]);
+        provider.GetRequiredService<IOllamaCatalog>().Should().BeOfType<OllamaCatalog>();
+        provider.GetRequiredService<OllamaApiClient>().Should()
+            .BeSameAs(provider.GetRequiredService<OllamaApiClient>(), "one HttpClient for the process");
         provider.GetRequiredService<IAiRouteReadiness>().Should().BeOfType<AiRouteReadiness>();
         provider.GetRequiredService<IAiRouteResolver>().Should().BeOfType<AiRouteResolver>();
     }

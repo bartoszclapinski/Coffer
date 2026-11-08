@@ -161,6 +161,9 @@ public sealed class AiAssistedParser : IStatementParser
             Temperature = 0.1,
         };
 
+        // An unreachable provider (e.g. Ollama not running) surfaces as AiProviderUnavailableException, which
+        // the import screen reports as "AI unavailable" — not as an unsupported bank, since the statement
+        // could be read once the provider is back.
         var response = await _provider.CompleteJsonAsync<AiStatementDto>(request, ct).ConfigureAwait(false);
         await _ledger.RecordAsync(response.Usage, AiPurpose.ParserFallback, ct).ConfigureAwait(false);
 

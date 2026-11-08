@@ -74,7 +74,7 @@ public sealed class ClaudeProvider : IAiProviderBackend
         ArgumentNullException.ThrowIfNull(request);
 
         var (text, usage) = await SendAsync(request, ct).ConfigureAwait(false);
-        var json = ExtractJson(text);
+        var json = AiJson.ExtractJson(text);
         var value = JsonSerializer.Deserialize<TResult>(json, _jsonOptions)
             ?? throw new InvalidOperationException("Claude returned a JSON null where a value was expected.");
         return new AiResult<TResult>(value, usage);
@@ -240,36 +240,6 @@ public sealed class ClaudeProvider : IAiProviderBackend
         arguments is null || arguments.Count == 0
             ? "{}"
             : JsonSerializer.Serialize(arguments, _jsonOptions);
-
-    // Models sometimes wrap JSON in a ```json fence or add prose; take the outermost
-    // brace/bracket span so deserialisation does not choke on the decoration.
-    private static string ExtractJson(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return text;
-        }
-
-        var firstObj = text.IndexOf('{');
-        var firstArr = text.IndexOf('[');
-        var start = (firstObj, firstArr) switch
-        {
-            (-1, -1) => -1,
-            (-1, var a) => a,
-            (var o, -1) => o,
-            var (o, a) => Math.Min(o, a),
-        };
-
-        if (start < 0)
-        {
-            return text.Trim();
-        }
-
-        var open = text[start];
-        var close = open == '{' ? '}' : ']';
-        var end = text.LastIndexOf(close);
-        return end > start ? text[start..(end + 1)] : text.Trim();
-    }
 
     /// <summary>
     /// Declares a read-only chat tool to the provider from a name + description + JSON-schema string.

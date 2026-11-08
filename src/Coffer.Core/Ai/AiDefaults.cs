@@ -11,10 +11,13 @@ public static class AiDefaults
     public const string ClaudeProvider = "Claude";
 
     /// <summary>
-    /// The local Ollama provider. Calls cost nothing. Its provider implementation arrives in Sprint 31-C;
-    /// until it is registered, a route naming it fails as an unknown provider.
+    /// The Ollama provider (Sprint 31-C): a local model server reached over its native HTTP API. Calls
+    /// cost nothing and need no API key; prompts still go through the redaction session.
     /// </summary>
     public const string OllamaProvider = "Ollama";
+
+    /// <summary>The Ollama endpoint used until the owner saves another: a local Ollama on its default port.</summary>
+    public const string OllamaEndpoint = "http://localhost:11434";
 
     /// <summary>The provider names a route may be saved with.</summary>
     public static IReadOnlyList<string> Providers { get; } = [ClaudeProvider, OllamaProvider];

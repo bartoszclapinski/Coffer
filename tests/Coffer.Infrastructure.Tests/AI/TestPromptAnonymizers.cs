@@ -53,6 +53,16 @@ public sealed class StubAiSettings : IAiSettings
 
     public Task SetRouteAsync(AiRole role, AiRoute route, CancellationToken ct) => Task.CompletedTask;
 
+    public Uri OllamaEndpoint { get; set; } = Coffer.Core.Ai.OllamaEndpoint.Default;
+
+    public Task<Uri> GetOllamaEndpointAsync(CancellationToken ct) => Task.FromResult(OllamaEndpoint);
+
+    public Task SetOllamaEndpointAsync(Uri endpoint, CancellationToken ct)
+    {
+        OllamaEndpoint = endpoint;
+        return Task.CompletedTask;
+    }
+
     public Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct) => Task.FromResult(true);
 
     public Task SetAiFallbackParsingEnabledAsync(bool enabled, CancellationToken ct) => Task.CompletedTask;

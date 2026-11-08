@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Coffer.Application.Localization;
 using Coffer.Core.Accounts;
+using Coffer.Core.Ai;
 using Coffer.Core.Domain;
 using Coffer.Core.Import;
 using Coffer.Core.Parsing;
@@ -289,6 +290,13 @@ public sealed partial class ImportViewModel : ObservableObject
             // Log the type only, consistent with the generic path below.
             _logger.LogWarning("Import rejected — unexpected statement layout ({ExceptionType})", ex.GetType().Name);
             ErrorMessage = _localizer["Import.Error.UnsupportedLayout"];
+        }
+        catch (AiProviderUnavailableException ex)
+        {
+            // The AI fallback parser could not reach its provider (e.g. Ollama not running). The message
+            // names only the endpoint and model; the reason code is enough for the log.
+            _logger.LogWarning("Import failed — AI provider unavailable ({Reason})", ex.Reason);
+            ErrorMessage = _localizer["Import.Error.AiUnavailable"];
         }
         catch (OperationCanceledException)
         {

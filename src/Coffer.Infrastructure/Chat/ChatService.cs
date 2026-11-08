@@ -35,6 +35,10 @@ public sealed class ChatService : IChatService
     private const string NotConfiguredMessage =
         "AI nie jest skonfigurowane. Wybierz dostawcę i model w ustawieniach, aby korzystać z asystenta.";
 
+    private const string UnavailableMessage =
+        "Model AI jest teraz niedostępny (np. Ollama nie działa albo nie ma wybranego modelu). "
+        + "Sprawdź ustawienia AI i spróbuj ponownie.";
+
     private const string ErrorMessage =
         "Przepraszam, wystąpił błąd podczas przetwarzania zapytania. Spróbuj ponownie za chwilę.";
 
@@ -160,6 +164,13 @@ public sealed class ChatService : IChatService
             {
                 return new ChatTurn(MissingKeyMessage, [], MissingApiKey: true);
             }
+            catch (AiProviderUnavailableException ex)
+            {
+                // The provider could not answer (e.g. Ollama not running or the model not pulled). Not
+                // retried: a second try would fail the same way or wait out the long timeout again.
+                _logger.LogWarning("Chat provider unavailable ({Reason}); no answer.", ex.Reason);
+                return new ChatTurn(UnavailableMessage, traces);
+            }
             catch (UnknownAiProviderException)
             {
                 // The route names a provider this build does not have: nothing was sent. Not a key
@@ -273,9 +284,10 @@ public sealed class ChatService : IChatService
             {
                 return await _provider.CompleteWithToolsAsync(request, ct).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is MissingAiKeyException or UnknownAiProviderException or OperationCanceledException)
+            catch (Exception ex) when (ex is MissingAiKeyException or UnknownAiProviderException
+                or AiProviderUnavailableException or OperationCanceledException)
             {
-                // Not configured or cancelled: never retried.
+                // Not configured, provider unavailable, or cancelled: never retried.
                 throw;
             }
             catch (Exception ex) when (attempt < ProviderAttempts)

@@ -83,6 +83,10 @@ public class AiBudgetGateTests
 
         public Task SetRouteAsync(AiRole role, AiRoute route, CancellationToken ct) => Task.CompletedTask;
 
+        public Task<Uri> GetOllamaEndpointAsync(CancellationToken ct) => Task.FromResult(OllamaEndpoint.Default);
+
+        public Task SetOllamaEndpointAsync(Uri endpoint, CancellationToken ct) => Task.CompletedTask;
+
         public Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct) =>
             Task.FromResult(AiDefaults.AiFallbackParsingEnabled);
 

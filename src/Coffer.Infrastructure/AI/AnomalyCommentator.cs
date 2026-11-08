@@ -122,6 +122,12 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
         {
             throw;
         }
+        catch (AiProviderUnavailableException ex)
+        {
+            // E.g. Ollama not running or the model not pulled: degrade like a missing key.
+            _logger.LogWarning("AI provider unavailable ({Reason}) for AI anomaly commentary; using templated text.", ex.Reason);
+            return candidates;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(

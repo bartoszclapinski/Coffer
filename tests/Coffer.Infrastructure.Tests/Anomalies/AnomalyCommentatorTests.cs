@@ -73,6 +73,18 @@ public class AnomalyCommentatorTests
     }
 
     [Fact]
+    public async Task Comment_ProviderUnavailable_FallsBackToTemplatedText()
+    {
+        var commentator = Commentator(new ScriptedProvider(new AiProviderUnavailableException(
+                AiDefaults.OllamaProvider, AiDefaults.OllamaEndpoint, "qwen2.5:3b", AiProviderUnavailableReason.Unreachable)));
+
+        var result = await commentator.CommentAsync([Candidate("high-amount:1")], CancellationToken.None);
+
+        result[0].Title.Should().Be("Szablonowy tytuł");
+        result[0].Description.Should().Be("Szablonowy opis.");
+    }
+
+    [Fact]
     public async Task Comment_PartialResponse_KeepsTemplatedTextForMissingIndexes()
     {
         var provider = new ScriptedProvider(
@@ -175,10 +187,17 @@ public class AnomalyCommentatorTests
     {
         private readonly string? _json;
         private readonly bool _throws;
+        private readonly Exception? _exception;
 
         public ScriptedProvider(string json) => _json = json;
 
         public ScriptedProvider(bool throws) => _throws = throws;
+
+        public ScriptedProvider(Exception exception)
+        {
+            _throws = true;
+            _exception = exception;
+        }
 
         public string ProviderName => "Scripted";
         public List<AiRequest> Requests { get; } = [];
@@ -188,7 +207,7 @@ public class AnomalyCommentatorTests
             Requests.Add(request);
             if (_throws)
             {
-                throw new InvalidOperationException("provider boom");
+                throw _exception ?? new InvalidOperationException("provider boom");
             }
 
             var value = System.Text.Json.JsonSerializer.Deserialize<TResult>(

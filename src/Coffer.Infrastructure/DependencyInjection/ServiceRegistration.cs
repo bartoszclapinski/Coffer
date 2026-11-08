@@ -18,6 +18,7 @@ using Coffer.Core.Theming;
 using Coffer.Core.Transactions;
 using Coffer.Infrastructure.Accounts;
 using Coffer.Infrastructure.AI;
+using Coffer.Infrastructure.AI.Ollama;
 using Coffer.Infrastructure.Anomalies;
 using Coffer.Infrastructure.Anomalies.Detectors;
 using Coffer.Infrastructure.Backup;
@@ -189,7 +190,7 @@ public static class ServiceRegistration
     /// here calls a vendor API at registration time — the key is resolved per-call.
     /// <para>
     /// Sprint 31 routing: concrete vendor providers are registered as <see cref="IAiProviderBackend"/>
-    /// (Claude today); the <see cref="IAiProvider"/> consumers get is <see cref="AiProviderRouter"/>,
+    /// (Claude and Ollama); the <see cref="IAiProvider"/> consumers get is <see cref="AiProviderRouter"/>,
     /// which enumerates the backends and dispatches each request by its <c>Provider</c>. Consumers
     /// resolve their role's route per call through <see cref="IAiRouteResolver"/>.
     /// </para>
@@ -211,6 +212,11 @@ public static class ServiceRegistration
 
         // Factory registration: the optional HttpMessageHandler parameter is a test seam, never resolved from DI.
         services.AddTransient<IAiProviderBackend>(sp => new ClaudeProvider(sp.GetRequiredService<ISecretStore>()));
+        // One OllamaApiClient (one HttpClient / connection pool) for the process; its constructor
+        // parameters are test seams, so it is built by a factory, never from DI.
+        services.AddSingleton(_ => new OllamaApiClient());
+        services.AddTransient<IAiProviderBackend, OllamaProvider>();
+        services.AddTransient<IOllamaCatalog, OllamaCatalog>();
         services.AddTransient<IAiProvider, AiProviderRouter>();
         services.AddTransient<IAiRouteResolver, AiRouteResolver>();
         services.AddTransient<IAiRouteReadiness, AiRouteReadiness>();
