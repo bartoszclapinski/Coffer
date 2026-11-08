@@ -184,14 +184,9 @@ public sealed class AiAssistedParser : IStatementParser
         return sb.ToString();
     }
 
-    private static string ReadCsvText(StatementInput input)
-    {
-        input.Content.Position = 0;
-        using var reader = new StreamReader(input.Content, leaveOpen: true);
-        var text = reader.ReadToEnd();
-        input.Content.Position = 0;
-        return text;
-    }
+    // Shared detection (BOM / strict UTF-8 / Windows-1250): a Windows-1250 export read as
+    // UTF-8 would garble diacritics, so an owner name like "Łucja" would slip past redaction.
+    private static string ReadCsvText(StatementInput input) => CsvTextDecoder.ReadAllText(input.Content);
 
     private ParseResult MapResult(AiStatementDto? dto, List<string> warnings)
     {

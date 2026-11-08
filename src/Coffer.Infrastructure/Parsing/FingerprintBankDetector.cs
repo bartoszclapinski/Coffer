@@ -1,4 +1,3 @@
-using System.Text;
 using Coffer.Core.Parsing;
 using Coffer.Shared.Parsing;
 using UglyToad.PdfPig;
@@ -17,17 +16,6 @@ namespace Coffer.Infrastructure.Parsing;
 /// </summary>
 public sealed class FingerprintBankDetector : IBankDetector
 {
-    private static readonly Encoding _windows1250;
-
-    static FingerprintBankDetector()
-    {
-        // The CSV branch reads Windows-1250; registering the provider is
-        // idempotent and safe to call more than once. Register before resolving
-        // the encoding (field initialisers run first otherwise).
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        _windows1250 = Encoding.GetEncoding(1250);
-    }
-
     /// <summary>
     /// Order matters only when two fingerprints could match the same document;
     /// the highest <c>Priority</c> wins. All entries use Priority 1 because none
@@ -99,10 +87,11 @@ public sealed class FingerprintBankDetector : IBankDetector
 
     private static BankFingerprint? DetectCsv(StatementInput input)
     {
-        input.Content.Position = 0;
+        // Same decoding as the PKO parser (BOM / strict UTF-8 / Windows-1250), so a
+        // UTF-8 BOM never sticks to the first header cell. Leaves the stream at 0.
+        var text = CsvTextDecoder.ReadAllText(input.Content);
         string? headerLine;
-        using (var reader = new StreamReader(
-                   input.Content, _windows1250, detectEncodingFromByteOrderMarks: false, leaveOpen: true))
+        using (var reader = new StringReader(text))
         {
             do
             {
@@ -110,7 +99,6 @@ public sealed class FingerprintBankDetector : IBankDetector
             }
             while (headerLine is not null && string.IsNullOrWhiteSpace(headerLine));
         }
-        input.Content.Position = 0;
 
         if (headerLine is null)
         {

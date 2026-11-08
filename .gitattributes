@@ -1,0 +1,3 @@
+# Encoding-variant golden files for the PKO CSV parser: their exact bytes (code page,
+# BOM, CRLF line endings) are what the tests exercise, so git must never normalise them.
+tests/Coffer.Infrastructure.Tests/Parsing/Pko/Fixtures/pko-historia-diacritics.*.golden.csv -text

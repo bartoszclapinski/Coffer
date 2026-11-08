@@ -24,11 +24,13 @@ internal static class CsvStatementInputFactory
         return new StatementInput(new MemoryStream(bytes), StatementFormat.Csv, fileName);
     }
 
-    public static StatementInput FromGoldenFile()
+    public static StatementInput FromGoldenFile() => FromFixture("pko-historia.golden.csv");
+
+    /// <summary>Loads a committed fixture from <c>Parsing/Pko/Fixtures</c> byte-for-byte.</summary>
+    public static StatementInput FromFixture(string fileName)
     {
-        var path = Path.Combine(
-            AppContext.BaseDirectory, "Parsing", "Pko", "Fixtures", "pko-historia.golden.csv");
+        var path = Path.Combine(AppContext.BaseDirectory, "Parsing", "Pko", "Fixtures", fileName);
         var bytes = File.ReadAllBytes(path);
-        return new StatementInput(new MemoryStream(bytes), StatementFormat.Csv, "pko-historia.golden.csv");
+        return new StatementInput(new MemoryStream(bytes), StatementFormat.Csv, fileName);
     }
 }

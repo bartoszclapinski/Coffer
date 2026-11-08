@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using Coffer.Core.Parsing;
 using Coffer.Infrastructure.Parsing.Polish;
 using Coffer.Shared.Parsing;
@@ -14,7 +13,8 @@ namespace Coffer.Infrastructure.Parsing.Pko;
 /// path — the paid "Wyciąg z rachunku" PDF parser was dropped in Sprint 8.
 /// </summary>
 /// <remarks>
-/// The export is Windows-1250, comma-separated, every field quoted, with a fixed
+/// The export is Windows-1250 (UTF-8 with or without a BOM is also accepted, see
+/// <see cref="CsvTextDecoder"/>), comma-separated, every field quoted, with a fixed
 /// 7-named-column header followed by unnamed overflow columns that hold the
 /// description sub-fields. Fields are read positionally (the overflow columns
 /// share an empty header name, so name-based mapping is not viable). Amounts are
@@ -25,17 +25,6 @@ namespace Coffer.Infrastructure.Parsing.Pko;
 /// </remarks>
 public sealed class PkoHistoriaCsvParser : IStatementParser
 {
-    private static readonly Encoding _windows1250;
-
-    static PkoHistoriaCsvParser()
-    {
-        // Windows-1250 is not a built-in code page on modern .NET; registering
-        // the provider is idempotent and safe to call more than once. Register
-        // before resolving the encoding (field initialisers run first otherwise).
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        _windows1250 = Encoding.GetEncoding(1250);
-    }
-
     /// <summary>The seven named header columns, in order, that identify the layout.</summary>
     private static readonly string[] _expectedHeader =
     {
@@ -74,12 +63,10 @@ public sealed class PkoHistoriaCsvParser : IStatementParser
     {
         ArgumentNullException.ThrowIfNull(input);
 
-        input.Content.Position = 0;
-        using var reader = new StreamReader(
-            input.Content,
-            _windows1250,
-            detectEncodingFromByteOrderMarks: false,
-            leaveOpen: true);
+        // PKO exports Windows-1250 by default, but a file re-saved by another tool may be
+        // UTF-8 (with or without a BOM); the shared decoder picks the right one.
+        var text = CsvTextDecoder.ReadAllText(input.Content);
+        using var reader = new StringReader(text);
 
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
