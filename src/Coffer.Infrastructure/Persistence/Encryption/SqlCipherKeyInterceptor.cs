@@ -5,9 +5,21 @@ namespace Coffer.Infrastructure.Persistence.Encryption;
 
 /// <summary>
 /// Sets <c>PRAGMA key</c> on every opened connection so SQLCipher can decrypt the
-/// database file.
+/// database file, then verifies that SQLCipher is actually the engine serving the
+/// connection (fail closed — see <see cref="EnsureSqlCipherActive"/>).
 /// </summary>
 /// <remarks>
+/// <para>
+/// Fail-closed guard: plain SQLite silently ignores <c>PRAGMA key</c>, so if a
+/// non-SQLCipher native provider ever wins the SQLitePCLRaw binding (e.g. a transitive
+/// <c>bundle_e_sqlite3</c> with a higher version than <c>bundle_e_sqlcipher</c>) the vault
+/// would be written in plaintext with no error. After setting the key the interceptor runs
+/// <c>PRAGMA cipher_version</c> — answered by SQLCipher without touching the database file,
+/// and returning no row on plain SQLite — and throws <see cref="SqlCipherUnavailableException"/>
+/// before EF can create or read a single table. It runs on every open (not once per process)
+/// because it costs one in-memory pragma and cannot be fooled by a provider swap mid-process.
+/// </para>
+/// <para>
 /// Memory hygiene: the DEK is held as a <see cref="byte"/>[] field for the
 /// interceptor's lifetime and zeroed on <see cref="Dispose"/>. The PRAGMA command
 /// is built into a stack-allocated <see cref="Span{T}"/> that is cleared right
@@ -21,12 +33,14 @@ namespace Coffer.Infrastructure.Persistence.Encryption;
 /// a bound parameter (PRAGMA statements cannot be parameterised in SQLite), so a
 /// parameterised path is not an option. See
 /// <c>docs/architecture/09-security-key-management.md</c> §"Memory hygiene".
+/// </para>
 /// </remarks>
 public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposable
 {
     private const string CommandPrefix = "PRAGMA key = \"x'";
     private const string CommandSuffix = "'\";";
     private const string HexChars = "0123456789ABCDEF";
+    private const string CipherVersionCommand = "PRAGMA cipher_version;";
 
     private byte[]? _dek;
 
@@ -45,6 +59,19 @@ public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposab
         cmd.ExecuteNonQuery();
         cmd.CommandText = string.Empty;
 
+        cmd.CommandText = CipherVersionCommand;
+        try
+        {
+            EnsureSqlCipherActive(cmd.ExecuteScalar());
+        }
+        catch (SqlCipherUnavailableException)
+        {
+            // Close before propagating so nobody who catches the exception can keep using a
+            // connection that would read or write plaintext.
+            connection.Close();
+            throw;
+        }
+
         base.ConnectionOpened(connection, eventData);
     }
 
@@ -60,7 +87,35 @@ public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposab
         await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         cmd.CommandText = string.Empty;
 
+        cmd.CommandText = CipherVersionCommand;
+        try
+        {
+            EnsureSqlCipherActive(await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false));
+        }
+        catch (SqlCipherUnavailableException)
+        {
+            // Close before propagating so nobody who catches the exception can keep using a
+            // connection that would read or write plaintext.
+            await connection.CloseAsync().ConfigureAwait(false);
+            throw;
+        }
+
         await base.ConnectionOpenedAsync(connection, eventData, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Throws <see cref="SqlCipherUnavailableException"/> unless <paramref name="cipherVersion"/>
+    /// — the scalar result of <c>PRAGMA cipher_version</c> on an open connection — is a
+    /// non-empty version string. Plain SQLite answers the pragma with no row, which ADO.NET
+    /// surfaces as <see langword="null"/> (or <see cref="DBNull"/>).
+    /// </summary>
+    /// <param name="cipherVersion">The raw <see cref="DbCommand.ExecuteScalar"/> result.</param>
+    public static void EnsureSqlCipherActive(object? cipherVersion)
+    {
+        if (cipherVersion is not string version || string.IsNullOrWhiteSpace(version))
+        {
+            throw new SqlCipherUnavailableException();
+        }
     }
 
     public void Dispose()

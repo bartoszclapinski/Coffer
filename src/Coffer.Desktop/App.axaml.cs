@@ -20,6 +20,7 @@ using Coffer.Desktop.Views;
 using Coffer.Desktop.Views.Login;
 using Coffer.Desktop.Views.Setup;
 using Coffer.Infrastructure.Persistence;
+using Coffer.Infrastructure.Persistence.Encryption;
 using Coffer.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -338,7 +339,21 @@ public partial class App : Avalonia.Application
     /// </summary>
     private Window BuildPostUnlockWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
-        if (HasPendingMigrations())
+        bool hasPendingMigrations;
+        try
+        {
+            // First database open after unlock — the SQLCipher fail-closed guard fires here.
+            hasPendingMigrations = HasPendingMigrations();
+        }
+        catch (Exception ex) when (IsSqlCipherUnavailable(ex))
+        {
+            // Nothing was read or written (the interceptor closed the connection before EF
+            // touched a table). Show a visible fatal error instead of crashing out silently.
+            Log.Fatal(ex, "SQLCipher native provider not loaded; refusing to open the vault");
+            return BuildEncryptionUnavailableWindow();
+        }
+
+        if (hasPendingMigrations)
         {
             Log.Information("Pending database migrations detected; showing migration confirmation");
             return BuildMigrationConfirmWindow(desktop);
@@ -352,6 +367,27 @@ public partial class App : Avalonia.Application
         var factory = Services.GetRequiredService<IDbContextFactory<CofferDbContext>>();
         using var db = factory.CreateDbContext();
         return db.Database.GetPendingMigrations().Any();
+    }
+
+    private static bool IsSqlCipherUnavailable(Exception ex)
+    {
+        for (var current = ex; current is not null; current = current.InnerException)
+        {
+            if (current is SqlCipherUnavailableException)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static Window BuildEncryptionUnavailableWindow()
+    {
+        var localizer = Services.GetRequiredService<ILocalizer>();
+        return BuildSimpleMessageWindow(
+            title: localizer["App.EncryptionUnavailable.Title"],
+            message: localizer["App.EncryptionUnavailable.Message"]);
     }
 
     private Window BuildMigrationConfirmWindow(IClassicDesktopStyleApplicationLifetime desktop)
