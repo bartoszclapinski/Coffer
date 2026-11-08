@@ -253,6 +253,9 @@
   <data name="Import.Summary.Skipped" xml:space="preserve">
     <value>Duplicates skipped: {0}</value>
   </data>
+  <data name="Import.Summary.WithinFileRepeats" xml:space="preserve">
+    <value>Identical rows in the file imported as separate transactions: {0} (e.g. two equal payments on the same day — worth a quick check).</value>
+  </data>
   <data name="Import.Summary.AlreadyImported" xml:space="preserve">
     <value>This file was already imported earlier.</value>
   </data>
@@ -288,6 +291,9 @@
   </data>
   <data name="Import.Error.ParseFailure" xml:space="preserve">
     <value>Could not read the statement. Check that the file is not corrupted and that it is a statement from a supported bank.</value>
+  </data>
+  <data name="Import.Error.UnsupportedLayout" xml:space="preserve">
+    <value>The file comes from a supported bank, but its layout is not the expected one (for PKO BP: the "Historia rachunku" CSV export). If it was opened and saved again in Excel or another spreadsheet app, the columns or separators may have changed — export it again from online banking and import the original file.</value>
   </data>
   <data name="Import.Error.NoAccount" xml:space="preserve">
     <value>Select an account or create a new one before importing.</value>

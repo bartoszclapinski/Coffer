@@ -26,9 +26,10 @@ public interface IStatementParser
 
     /// <summary>
     /// Parses the statement. Reads <see cref="StatementInput.Content"/> from
-    /// position 0; does not dispose it. Throws a parser-specific exception for
-    /// an unsupported layout (e.g. <c>UnsupportedCsvLayoutException</c> when the
-    /// CSV header shape does not match).
+    /// position 0; does not dispose it. Throws an
+    /// <see cref="UnsupportedStatementLayoutException"/> subtype for an unsupported
+    /// layout (e.g. <c>UnsupportedCsvLayoutException</c> when the CSV header shape
+    /// does not match).
     /// </summary>
     Task<ParseResult> ParseAsync(StatementInput input, CancellationToken ct);
 }

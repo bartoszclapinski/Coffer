@@ -39,7 +39,9 @@ Detector and parser operate on a format-neutral `StatementInput` (a `Stream` +
 `StatementFormat` + optional file name), not on a `PdfDocument`. This keeps
 `Coffer.Core` free of any third-party runtime dependency (hard rule #3) and lets
 a single registry route both PDF and CSV statements. PDF parsers open PdfPig from
-the stream themselves; the CSV parser reads the stream as Windows-1250.
+the stream themselves; CSV text is decoded by the shared `CsvTextDecoder`
+(UTF-8 BOM → UTF-8; strict UTF-8 decode succeeds → UTF-8; else Windows-1250),
+used by the detector, the PKO CSV parser and the AI fallback alike.
 
 ```csharp
 public enum StatementFormat { Pdf, Csv }
@@ -270,8 +272,9 @@ future banks that only offer PDF.
 
 ### "Historia rachunku" CSV schema
 
-- **Windows-1250**, no BOM, comma-separated, every field quoted (`"..."`) —
-  embedded commas occur inside description fields, so an RFC-4180-correct reader
+- **Windows-1250**, no BOM, as exported (a UTF-8 re-save, with or without a BOM, is
+  also accepted via `CsvTextDecoder`; golden files cover all three), comma-separated,
+  every field quoted (`"..."`) — embedded commas occur inside description fields, so an RFC-4180-correct reader
   (CsvHelper) is required, not `Split(',')`.
 - Fixed **12 columns**; the header names the first seven, then five unnamed
   overflow columns hold the description sub-fields:
@@ -385,6 +388,13 @@ public static string ComputeHash(ParsedTransaction tx, string accountNumber)
 ```
 
 Unique index on `Transaction.Hash`. Re-importing the same statement is safe — duplicates skipped, `ImportSession.TransactionsSkipped` records how many.
+
+**Identical rows within one file** (two equal coffees, same day, same description) are separate
+transactions. The import numbers occurrences of the same key in file order: the first keeps the hash
+above unchanged (so rows imported by older versions still dedup), the n-th (n ≥ 2) hashes
+`…|{description}|#n`. A re-import reproduces the same ordinals, so it still adds nothing.
+`ImportSummary.WithinFileRepeats` reports how many added rows were such repeats, separately from
+cross-import duplicates (`Skipped`).
 
 ## Testing — see also `docs/architecture/03b-parser-testing.md` (TBD)
 

@@ -253,6 +253,9 @@
   <data name="Import.Summary.Skipped" xml:space="preserve">
     <value>Pominięto duplikatów: {0}</value>
   </data>
+  <data name="Import.Summary.WithinFileRepeats" xml:space="preserve">
+    <value>Identyczne wiersze w pliku zaimportowane jako osobne transakcje: {0} (np. dwie równe płatności tego samego dnia — warto je sprawdzić).</value>
+  </data>
   <data name="Import.Summary.AlreadyImported" xml:space="preserve">
     <value>Ten plik był już wcześniej zaimportowany.</value>
   </data>
@@ -288,6 +291,9 @@
   </data>
   <data name="Import.Error.ParseFailure" xml:space="preserve">
     <value>Nie udało się odczytać wyciągu. Sprawdź, czy plik nie jest uszkodzony i czy to wyciąg z obsługiwanego banku.</value>
+  </data>
+  <data name="Import.Error.UnsupportedLayout" xml:space="preserve">
+    <value>Plik pochodzi z obsługiwanego banku, ale ma nieoczekiwany układ (dla PKO BP: eksport CSV „Historia rachunku”). Jeśli został otwarty i ponownie zapisany w Excelu lub innym arkuszu kalkulacyjnym, kolumny lub separatory mogły się zmienić — wyeksportuj go ponownie z bankowości internetowej i zaimportuj oryginalny plik.</value>
   </data>
   <data name="Import.Error.NoAccount" xml:space="preserve">
     <value>Wybierz konto lub utwórz nowe przed importem.</value>

@@ -15,6 +15,9 @@ public interface IImportStatementUseCase
     /// each stage through <paramref name="progress"/> when supplied.
     /// </summary>
     /// <exception cref="Coffer.Core.Parsing.UnsupportedBankException">The statement's bank/format has no registered parser.</exception>
+    /// <exception cref="Coffer.Core.Parsing.UnsupportedStatementLayoutException">
+    /// The bank is supported but the file's layout is not the expected one (e.g. re-saved in a spreadsheet app).
+    /// </exception>
     Task<ImportSummary> ExecuteAsync(
         ImportRequest request,
         IProgress<ImportProgress>? progress,

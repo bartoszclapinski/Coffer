@@ -190,6 +190,52 @@ public class ImportViewModelTests
     }
 
     [Fact]
+    public async Task Import_UnexpectedLayout_ShowsLayoutHintNotGenericFailure()
+    {
+        var logger = new CapturingLogger<ImportViewModel>();
+        var vm = Create(out _, out var useCase, out _, picked: NewCsv(), logger: logger, seedAccounts: _account);
+        await vm.LoadAccountsCommand.ExecuteAsync(null);
+        await vm.BrowseCommand.ExecuteAsync(null);
+        useCase.Throw = new FakeLayoutException("unexpected header in column 0");
+
+        await vm.ImportCommand.ExecuteAsync(null);
+
+        vm.ErrorMessage.Should().Be("Import.Error.UnsupportedLayout");
+        vm.HasSummary.Should().BeFalse();
+        vm.IsImporting.Should().BeFalse();
+        logger.Entries.Should().NotContain(e => e.Contains("column 0"), "only the exception type is logged");
+    }
+
+    [Fact]
+    public async Task Import_WithinFileRepeats_SurfacedSeparatelyFromDuplicates()
+    {
+        var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
+        await vm.LoadAccountsCommand.ExecuteAsync(null);
+        await vm.BrowseCommand.ExecuteAsync(null);
+        useCase.Result = new ImportSummary(Guid.NewGuid(), 5, 1, 0, false, [], WithinFileRepeats: 2);
+
+        await vm.ImportCommand.ExecuteAsync(null);
+
+        vm.SummaryWithinFileRepeats.Should().Be(2);
+        vm.SummarySkipped.Should().Be(1);
+        vm.HasWithinFileRepeats.Should().BeTrue();
+        vm.SummaryWithinFileRepeatsText.Should().Be("Import.Summary.WithinFileRepeats");
+    }
+
+    [Fact]
+    public async Task Import_NoWithinFileRepeats_HidesRepeatsLine()
+    {
+        var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
+        await vm.LoadAccountsCommand.ExecuteAsync(null);
+        await vm.BrowseCommand.ExecuteAsync(null);
+        useCase.Result = new ImportSummary(Guid.NewGuid(), 8, 0, 0, false, []);
+
+        await vm.ImportCommand.ExecuteAsync(null);
+
+        vm.HasWithinFileRepeats.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Import_UnsupportedExtension_ShowsFormatMessageWithoutCallingUseCase()
     {
         var vm = Create(out _, out var useCase, out _, picked: NewCsv("statement.txt"), seedAccounts: _account);
@@ -223,4 +269,6 @@ public class ImportViewModelTests
         logger.Entries.Should().NotContain(e => e.Contains("1 234,56"),
             "rules #6/#7 — raw statement content must never reach the log");
     }
+
+    private sealed class FakeLayoutException(string hint) : UnsupportedStatementLayoutException(hint);
 }

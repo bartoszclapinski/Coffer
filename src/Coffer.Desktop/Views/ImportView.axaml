@@ -108,6 +108,10 @@
                     <TextBlock Text="{l:Localize Import.Summary.Title}" Classes="title" />
                     <TextBlock Text="{Binding SummaryAddedText}" />
                     <TextBlock Text="{Binding SummarySkippedText}" />
+                    <TextBlock Text="{Binding SummaryWithinFileRepeatsText}"
+                               Classes="muted"
+                               TextWrapping="Wrap"
+                               IsVisible="{Binding HasWithinFileRepeats}" />
                     <TextBlock Text="{l:Localize Import.Summary.AlreadyImported}"
                                Classes="muted"
                                IsVisible="{Binding SummaryAlreadyImported}" />
