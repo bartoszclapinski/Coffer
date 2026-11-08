@@ -1,3 +1,5 @@
+using Coffer.Core.Parsing;
+
 namespace Coffer.Infrastructure.Parsing.Pko;
 
 /// <summary>
@@ -8,9 +10,11 @@ namespace Coffer.Infrastructure.Parsing.Pko;
 /// <remarks>
 /// The message carries a short structural hint only — never raw row content —
 /// so a parse failure cannot leak account numbers, names, or amounts into logs
-/// (hard rules #6 / #11).
+/// (hard rules #6 / #11). Derives from <see cref="UnsupportedStatementLayoutException"/>
+/// so the import screen shows a localized "unexpected layout" hint instead of a
+/// generic failure.
 /// </remarks>
-public sealed class UnsupportedCsvLayoutException : Exception
+public sealed class UnsupportedCsvLayoutException : UnsupportedStatementLayoutException
 {
     public UnsupportedCsvLayoutException(string hint)
         : base($"CSV does not match the PKO 'Historia rachunku' layout: {hint}.")

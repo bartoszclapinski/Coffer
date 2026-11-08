@@ -111,8 +111,20 @@ ProfileGenerator.app/
 
 # Real bank statements — never commit
 *.real.pdf
+*.real.*
 *real-statement*.pdf
 samples/private/
+
+# Real CSV statement exports under their bank-default download names (PKO BP "Historia
+# rachunku" / "Zestawienie operacji"). Git matches ignore patterns case-sensitively on
+# Linux/CI (core.ignorecase=false), hence the [Xx] classes. Synthetic golden fixtures are
+# named pko-historia*.golden.csv and stay tracked — re-check with
+# `git ls-files -ci --exclude-standard` (must print nothing) after touching these rules.
+[Hh]istoria*[Rr]achunku*.csv
+[Hh]istoria_*.csv
+[Zz]estawienie*[Oo]peracji*.csv
+# Any CSV dropped at the repository root (where an ad-hoc export most likely lands).
+/*.csv
 
 # Per-developer test fixtures (real PDFs dropped in for manual parser verification)
 tests/.local-fixtures/

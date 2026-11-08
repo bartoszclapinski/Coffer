@@ -98,6 +98,24 @@ public class AiAssistedParserTests
     }
 
     [Fact]
+    public async Task ParseAsync_Windows1250Csv_DecodedSoDiacriticNameIsRedacted()
+    {
+        // Non-PKO CSVs reach the fallback too; a Windows-1250 file read as UTF-8 would garble
+        // "Łucja Żółtowska" into replacement characters and the redaction would miss it.
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        var provider = new FakeAiProvider(TwoTransactionsJson);
+        var parser = Build(provider, ownerNames: "Łucja Żółtowska");
+        var bytes = Encoding.GetEncoding(1250).GetBytes("Posiadacz: Łucja Żółtowska;Saldo: 100,00");
+        var input = new StatementInput(new MemoryStream(bytes), StatementFormat.Csv);
+
+        await parser.ParseAsync(input, CancellationToken.None);
+
+        provider.LastPrompt.Should().Contain("[NAME]");
+        provider.LastPrompt.Should().NotContain("Żółtowska");
+        provider.LastPrompt.Should().NotContain("\uFFFD", "the CSV must be decoded with the right code page");
+    }
+
+    [Fact]
     public async Task ParseAsync_OwnerNameUnset_AddsHeaderExposureWarning()
     {
         var parser = Build(new FakeAiProvider(TwoTransactionsJson), ownerNames: null);

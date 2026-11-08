@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Coffer.Core.Domain;
 using FluentAssertions;
 
@@ -76,5 +78,51 @@ public class TransactionHashTests
         var hashB = TransactionHash.Compute(Account, date, 1234.50m, "X");
 
         hashA.Should().Be(hashB);
+    }
+
+    [Fact]
+    public void Compute_LegacyComposition_IsUnchanged()
+    {
+        // Rows imported before occurrence indexing (Sprint 30) are stored with this exact
+        // hash; changing it would make every re-import duplicate them.
+        var expected = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes($"{Account}|2025-11-28|-49.99|BIEDRONKA 1234")));
+
+        TransactionHash.Compute(Account, new DateOnly(2025, 11, 28), -49.99m, "BIEDRONKA 1234")
+            .Should().Be(expected);
+    }
+
+    [Fact]
+    public void Compute_FirstOccurrence_EqualsLegacyHash()
+    {
+        var date = new DateOnly(2025, 11, 28);
+
+        TransactionHash.Compute(Account, date, -10.00m, "KAWIARNIA", occurrence: 1)
+            .Should().Be(TransactionHash.Compute(Account, date, -10.00m, "KAWIARNIA"));
+    }
+
+    [Fact]
+    public void Compute_LaterOccurrence_HashesBaseWithOrdinalSuffix()
+    {
+        var date = new DateOnly(2025, 11, 28);
+        var expected = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes($"{Account}|2025-11-28|-10.00|KAWIARNIA|#2")));
+
+        var second = TransactionHash.Compute(Account, date, -10.00m, "KAWIARNIA", occurrence: 2);
+        var third = TransactionHash.Compute(Account, date, -10.00m, "KAWIARNIA", occurrence: 3);
+
+        second.Should().Be(expected);
+        second.Should().NotBe(TransactionHash.Compute(Account, date, -10.00m, "KAWIARNIA"));
+        third.Should().NotBe(second);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Compute_OccurrenceBelowOne_Throws(int occurrence)
+    {
+        var act = () => TransactionHash.Compute(Account, new DateOnly(2025, 11, 28), -10.00m, "X", occurrence);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
     }
 }

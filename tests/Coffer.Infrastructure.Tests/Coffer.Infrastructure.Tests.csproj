@@ -24,6 +24,10 @@
     <None Update="Parsing\Pko\Fixtures\pko-historia.golden.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- Encoding variants (Windows-1250 / UTF-8 / UTF-8 with BOM) of the golden file with diacritics. -->
+    <None Update="Parsing\Pko\Fixtures\pko-historia-diacritics.*.golden.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

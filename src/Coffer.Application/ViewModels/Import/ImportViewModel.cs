@@ -16,7 +16,7 @@ namespace Coffer.Application.ViewModels.Import;
 /// View-model behind the Import page. Drives the three-step flow: pick the target
 /// account (existing or inline-created), browse for a statement file, then run
 /// <see cref="IImportStatementUseCase"/> while surfacing per-stage progress and a
-/// final summary. Parser/bank failures are translated into Polish UI messages that
+/// final summary. Parser/bank failures are translated into localized UI messages that
 /// never leak statement row content.
 /// </summary>
 public sealed partial class ImportViewModel : ObservableObject
@@ -81,6 +81,11 @@ public sealed partial class ImportViewModel : ObservableObject
     private int _summarySkipped;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SummaryWithinFileRepeatsText))]
+    [NotifyPropertyChangedFor(nameof(HasWithinFileRepeats))]
+    private int _summaryWithinFileRepeats;
+
+    [ObservableProperty]
     private bool _summaryAlreadyImported;
 
     [ObservableProperty]
@@ -123,6 +128,12 @@ public sealed partial class ImportViewModel : ObservableObject
     public string SummaryAddedText => _localizer.Format("Import.Summary.Added", SummaryAdded);
 
     public string SummarySkippedText => _localizer.Format("Import.Summary.Skipped", SummarySkipped);
+
+    /// <summary>True when some added rows repeat an identical row in the same file.</summary>
+    public bool HasWithinFileRepeats => SummaryWithinFileRepeats > 0;
+
+    public string SummaryWithinFileRepeatsText =>
+        _localizer.Format("Import.Summary.WithinFileRepeats", SummaryWithinFileRepeats);
 
     public string StageLabel => CurrentStage switch
     {
@@ -253,6 +264,7 @@ public sealed partial class ImportViewModel : ObservableObject
 
             SummaryAdded = summary.Added;
             SummarySkipped = summary.Skipped;
+            SummaryWithinFileRepeats = summary.WithinFileRepeats;
             SummaryAlreadyImported = summary.AlreadyImported;
             AiFallbackUsed = summary.AiFallbackUsed;
             OwnerNameUnredacted = summary.OwnerNameUnredacted;
@@ -270,6 +282,13 @@ public sealed partial class ImportViewModel : ObservableObject
         {
             _logger.LogWarning(ex, "Import rejected — unsupported bank {BankCode}", ex.BankCode);
             ErrorMessage = _localizer["Import.Error.UnsupportedBank"];
+        }
+        catch (UnsupportedStatementLayoutException ex)
+        {
+            // Supported bank, unexpected layout — typically a CSV re-saved in a spreadsheet app.
+            // Log the type only, consistent with the generic path below.
+            _logger.LogWarning("Import rejected — unexpected statement layout ({ExceptionType})", ex.GetType().Name);
+            ErrorMessage = _localizer["Import.Error.UnsupportedLayout"];
         }
         catch (OperationCanceledException)
         {
@@ -320,6 +339,7 @@ public sealed partial class ImportViewModel : ObservableObject
         HasSummary = false;
         SummaryAdded = 0;
         SummarySkipped = 0;
+        SummaryWithinFileRepeats = 0;
         SummaryAlreadyImported = false;
         AiFallbackUsed = false;
         OwnerNameUnredacted = false;

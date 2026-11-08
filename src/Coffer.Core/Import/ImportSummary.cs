@@ -9,7 +9,9 @@ namespace Coffer.Core.Import;
 /// </summary>
 /// <param name="ImportSessionId">The session row created for this run.</param>
 /// <param name="Added">Transactions newly persisted.</param>
-/// <param name="Skipped">Parsed transactions skipped as duplicates.</param>
+/// <param name="Skipped">
+/// Parsed transactions skipped as duplicates of rows already stored (cross-import dedup).
+/// </param>
 /// <param name="Categorized">Newly persisted transactions that got a category (rules/cache).</param>
 /// <param name="AlreadyImported">True when an earlier session imported a byte-identical file.</param>
 /// <param name="Warnings">Non-fatal issues surfaced by the parser (and the import).</param>
@@ -21,6 +23,11 @@ namespace Coffer.Core.Import;
 /// True when the AI fallback ran without a configured account-holder name, so the statement
 /// header may have reached the AI provider un-redacted. Prompts the owner to set their name.
 /// </param>
+/// <param name="WithinFileRepeats">
+/// How many of the <see cref="Added"/> transactions repeat an identical row (same date, amount
+/// and description) earlier in the same file. They are kept as separate transactions — not
+/// counted in <see cref="Skipped"/> — and reported so the owner can double-check them.
+/// </param>
 public sealed record ImportSummary(
     Guid ImportSessionId,
     int Added,
@@ -29,4 +36,5 @@ public sealed record ImportSummary(
     bool AlreadyImported,
     IReadOnlyList<string> Warnings,
     bool AiFallbackUsed = false,
-    bool OwnerNameUnredacted = false);
+    bool OwnerNameUnredacted = false,
+    int WithinFileRepeats = 0);

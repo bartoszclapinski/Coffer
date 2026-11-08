@@ -55,10 +55,10 @@ A readiness audit (2026-11-08, adversarially verified) run at the end of Sprint 
 - [ ] 30.9 Tests: synthetic PKO transfer / BLIK-to-phone / tax-transfer (PESEL) rows produce prompts with no name, address, phone or PESEL, per AI consumer.
 
 ### 30-C — import robustness
-- [ ] 30.10 Occurrence-indexed hash for identical rows within one file (first occurrence unchanged); summary reports them.
-- [ ] 30.11 Shared CSV encoding detection (BOM / strict UTF-8 / Windows-1250) in the PKO detector + parser and the AI fallback; golden files for UTF-8 with/without BOM.
-- [ ] 30.12 Unsupported CSV layout → a clear, localized message (e.g. "re-saved in Excel?") instead of a generic failure.
-- [ ] 30.13 `.gitignore`: real statement exports (`*.real.*`, PKO export file-name patterns), keeping the golden fixtures.
+- [x] 30.10 Occurrence-indexed hash for identical rows within one file (first occurrence unchanged); summary reports them.
+- [x] 30.11 Shared CSV encoding detection (BOM / strict UTF-8 / Windows-1250) in the PKO detector + parser and the AI fallback; golden files for UTF-8 with/without BOM.
+- [x] 30.12 Unsupported CSV layout → a clear, localized message (e.g. "re-saved in Excel?") instead of a generic failure.
+- [x] 30.13 `.gitignore`: real statement exports (`*.real.*`, PKO export file-name patterns), keeping the golden fixtures.
 
 ### 30-D — running on real data + close
 - [ ] 30.14 `docs/running-on-real-data.md`: self-contained publish command, data root, first-run checklist (seed written down + one restore-from-seed drill, owner identity names, AI cap/key, first backup + archive to external media), import verification checklist.

@@ -17,7 +17,10 @@ namespace Coffer.Infrastructure.Import;
 /// New transactions and the <see cref="ImportSession"/> that groups them are
 /// persisted in a single database transaction. Dedup is by <see cref="Transaction.Hash"/>,
 /// which is scoped to the chosen account's number (the PKO CSV omits it), so the
-/// same statement re-imported into the same account adds nothing.
+/// same statement re-imported into the same account adds nothing. Identical rows
+/// within one file (same date, amount and description) are distinct transactions:
+/// the n-th occurrence gets an occurrence-indexed hash (the first keeps the
+/// pre-Sprint-30 hash), so neither collapses and re-imports still dedup.
 /// </summary>
 public sealed class ImportStatementUseCase : IImportStatementUseCase
 {
@@ -80,15 +83,34 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
             .ConfigureAwait(false);
 
         var candidates = new List<Transaction>(parsed.Transactions.Count);
-        var seenHashes = new HashSet<string>();
+        var repeatHashes = new HashSet<string>(StringComparer.Ordinal);
+        var fileHashes = new HashSet<string>(StringComparer.Ordinal);
+        // Occurrences seen so far per base (first-occurrence) hash, in file order. The order
+        // is deterministic for a given file, so a re-import reproduces the same ordinals.
+        var occurrences = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var pt in parsed.Transactions)
         {
             var normalized = DescriptionNormalizer.Normalize(pt.Description);
-            var hash = TransactionHash.Compute(account.AccountNumber, pt.Date, pt.Amount, normalized);
-            if (!seenHashes.Add(hash))
+            var baseHash = TransactionHash.Compute(account.AccountNumber, pt.Date, pt.Amount, normalized);
+            var occurrence = occurrences.TryGetValue(baseHash, out var seen) ? seen + 1 : 1;
+            occurrences[baseHash] = occurrence;
+
+            // A genuinely identical row in the same file (two same coffees, same day) is a
+            // separate transaction. The first occurrence keeps the legacy hash so rows imported
+            // before occurrence indexing still dedup; later ones hash as base|#n.
+            var hash = occurrence == 1
+                ? baseHash
+                : TransactionHash.Compute(account.AccountNumber, pt.Date, pt.Amount, normalized, occurrence);
+            if (!fileHashes.Add(hash))
             {
-                // Duplicate within this very file (same day/amount/desc) — count once.
+                // Only reachable if a description literally ends in "|#n" and so collides with
+                // an indexed repeat; skip it rather than violate the unique Hash index.
                 continue;
+            }
+
+            if (occurrence > 1)
+            {
+                repeatHashes.Add(hash);
             }
 
             candidates.Add(new Transaction
@@ -117,6 +139,7 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
 
         var toAdd = candidates.Where(t => !existing.Contains(t.Hash)).ToList();
         var skipped = parsed.Transactions.Count - toAdd.Count;
+        var withinFileRepeats = toAdd.Count(t => repeatHashes.Contains(t.Hash));
 
         // Categorisation (cache → rules → AI batch) runs over the new rows before they're
         // saved. Cache/rule hits are instant; an AI batch (Phase 10-C) may take longer, so
@@ -169,9 +192,12 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
             await tx.CommitAsync(ct).ConfigureAwait(false);
         }
 
+        // The statement file name is deliberately not logged: it often embeds the account
+        // number or the owner's name, and the log is plaintext. The format is enough.
         _logger.LogInformation(
-            "Imported {Added} new transaction(s), skipped {Skipped} duplicate(s) from {File} into account {Account}",
-            toAdd.Count, skipped, session.FileName, account.Id);
+            "Imported {Added} new transaction(s) ({Repeats} identical within the file), "
+            + "skipped {Skipped} duplicate(s) from a {Format} statement into account {Account}",
+            toAdd.Count, withinFileRepeats, skipped, input.Format, account.Id);
 
         var aiFallbackUsed = string.Equals(parsed.BankCode, AiAssistedParser.AiFallbackBankCode, StringComparison.Ordinal);
         var ownerNameUnredacted = parsed.Warnings.Contains(AiAssistedParser.OwnerNameUnsetWarning, StringComparer.Ordinal);
@@ -197,7 +223,8 @@ public sealed class ImportStatementUseCase : IImportStatementUseCase
             alreadyImported,
             userWarnings,
             aiFallbackUsed,
-            ownerNameUnredacted);
+            ownerNameUnredacted,
+            withinFileRepeats);
     }
 
     private static string ComputeFileHash(Stream content)

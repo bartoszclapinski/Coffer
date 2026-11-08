@@ -64,6 +64,22 @@ public class FingerprintBankDetectorTests
         result!.BankCode.Should().Be("PKO_BP");
     }
 
+    [Theory]
+    [InlineData("pko-historia-diacritics.cp1250.golden.csv")]
+    [InlineData("pko-historia-diacritics.utf8.golden.csv")]
+    [InlineData("pko-historia-diacritics.utf8bom.golden.csv")]
+    public void Detect_PkoHistoriaCsvInAnySupportedEncoding_ReturnsPkoFingerprint(string fixture)
+    {
+        var detector = new FingerprintBankDetector();
+        var input = CsvStatementInputFactory.FromFixture(fixture);
+
+        var result = detector.Detect(input);
+
+        result.Should().NotBeNull();
+        result!.BankCode.Should().Be("PKO_BP");
+        input.Content.Position.Should().Be(0, "the parser reads the same stream next");
+    }
+
     [Fact]
     public void Detect_UnknownCsvHeader_ReturnsNull()
     {

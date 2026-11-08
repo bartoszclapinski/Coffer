@@ -7,6 +7,7 @@ using Coffer.Infrastructure.Import;
 using Coffer.Infrastructure.Parsing;
 using Coffer.Infrastructure.Parsing.Ai;
 using Coffer.Infrastructure.Parsing.Pko;
+using Coffer.Infrastructure.Parsing.Polish;
 using Coffer.Infrastructure.Persistence;
 using Coffer.Infrastructure.Tests.Parsing.Pko;
 using Coffer.Infrastructure.Tests.Persistence;
@@ -14,12 +15,28 @@ using Coffer.Shared.Parsing;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Coffer.Infrastructure.Tests.Import;
 
 public class ImportStatementUseCaseTests : IDisposable
 {
+    private const string AccountNumber = "PL60102010260000042270201111";
+
+    private const string PkoHeader =
+        "\"Data operacji\",\"Data waluty\",\"Typ transakcji\",\"Kwota\",\"Waluta\",\"Saldo po transakcji\",\"Opis transakcji\",\"\",\"\"\n";
+
+    // Two genuinely identical card payments on the same day (same amount, same description),
+    // plus one unrelated row. Synthetic merchant names only.
+    private const string CoffeeRow =
+        "\"2026-02-03\",\"2026-02-03\",\"Platnosc karta\",\"-12.00\",\"PLN\",\"500.00\",\"Platnosc karta\",\"Nazwa nadawcy/odbiorcy: KAWIARNIA TESTOWA\",\"Tytul: Kawa\"\n";
+
+    private const string BakeryRow =
+        "\"2026-02-03\",\"2026-02-03\",\"Platnosc karta\",\"-7.50\",\"PLN\",\"476.00\",\"Platnosc karta\",\"Nazwa nadawcy/odbiorcy: PIEKARNIA TESTOWA\",\"Tytul: Chleb\"\n";
+
+    private const string IdenticalRowsCsv = PkoHeader + CoffeeRow + CoffeeRow + BakeryRow;
+
     private readonly string _tempDir;
     private readonly string _dbPath;
     private readonly byte[] _dek;
@@ -90,6 +107,179 @@ public class ImportStatementUseCaseTests : IDisposable
         await using var db = _factory.CreateDbContext();
         (await db.Transactions.CountAsync()).Should().Be(8, "dedup by Hash prevents duplicate rows");
         (await db.ImportSessions.CountAsync()).Should().Be(2, "each run still records its own session");
+    }
+
+    [Fact]
+    public async Task Execute_IdenticalRowsInOneFile_ImportsEachAsSeparateTransaction()
+    {
+        var accountId = await SeedAccountAsync();
+        var useCase = CreateUseCase();
+
+        var summary = await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(IdenticalRowsCsv), accountId), null, CancellationToken.None);
+
+        summary.Added.Should().Be(3, "the second coffee is a real transaction, not a duplicate");
+        summary.Skipped.Should().Be(0);
+        summary.WithinFileRepeats.Should().Be(1);
+
+        await using var db = _factory.CreateDbContext();
+        var coffees = await db.Transactions.Where(t => t.Amount == -12.00m).ToListAsync();
+        coffees.Should().HaveCount(2);
+
+        // The first occurrence keeps the pre-Sprint-30 hash; the second is occurrence-indexed.
+        var normalized = coffees[0].NormalizedDescription;
+        var date = new DateOnly(2026, 2, 3);
+        coffees.Select(t => t.Hash).Should().BeEquivalentTo(
+        [
+            TransactionHash.Compute(AccountNumber, date, -12.00m, normalized),
+            TransactionHash.Compute(AccountNumber, date, -12.00m, normalized, occurrence: 2),
+        ]);
+    }
+
+    [Fact]
+    public async Task Execute_ExistingHashesOfGoldenFile_AreUnchanged()
+    {
+        // The golden file has no repeated rows, so every stored hash must equal the legacy
+        // four-part hash — exactly what versions before occurrence indexing stored.
+        var accountId = await SeedAccountAsync();
+        var useCase = CreateUseCase();
+
+        await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromGoldenFile(), accountId), null, CancellationToken.None);
+
+        await using var db = _factory.CreateDbContext();
+        var stored = await db.Transactions.ToListAsync();
+        stored.Should().HaveCount(8).And.OnlyContain(t =>
+            t.Hash == TransactionHash.Compute(AccountNumber, t.Date, t.Amount, DescriptionNormalizer.Normalize(t.Description)));
+    }
+
+    [Fact]
+    public async Task Execute_ReimportingFileWithIdenticalRows_AddsNothing()
+    {
+        var accountId = await SeedAccountAsync();
+        var useCase = CreateUseCase();
+        await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(IdenticalRowsCsv), accountId), null, CancellationToken.None);
+
+        var summary = await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(IdenticalRowsCsv), accountId), null, CancellationToken.None);
+
+        summary.Added.Should().Be(0);
+        summary.Skipped.Should().Be(3, "the indexed repeat is also deduplicated across imports");
+        summary.WithinFileRepeats.Should().Be(0, "repeats are reported only for rows actually added");
+
+        await using var db = _factory.CreateDbContext();
+        (await db.Transactions.CountAsync()).Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Execute_OverlappingExportWithMoreRepeats_AddsOnlyTheNewOccurrence()
+    {
+        // A mid-day export held one coffee; the full-day export later holds both plus the bakery.
+        var accountId = await SeedAccountAsync();
+        var useCase = CreateUseCase();
+        await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(PkoHeader + CoffeeRow), accountId), null, CancellationToken.None);
+
+        var summary = await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(IdenticalRowsCsv), accountId), null, CancellationToken.None);
+
+        summary.Added.Should().Be(2, "only the second coffee and the bakery are new");
+        summary.Skipped.Should().Be(1);
+
+        await using var db = _factory.CreateDbContext();
+        (await db.Transactions.CountAsync(t => t.Amount == -12.00m)).Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Execute_RowImportedBeforeOccurrenceIndexing_StillDeduplicates()
+    {
+        // Simulates a vault where an older version imported this file and collapsed the two
+        // coffees into one row stored under the legacy hash.
+        var accountId = await SeedAccountAsync();
+        const string coffeeDescription = "Platnosc karta Nazwa nadawcy/odbiorcy: KAWIARNIA TESTOWA Tytul: Kawa";
+        var normalized = DescriptionNormalizer.Normalize(coffeeDescription);
+        var date = new DateOnly(2026, 2, 3);
+        await using (var db = _factory.CreateDbContext())
+        {
+            var session = new ImportSession
+            {
+                Id = Guid.NewGuid(),
+                FileName = "older.csv",
+                FileHash = "OLDER",
+                BankCode = "PKO_BP",
+                PeriodFrom = date,
+                PeriodTo = date,
+                ImportedAt = DateTime.UtcNow,
+                TransactionsAdded = 1,
+                Status = ImportStatus.Completed,
+            };
+            db.ImportSessions.Add(session);
+            db.Transactions.Add(new Transaction
+            {
+                Id = Guid.NewGuid(),
+                AccountId = accountId,
+                Date = date,
+                Amount = -12.00m,
+                Currency = "PLN",
+                Description = coffeeDescription,
+                NormalizedDescription = normalized,
+                Hash = TransactionHash.Compute(AccountNumber, date, -12.00m, normalized),
+                ImportSessionId = session.Id,
+                CreatedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var summary = await CreateUseCase().ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(PkoHeader + CoffeeRow + CoffeeRow), accountId),
+            null,
+            CancellationToken.None);
+
+        summary.Added.Should().Be(1, "only the previously collapsed second coffee is new");
+        summary.Skipped.Should().Be(1, "the first coffee matches the legacy hash already stored");
+        summary.WithinFileRepeats.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Execute_UnexpectedPkoLayout_ThrowsLayoutExceptionAndSavesNothing()
+    {
+        var accountId = await SeedAccountAsync();
+        var useCase = CreateUseCase();
+        // Same labels (so the detector picks PKO) but ';' separators, as after a spreadsheet re-save.
+        const string resaved =
+            "Data operacji;Data waluty;Typ transakcji;Kwota;Waluta;Saldo po transakcji;Opis transakcji\n" +
+            "2026-02-03;2026-02-03;Platnosc karta;-12,00;PLN;500,00;Platnosc karta\n";
+
+        var act = async () => await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(resaved), accountId), null, CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnsupportedStatementLayoutException>();
+        await using var db = _factory.CreateDbContext();
+        (await db.ImportSessions.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Execute_DoesNotLogStatementFileName()
+    {
+        var accountId = await SeedAccountAsync();
+        var logger = new RecordingLogger();
+        var useCase = new ImportStatementUseCase(
+            _factory,
+            new FingerprintBankDetector(),
+            new StatementParserRegistry([new PkoHistoriaCsvParser()]),
+            new RuleCacheCategorizer(_factory, new RuleEngine(NullLogger<RuleEngine>.Instance)),
+            logger);
+        const string fileName = "Historia_rachunku_JAN_TESTOWY_PL00000000000000000000000000.csv";
+
+        await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(IdenticalRowsCsv, fileName), accountId),
+            null,
+            CancellationToken.None);
+
+        logger.Messages.Should().NotBeEmpty();
+        logger.Messages.Should().NotContain(m => m.Contains("JAN_TESTOWY", StringComparison.Ordinal)
+            || m.Contains("PL00000000000000000000000000", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -224,7 +414,7 @@ public class ImportStatementUseCaseTests : IDisposable
             Id = Guid.NewGuid(),
             Name = "PKO checking",
             BankCode = "PKO_BP",
-            AccountNumber = "PL60102010260000042270201111",
+            AccountNumber = AccountNumber,
             Currency = "PLN",
             Type = AccountType.Checking,
             CreatedAt = DateTime.UtcNow,
@@ -232,6 +422,20 @@ public class ImportStatementUseCaseTests : IDisposable
         db.Accounts.Add(account);
         await db.SaveChangesAsync();
         return account.Id;
+    }
+
+    private sealed class RecordingLogger : ILogger<ImportStatementUseCase>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            Messages.Add(formatter(state, exception));
     }
 
     private sealed class ProgressRecorder : IProgress<ImportProgress>
