@@ -1,7 +1,7 @@
 # Sprint 29 — Redesign rollout: migrate every remaining screen to the design system
 
 **Phase:** — (cross-cutting UI redesign, continuation of Sprint 28. Driven by `.ai/design/Coffer desktop project design/`.)
-**Status:** Planned
+**Status:** Closed
 **Depends on:** sprint-28 (the token substrate, `Styles/Components.axaml`, fonts, `PhosphorIcon`, the shell + `NavItem` model, the preview-harness pattern). No database schema, no AI, no network.
 
 ## Goal
@@ -54,13 +54,13 @@ Sprint 28 shipped the substrate + shell + one reference screen (Overview). The o
 - [x] 29.14 Previews skipped — reskin of proven components + trivial token-swapped bubbles; VMs would need 4–6 stubbed services each (disproportionate). Verified via build + hex scan in both themes.
 
 ### 29-E — Settings + pre-login
-- [ ] 29.15 `SettingsView` on tokens: sectioned panels (AI provider/keys/cap, budget, Backup & Recovery, language, **theme selector**), all actions.
-- [ ] 29.16 `LoginWindow` + setup wizard (`SetupWizardWindow` + `WelcomeStepView` / `MasterPasswordStepView` / `BipSeedDisplayStepView` / `BipSeedVerificationStepView` / `ConfirmStepView`) on tokens.
-- [ ] 29.17 Dialog windows on tokens: `RestoreWindow`, `RestoreFromSeedWindow`, `EnableSeedRecoveryWindow`, `ChangeMasterPasswordWindow`.
-- [ ] 29.18 Flip the default theme to **Dark** (`FileThemeStore` default) now that every surface is migrated; a Settings theme selector persists the owner's choice.
+- [x] 29.15 `SettingsView` on tokens: sectioned panels (AI provider/keys/cap, budget, Backup & Recovery, language, **theme selector**), all actions.
+- [x] 29.16 `LoginWindow` + setup wizard (`SetupWizardWindow` + `WelcomeStepView` / `MasterPasswordStepView` / `BipSeedDisplayStepView` / `BipSeedVerificationStepView` / `ConfirmStepView`) on tokens.
+- [x] 29.17 Dialog windows on tokens: `RestoreWindow`, `RestoreFromSeedWindow`, `EnableSeedRecoveryWindow`, `ChangeMasterPasswordWindow`.
+- [x] 29.18 Flip the default theme to **Dark** (`FileThemeStore` default) now that every surface is migrated; a Settings theme selector persists the owner's choice.
 
 ### Sweep
-- [ ] 29.19 No hardcoded user-facing hex left in any migrated view (grep for `#` colours); resx parity green; `dotnet format` clean; every screen captured in both themes.
+- [x] 29.19 No hardcoded user-facing hex left in any migrated view (grep for `#` colours); resx parity green; `dotnet format` clean; every screen captured in both themes.
 - [ ] 29.20 Manual full click-through by the owner (login → each screen) — deferred to manual.
 
 ## Definition of Done

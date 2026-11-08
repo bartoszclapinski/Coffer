@@ -11,6 +11,7 @@
         Title="{l:Localize Login.WindowTitle}"
         Width="480" Height="320"
         CanResize="False"
+        Background="{DynamicResource Coffer.Bg}"
         WindowStartupLocation="CenterScreen">
     <Grid RowDefinitions="Auto,*,Auto" Margin="32">
         <StackPanel Grid.Row="0" Spacing="6">
@@ -19,7 +20,7 @@
                        FontWeight="Light" />
             <TextBlock Text="{l:Localize Login.Subtitle}"
                        TextWrapping="Wrap"
-                       Foreground="#999" />
+                       Classes="muted" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Spacing="12" Margin="0,24,0,0" VerticalAlignment="Center">
@@ -33,11 +34,12 @@
             </StackPanel>
 
             <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="#D14"
+                       Foreground="{DynamicResource Coffer.Neg}"
                        TextWrapping="Wrap"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-            <ProgressBar IsIndeterminate="True"
+            <ProgressBar Classes="bar"
+                         IsIndeterminate="True"
                          Height="4"
                          IsVisible="{Binding IsBusy}" />
         </StackPanel>
@@ -47,11 +49,12 @@
                     Content="{l:Localize Login.ForgotPassword}"
                     HorizontalAlignment="Left"
                     Background="Transparent"
-                    Foreground="#0A84FF"
+                    Foreground="{DynamicResource Coffer.Pos}"
                     Padding="0"
                     IsEnabled="{Binding !IsBusy}"
                     Command="{Binding RestoreFromSeedCommand}" />
             <Button Grid.Column="1"
+                    Classes="accent"
                     Content="{l:Localize Login.SignIn}"
                     MinWidth="120"
                     IsDefault="True"

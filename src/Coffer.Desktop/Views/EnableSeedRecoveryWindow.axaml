@@ -11,12 +11,13 @@
         Title="{l:Localize Settings.SeedRecovery.EnableTitle}"
         Width="560" Height="600"
         CanResize="False"
+        Background="{DynamicResource Coffer.Bg}"
         WindowStartupLocation="CenterOwner">
     <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="28">
         <StackPanel Grid.Row="0" Spacing="6">
             <TextBlock Text="{l:Localize Settings.SeedRecovery.EnableTitle}" FontSize="20" FontWeight="Light" />
-            <TextBlock Text="{l:Localize Settings.SeedRecovery.EnableIntro}" TextWrapping="Wrap" Foreground="#8E8E93" />
-            <TextBlock Text="{l:Localize Setup.SeedDisplay.Warning}" TextWrapping="Wrap" Foreground="#E07B00" />
+            <TextBlock Text="{l:Localize Settings.SeedRecovery.EnableIntro}" TextWrapping="Wrap" Classes="muted" />
+            <TextBlock Text="{l:Localize Setup.SeedDisplay.Warning}" TextWrapping="Wrap" Foreground="{DynamicResource Coffer.Neg}" />
         </StackPanel>
 
         <ItemsControl Grid.Row="1" ItemsSource="{Binding Display.Words}" Margin="0,16,0,0">
@@ -27,8 +28,8 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Border BorderBrush="#555" BorderThickness="1" CornerRadius="4" Margin="4" Padding="12,8">
-                        <TextBlock Text="{Binding}" FontFamily="Consolas, Menlo, monospace" FontSize="16" />
+                    <Border BorderBrush="{DynamicResource Coffer.Bd}" Background="{DynamicResource Coffer.Panel2}" BorderThickness="1" CornerRadius="4" Margin="4" Padding="12,8">
+                        <TextBlock Text="{Binding}" FontFamily="Consolas, Menlo, monospace" FontSize="16" Foreground="{DynamicResource Coffer.Tx}" />
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
@@ -51,16 +52,18 @@
         <TextBlock Grid.Row="3"
                    Margin="0,12,0,0"
                    Text="{Binding ErrorMessage}"
-                   Foreground="#D14"
+                   Foreground="{DynamicResource Coffer.Neg}"
                    TextWrapping="Wrap"
                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,20,0,0">
             <Button Content="{l:Localize Settings.SeedRecovery.Cancel}"
+                    Classes="chip"
                     MinWidth="100"
                     IsCancel="True"
                     Command="{Binding CancelCommand}" />
             <Button Content="{l:Localize Settings.SeedRecovery.EnableConfirm}"
+                    Classes="accent"
                     MinWidth="160"
                     IsDefault="True"
                     IsEnabled="{Binding !IsBusy}"

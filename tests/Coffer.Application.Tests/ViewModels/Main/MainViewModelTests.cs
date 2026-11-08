@@ -215,6 +215,7 @@ public class MainViewModelTests
             new FakeChangeMasterPasswordDialog(),
             new FakeLocalizer(),
             new FakeLanguageStore(),
+            new FakeThemeSwitcher(),
             NullLogger<SettingsViewModel>.Instance);
         var planning = new CashFlowPlanningViewModel(
             new FakeRecurringFlowRepository(),

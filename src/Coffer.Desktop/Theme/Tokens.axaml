@@ -46,6 +46,8 @@
             <SolidColorBrush x:Key="Coffer.Hover" Color="#FBFAF6" />
             <SolidColorBrush x:Key="Coffer.Accent" Color="#2F6B4F" />
             <SolidColorBrush x:Key="Coffer.OnAccent" Color="#FFFFFF" />
+            <!-- Primary-button hover: a darker accent shade, white text stays readable. -->
+            <SolidColorBrush x:Key="Coffer.AccentHover" Color="#275A42" />
 
             <!-- Semantic alert/verdict surfaces: pos/neg at ~13% alpha over the panel. -->
             <SolidColorBrush x:Key="Coffer.PosTint" Color="#222F6B4F" />
@@ -102,6 +104,8 @@
             <SolidColorBrush x:Key="Coffer.Hover" Color="#1A1D23" />
             <SolidColorBrush x:Key="Coffer.Accent" Color="#2F6B4F" />
             <SolidColorBrush x:Key="Coffer.OnAccent" Color="#FFFFFF" />
+            <!-- Primary-button hover: a lighter accent shade, white text stays readable. -->
+            <SolidColorBrush x:Key="Coffer.AccentHover" Color="#3A7D5D" />
 
             <!-- Semantic alert/verdict surfaces: pos/neg at ~13% alpha over the panel. -->
             <SolidColorBrush x:Key="Coffer.PosTint" Color="#224ADE80" />

@@ -7,8 +7,9 @@ namespace Coffer.Infrastructure.Theming;
 /// <summary>
 /// <see cref="IThemeStore"/> backed by a small plaintext JSON file in the vault folder
 /// (<c>theme.json</c>). Deliberately not in the encrypted DB: the choice is non-sensitive
-/// and must be readable on the pre-login screens before the DEK exists. Any read failure
-/// falls back to <see cref="AppTheme.Light"/> rather than blocking startup.
+/// and must be readable on the pre-login screens before the DEK exists. With every screen
+/// migrated to the design system (Sprint 29), the app default is now <see cref="AppTheme.Dark"/>;
+/// any read failure falls back to it rather than blocking startup.
 /// </summary>
 public sealed class FileThemeStore : IThemeStore
 {
@@ -26,17 +27,17 @@ public sealed class FileThemeStore : IThemeStore
         {
             if (!File.Exists(_filePath))
             {
-                return AppTheme.Light;
+                return AppTheme.Dark;
             }
 
             var dto = JsonSerializer.Deserialize<ThemeDto>(File.ReadAllText(_filePath));
             return dto is not null && Enum.TryParse<AppTheme>(dto.Theme, out var theme)
                 ? theme
-                : AppTheme.Light;
+                : AppTheme.Dark;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
-            return AppTheme.Light;
+            return AppTheme.Dark;
         }
     }
 

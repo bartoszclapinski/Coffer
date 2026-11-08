@@ -2,6 +2,7 @@ using Coffer.Application.Tests.Fakes;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Core.Ai;
 using Coffer.Core.Localization;
+using Coffer.Core.Theming;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -140,6 +141,7 @@ public class SettingsViewModelTests
             new FakeChangeMasterPasswordDialog(),
             localizer,
             store,
+            new FakeThemeSwitcher(),
             NullLogger<SettingsViewModel>.Instance);
 
         vm.SelectedLanguage = vm.Languages.First(l => l.Language == AppLanguage.English);
@@ -148,6 +150,52 @@ public class SettingsViewModelTests
         store.Stored.Should().Be(AppLanguage.English);
         store.SaveCalls.Should().Be(1);
     }
+
+    [Fact]
+    public void SelectingDarkTheme_AppliesAndPersistsViaSwitcher()
+    {
+        var switcher = new FakeThemeSwitcher();
+        var vm = CreateWithTheme(switcher);
+
+        vm.IsDarkTheme.Should().BeFalse("the fake switcher starts on Light");
+
+        vm.IsDarkTheme = true;
+
+        switcher.Current.Should().Be(AppTheme.Dark);
+        switcher.AppliedCount.Should().Be(1, "one user flip = one apply + save");
+    }
+
+    [Fact]
+    public void Ctor_ReflectsCurrentTheme_WithoutReapplyingIt()
+    {
+        var switcher = new FakeThemeSwitcher(AppTheme.Dark);
+
+        var vm = CreateWithTheme(switcher);
+
+        vm.IsDarkTheme.Should().BeTrue();
+        switcher.AppliedCount.Should().Be(0, "opening Settings must not rewrite theme.json");
+    }
+
+    [Fact]
+    public void ExternalThemeChange_SyncsToggle_WithoutEchoingBack()
+    {
+        var switcher = new FakeThemeSwitcher();
+        var vm = CreateWithTheme(switcher);
+
+        // e.g. the top-bar sun/moon button or the command palette while Settings is open
+        switcher.Toggle();
+
+        vm.IsDarkTheme.Should().BeTrue();
+        switcher.AppliedCount.Should().Be(1, "the toggle's echo back into the switcher is a no-op");
+    }
+
+    private static SettingsViewModel CreateWithTheme(FakeThemeSwitcher switcher) =>
+        new(new FakeAiSettings(), new FakePlanningSettings(), new FakeAccountService(),
+            new FakeSecretStore(), new FakeAiUsageLedger(), new FakeBackupService(),
+            new FakeArchiveExporter(), new FakeFilePicker(), new FakeRestoreDialogService(),
+            new FakeSeedRecoveryService(), new FakeEnableSeedRecoveryDialog(),
+            new FakeChangeMasterPasswordDialog(), new FakeLocalizer(), new FakeLanguageStore(),
+            switcher, NullLogger<SettingsViewModel>.Instance);
 
     [Fact]
     public async Task Load_PopulatesSafetyFloorAndAccounts()
@@ -248,7 +296,7 @@ public class SettingsViewModelTests
             new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(),
             new FakeRestoreDialogService(), new FakeSeedRecoveryService(), new FakeEnableSeedRecoveryDialog(),
             new FakeChangeMasterPasswordDialog(), new FakeLocalizer(), new FakeLanguageStore(),
-            NullLogger<SettingsViewModel>.Instance);
+            new FakeThemeSwitcher(), NullLogger<SettingsViewModel>.Instance);
 
     private static SettingsViewModel CreateWithBackup(
         FakeBackupService backup,
@@ -264,7 +312,8 @@ public class SettingsViewModelTests
             seedRecovery ?? new FakeSeedRecoveryService(),
             enableDialog ?? new FakeEnableSeedRecoveryDialog(),
             changePasswordDialog ?? new FakeChangeMasterPasswordDialog(),
-            new FakeLocalizer(), new FakeLanguageStore(), NullLogger<SettingsViewModel>.Instance);
+            new FakeLocalizer(), new FakeLanguageStore(), new FakeThemeSwitcher(),
+            NullLogger<SettingsViewModel>.Instance);
 
     [Fact]
     public async Task Load_PopulatesBackupStatus()

@@ -8,13 +8,13 @@ namespace Coffer.Infrastructure.Tests.Theming;
 public class FileThemeStoreTests
 {
     [Fact]
-    public void Load_DefaultsToLight_WhenFileAbsent()
+    public void Load_DefaultsToDark_WhenFileAbsent()
     {
         using var paths = new TestVaultPaths();
         var store = new FileThemeStore(paths);
 
-        // Light stays the migration-era default until every screen consumes the design tokens.
-        store.Load().Should().Be(AppTheme.Light);
+        // With Sprint 29 complete, Dark is the app default for a fresh install.
+        store.Load().Should().Be(AppTheme.Dark);
     }
 
     [Theory]
@@ -31,12 +31,12 @@ public class FileThemeStoreTests
     }
 
     [Fact]
-    public void Load_DefaultsToLight_WhenFileCorrupt()
+    public void Load_DefaultsToDark_WhenFileCorrupt()
     {
         using var paths = new TestVaultPaths();
         File.WriteAllText(Path.Combine(paths.LocalAppDataFolder, "theme.json"), "{ not valid json");
         var store = new FileThemeStore(paths);
 
-        store.Load().Should().Be(AppTheme.Light);
+        store.Load().Should().Be(AppTheme.Dark);
     }
 }

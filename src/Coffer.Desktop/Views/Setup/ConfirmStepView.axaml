@@ -10,34 +10,37 @@
         <StackPanel Grid.Row="0" Spacing="8">
             <TextBlock Text="{l:Localize Setup.Confirm.Title}"
                        FontSize="22"
-                       FontWeight="Light" />
+                       FontWeight="Light"
+                       Foreground="{DynamicResource Coffer.Tx}" />
             <TextBlock TextWrapping="Wrap"
                        Text="{l:Localize Setup.Confirm.Intro}" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Spacing="12" VerticalAlignment="Center">
-            <ProgressBar IsIndeterminate="True"
+            <ProgressBar Classes="bar"
+                         IsIndeterminate="True"
                          IsVisible="{Binding IsBusy}"
                          Height="6" />
             <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="#D73A4A"
+                       Foreground="{DynamicResource Coffer.Neg}"
                        TextWrapping="Wrap"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </StackPanel>
 
         <StackPanel Grid.Row="2" Spacing="4" Margin="0,16,0,16">
             <TextBlock Text="{l:Localize Setup.Confirm.Location}"
-                       Foreground="#999"
-                       FontSize="12"
+                       Classes="muted"
                        TextWrapping="Wrap" />
         </StackPanel>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
             <Button Content="{l:Localize Setup.Back}"
+                    Classes="chip"
                     MinWidth="120"
                     IsEnabled="{Binding !IsBusy}"
                     Command="{Binding $parent[Window].DataContext.BackCommand}" />
             <Button Content="{l:Localize Setup.Confirm.CreateVault}"
+                    Classes="accent"
                     MinWidth="160"
                     IsEnabled="{Binding !IsBusy}"
                     Command="{Binding CreateVaultCommand}" />
