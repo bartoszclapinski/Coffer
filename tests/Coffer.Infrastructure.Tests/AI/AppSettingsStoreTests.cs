@@ -1,4 +1,5 @@
 using Coffer.Core.Ai;
+using Coffer.Core.Domain;
 using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Tests.Categorization;
 using FluentAssertions;
@@ -17,8 +18,10 @@ public class AppSettingsStoreTests : CategorizationDbTest
         var store = new AppSettingsStore(Factory);
 
         (await store.GetMonthlyCapPlnAsync(CancellationToken.None)).Should().Be(AiDefaults.MonthlyCapPln);
-        (await store.GetActiveProviderAsync(CancellationToken.None)).Should().Be(AiDefaults.ClaudeProvider);
-        (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be(AiDefaults.CategorizationModel);
+        (await store.GetProviderAsync(AiRole.Categorization, CancellationToken.None)).Should().Be(AiDefaults.ClaudeProvider);
+        (await store.GetModelAsync(AiRole.Categorization, CancellationToken.None)).Should().Be(AiDefaults.CategorizationModel);
+        (await store.GetProviderAsync(AiRole.Analysis, CancellationToken.None)).Should().Be(AiDefaults.ClaudeProvider);
+        (await store.GetModelAsync(AiRole.Analysis, CancellationToken.None)).Should().Be(AiDefaults.AnalysisModel);
         (await store.GetAiFallbackParsingEnabledAsync(CancellationToken.None)).Should().Be(AiDefaults.AiFallbackParsingEnabled);
         (await store.GetOwnerIdentityNamesAsync(CancellationToken.None)).Should().BeNull();
     }
@@ -33,19 +36,100 @@ public class AppSettingsStoreTests : CategorizationDbTest
         var store = new AppSettingsStore(Factory);
 
         await store.SetMonthlyCapPlnAsync(35.50m, CancellationToken.None);
-        await store.SetActiveProviderAsync(AiDefaults.ClaudeProvider, CancellationToken.None);
-        await store.SetCategorizationModelAsync("claude-sonnet-4-6", CancellationToken.None);
+        await store.SetProviderAsync(AiRole.Categorization, AiDefaults.ClaudeProvider, CancellationToken.None);
+        await store.SetModelAsync(AiRole.Categorization, "claude-sonnet-4-6", CancellationToken.None);
 
         (await store.GetMonthlyCapPlnAsync(CancellationToken.None)).Should().Be(35.50m);
-        (await store.GetActiveProviderAsync(CancellationToken.None)).Should().Be(AiDefaults.ClaudeProvider);
-        (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be("claude-sonnet-4-6");
+        (await store.GetProviderAsync(AiRole.Categorization, CancellationToken.None)).Should().Be(AiDefaults.ClaudeProvider);
+        (await store.GetModelAsync(AiRole.Categorization, CancellationToken.None)).Should().Be("claude-sonnet-4-6");
+    }
+
+    [Fact]
+    public async Task Routes_PreSprint31Keys_AreTheCategorizationRoute()
+    {
+        await using (var db = await MigratedContextAsync())
+        {
+            db.AppSettings.Add(new AppSetting { Key = "ai.activeProvider", Value = "Claude" });
+            db.AppSettings.Add(new AppSetting { Key = "ai.categorizationModel", Value = "claude-haiku-4-5" });
+            await db.SaveChangesAsync();
+        }
+
+        var store = new AppSettingsStore(Factory);
+
+        (await store.GetModelAsync(AiRole.Categorization, CancellationToken.None)).Should().Be("claude-haiku-4-5");
+        (await store.GetModelAsync(AiRole.Analysis, CancellationToken.None))
+            .Should().Be(AiDefaults.AnalysisModel, "the analysis route has its own keys and is untouched");
+    }
+
+    [Fact]
+    public async Task Routes_EachRoleRoundTripsIndependently()
+    {
+        await using (await MigratedContextAsync())
+        {
+        }
+
+        var store = new AppSettingsStore(Factory);
+
+        await store.SetProviderAsync(AiRole.Categorization, AiDefaults.OllamaProvider, CancellationToken.None);
+        await store.SetModelAsync(AiRole.Categorization, "qwen2.5:3b", CancellationToken.None);
+        await store.SetModelAsync(AiRole.Analysis, "claude-sonnet-4-6", CancellationToken.None);
+
+        (await store.GetProviderAsync(AiRole.Categorization, CancellationToken.None)).Should().Be(AiDefaults.OllamaProvider);
+        (await store.GetModelAsync(AiRole.Categorization, CancellationToken.None))
+            .Should().Be("qwen2.5:3b", "a non-Claude model is not checked against the Claude list");
+        (await store.GetProviderAsync(AiRole.Analysis, CancellationToken.None)).Should().Be(AiDefaults.ClaudeProvider);
+        (await store.GetModelAsync(AiRole.Analysis, CancellationToken.None)).Should().Be("claude-sonnet-4-6");
+    }
+
+    [Theory]
+    [InlineData("OpenAI")]
+    [InlineData("Retired")]
+    public async Task GetProvider_StoredProviderNotKnown_ReadsAsClaudeWithTheDefaultModel(string stored)
+    {
+        await using (await MigratedContextAsync())
+        {
+        }
+
+        var store = new AppSettingsStore(Factory);
+        await store.SetProviderAsync(AiRole.Categorization, stored, CancellationToken.None);
+        await store.SetModelAsync(AiRole.Categorization, "gpt-4o-mini", CancellationToken.None);
+
+        (await store.GetProviderAsync(AiRole.Categorization, CancellationToken.None)).Should().Be(AiDefaults.ClaudeProvider);
+        (await store.GetModelAsync(AiRole.Categorization, CancellationToken.None)).Should().Be(AiDefaults.CategorizationModel);
+    }
+
+    [Fact]
+    public async Task GetProvider_KnownProviderInOtherCase_ReadsCanonical()
+    {
+        await using (await MigratedContextAsync())
+        {
+        }
+
+        var store = new AppSettingsStore(Factory);
+        await store.SetProviderAsync(AiRole.Analysis, "ollama", CancellationToken.None);
+
+        (await store.GetProviderAsync(AiRole.Analysis, CancellationToken.None)).Should().Be(AiDefaults.OllamaProvider);
+    }
+
+    [Fact]
+    public async Task GetModel_NonClaudeProviderWithoutModel_ReadsEmpty()
+    {
+        await using (await MigratedContextAsync())
+        {
+        }
+
+        var store = new AppSettingsStore(Factory);
+        await store.SetProviderAsync(AiRole.Analysis, AiDefaults.OllamaProvider, CancellationToken.None);
+
+        (await store.GetModelAsync(AiRole.Analysis, CancellationToken.None))
+            .Should().BeEmpty("there is no default local model; an empty model makes the route not ready");
     }
 
     [Theory]
     [InlineData("gpt-4o-mini")]
     [InlineData("gpt-4o")]
     [InlineData("claude-3-haiku-20240307")]
-    public async Task GetCategorizationModel_StoredModelNoLongerOffered_ReturnsDefault(string stored)
+    public async Task GetModel_ClaudeModelNoLongerOffered_ReturnsTheRoleDefault(string stored)
     {
         await using (await MigratedContextAsync())
         {
@@ -53,13 +137,15 @@ public class AppSettingsStoreTests : CategorizationDbTest
 
         var store = new AppSettingsStore(Factory);
 
-        await store.SetCategorizationModelAsync(stored, CancellationToken.None);
+        await store.SetModelAsync(AiRole.Categorization, stored, CancellationToken.None);
+        await store.SetModelAsync(AiRole.Analysis, stored, CancellationToken.None);
 
-        (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be(AiDefaults.CategorizationModel);
+        (await store.GetModelAsync(AiRole.Categorization, CancellationToken.None)).Should().Be(AiDefaults.CategorizationModel);
+        (await store.GetModelAsync(AiRole.Analysis, CancellationToken.None)).Should().Be(AiDefaults.AnalysisModel);
     }
 
     [Fact]
-    public async Task GetCategorizationModel_EveryOfferedModel_RoundTrips()
+    public async Task GetModel_EveryOfferedClaudeModel_RoundTripsForBothRoles()
     {
         await using (await MigratedContextAsync())
         {
@@ -67,10 +153,13 @@ public class AppSettingsStoreTests : CategorizationDbTest
 
         var store = new AppSettingsStore(Factory);
 
-        foreach (var model in AiDefaults.ClaudeModels)
+        foreach (var role in new[] { AiRole.Categorization, AiRole.Analysis })
         {
-            await store.SetCategorizationModelAsync(model, CancellationToken.None);
-            (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be(model);
+            foreach (var model in AiDefaults.ClaudeModels)
+            {
+                await store.SetModelAsync(role, model, CancellationToken.None);
+                (await store.GetModelAsync(role, CancellationToken.None)).Should().Be(model);
+            }
         }
     }
 

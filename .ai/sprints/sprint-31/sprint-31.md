@@ -58,10 +58,10 @@ The owner can run every AI feature on a **local Ollama model** — nothing leave
 
 ### 31-B — per-role routing
 
-- [ ] 31.5 `AiRole` (`Categorization`, `Analysis`), `AiRoute(Provider, Model)`; `IAiSettings` per-role provider + model (existing keys = categorization).
-- [ ] 31.6 Route resolver; `AiRequest` / `AiToolRequest` carry `Provider`; routing `IAiProvider` dispatching to registered concrete providers (unknown provider → clear exception).
-- [ ] 31.7 Provider-aware `IAiPricing.Estimate`; budget gate always allows zero-cost calls; provider-aware readiness (key needed only for Claude).
-- [ ] 31.8 `HybridCategorizer`, `ChatService`, `AdvisorReportGenerator`, `AnomalyCommentator`, `CashFlowExplainer`, `AiAssistedParser` resolve their role's route per call; no remaining `AiDefaults.ChatModel` call-site use. Tests per consumer that the routed provider/model is what gets sent and estimated.
+- [x] 31.5 `AiRole` (`Categorization`, `Analysis`), `AiRoute(Provider, Model)`; `IAiSettings` per-role provider + model (existing keys = categorization).
+- [x] 31.6 Route resolver; `AiRequest` / `AiToolRequest` carry `Provider`; routing `IAiProvider` dispatching to registered concrete providers (unknown provider → clear exception).
+- [x] 31.7 Provider-aware `IAiPricing.Estimate`; budget gate always allows zero-cost calls; provider-aware readiness (key needed only for Claude).
+- [x] 31.8 `HybridCategorizer`, `ChatService`, `AdvisorReportGenerator`, `AnomalyCommentator`, `CashFlowExplainer`, `AiAssistedParser` resolve their role's route per call; no remaining `AiDefaults.ChatModel` call-site use. Tests per consumer that the routed provider/model is what gets sent and estimated.
 
 ### 31-C — Ollama provider
 

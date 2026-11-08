@@ -27,7 +27,7 @@ public class ClaudeProviderRequestTests
         var provider = await CreateAsync(handler);
 
         var result = await provider.CompleteJsonAsync<Categorized>(
-            new AiRequest { Prompt = "p", Model = "claude-haiku-5-5", MaxTokens = 512, Temperature = 0.0 },
+            new AiRequest { Prompt = "p", Provider = AiDefaults.ClaudeProvider, Model = "claude-haiku-5-5", MaxTokens = 512, Temperature = 0.0 },
             CancellationToken.None);
 
         result.Value.Category.Should().Be("Groceries");
@@ -44,7 +44,7 @@ public class ClaudeProviderRequestTests
         var provider = await CreateAsync(handler);
 
         await provider.CompleteJsonAsync<Categorized>(
-            new AiRequest { Prompt = "p", Model = "claude-haiku-4-5", MaxTokens = 512, Temperature = 0.0 },
+            new AiRequest { Prompt = "p", Provider = AiDefaults.ClaudeProvider, Model = "claude-haiku-4-5", MaxTokens = 512, Temperature = 0.0 },
             CancellationToken.None);
 
         var body = handler.SingleBody();
@@ -59,7 +59,7 @@ public class ClaudeProviderRequestTests
         var provider = await CreateAsync(handler);
 
         var result = await provider.CompleteJsonAsync<List<Categorized>>(
-            new AiRequest { Prompt = "p", Model = "claude-haiku-5-5" },
+            new AiRequest { Prompt = "p", Provider = AiDefaults.ClaudeProvider, Model = "claude-haiku-5-5" },
             CancellationToken.None);
 
         result.Value.Should().ContainSingle().Which.Category.Should().Be("Rent");
@@ -75,6 +75,7 @@ public class ClaudeProviderRequestTests
         var turn = await provider.CompleteWithToolsAsync(
             new AiToolRequest
             {
+                Provider = AiDefaults.ClaudeProvider,
                 Model = "claude-sonnet-5-5",
                 Messages = [AiChatMessage.User("How much did I spend?")],
                 Tools = [_spendingTool],
@@ -107,6 +108,7 @@ public class ClaudeProviderRequestTests
         var turn = await provider.CompleteWithToolsAsync(
             new AiToolRequest
             {
+                Provider = AiDefaults.ClaudeProvider,
                 Model = "claude-sonnet-5-5",
                 Messages =
                 [
@@ -131,7 +133,7 @@ public class ClaudeProviderRequestTests
         var handler = new CapturingHandler(TextResponse("ok"));
         var provider = await CreateAsync(handler);
 
-        await provider.CompleteAsync(new AiRequest { Prompt = "p", Model = "claude-haiku-5-5" }, CancellationToken.None);
+        await provider.CompleteAsync(new AiRequest { Prompt = "p", Provider = AiDefaults.ClaudeProvider, Model = "claude-haiku-5-5" }, CancellationToken.None);
 
         handler.Bodies.Should().ContainSingle().Which.Should().NotContain(FakeKey);
     }

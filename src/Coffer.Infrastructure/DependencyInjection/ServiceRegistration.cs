@@ -184,10 +184,15 @@ public static class ServiceRegistration
 
     /// <summary>
     /// Registers the Phase 10-B AI plumbing: the secret store for API keys, the
-    /// provider-neutral <see cref="IAiProvider"/> (Claude today), the prompt anonymiser
-    /// (hard rule #7), token pricing, the cost ledger and budget gate (doc 04), and the
-    /// KV-backed AI settings. Nothing here calls a vendor API at registration time — the
-    /// key is resolved per-call. Phase 10-C wires these into the hybrid categoriser.
+    /// provider-neutral <see cref="IAiProvider"/>, the prompt anonymiser (hard rule #7), token
+    /// pricing, the cost ledger and budget gate (doc 04), and the KV-backed AI settings. Nothing
+    /// here calls a vendor API at registration time — the key is resolved per-call.
+    /// <para>
+    /// Sprint 31 routing: concrete vendor providers are registered as <see cref="IAiProviderBackend"/>
+    /// (Claude today); the <see cref="IAiProvider"/> consumers get is <see cref="AiProviderRouter"/>,
+    /// which enumerates the backends and dispatches each request by its <c>Provider</c>. Consumers
+    /// resolve their role's route per call through <see cref="IAiRouteResolver"/>.
+    /// </para>
     /// </summary>
     public static IServiceCollection AddCofferAi(this IServiceCollection services)
     {
@@ -205,7 +210,10 @@ public static class ServiceRegistration
         });
 
         // Factory registration: the optional HttpMessageHandler parameter is a test seam, never resolved from DI.
-        services.AddTransient<IAiProvider>(sp => new ClaudeProvider(sp.GetRequiredService<ISecretStore>()));
+        services.AddTransient<IAiProviderBackend>(sp => new ClaudeProvider(sp.GetRequiredService<ISecretStore>()));
+        services.AddTransient<IAiProvider, AiProviderRouter>();
+        services.AddTransient<IAiRouteResolver, AiRouteResolver>();
+        services.AddTransient<IAiRouteReadiness, AiRouteReadiness>();
         // Transient: each session reads the current owner names / counterparties from the DB.
         services.AddTransient<IPromptAnonymizer, PromptAnonymizer>();
         services.AddTransient<ICounterpartyNameSource, StoredCounterpartyNameSource>();

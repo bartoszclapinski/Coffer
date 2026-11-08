@@ -37,6 +37,28 @@ public class AiBudgetGateTests
         ok.Should().BeTrue("Critical work bypasses the cap (e.g. categorising an import the user just asked for)");
     }
 
+    [Theory]
+    [InlineData(AiPriority.Normal)]
+    [InlineData(AiPriority.Critical)]
+    public async Task CanProceed_ZeroCostCallPastTheCap_ReturnsTrue(AiPriority priority)
+    {
+        var gate = CreateGate(spent: 50m, cap: 20m);
+
+        var ok = await gate.CanProceedAsync(estimatedCostPln: 0m, priority, CancellationToken.None);
+
+        ok.Should().BeTrue("a local model costs nothing, so the cap has nothing to protect");
+    }
+
+    [Fact]
+    public async Task CanProceed_SmallestPaidCallPastTheCap_StillBlocksNormalWork()
+    {
+        var gate = CreateGate(spent: 20m, cap: 20m);
+
+        var ok = await gate.CanProceedAsync(estimatedCostPln: 0.0001m, AiPriority.Normal, CancellationToken.None);
+
+        ok.Should().BeFalse("only a zero estimate bypasses the cap");
+    }
+
     private static AiBudgetGate CreateGate(decimal spent, decimal cap) =>
         new(new StubLedger(spent), new StubSettings(cap), NullLogger<AiBudgetGate>.Instance);
 
@@ -56,15 +78,15 @@ public class AiBudgetGateTests
 
         public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<string> GetActiveProviderAsync(CancellationToken ct) =>
+        public Task<string> GetProviderAsync(AiRole role, CancellationToken ct) =>
             Task.FromResult(AiDefaults.ClaudeProvider);
 
-        public Task SetActiveProviderAsync(string provider, CancellationToken ct) => Task.CompletedTask;
+        public Task SetProviderAsync(AiRole role, string provider, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<string> GetCategorizationModelAsync(CancellationToken ct) =>
-            Task.FromResult(AiDefaults.CategorizationModel);
+        public Task<string> GetModelAsync(AiRole role, CancellationToken ct) =>
+            Task.FromResult(AiDefaults.DefaultModel(role));
 
-        public Task SetCategorizationModelAsync(string model, CancellationToken ct) => Task.CompletedTask;
+        public Task SetModelAsync(AiRole role, string model, CancellationToken ct) => Task.CompletedTask;
 
         public Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct) =>
             Task.FromResult(AiDefaults.AiFallbackParsingEnabled);

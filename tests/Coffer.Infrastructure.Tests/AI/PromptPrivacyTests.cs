@@ -98,7 +98,7 @@ public class PromptPrivacyTests : CategorizationDbTest
             new NullLedger(),
             new AiPricing(),
             ProductionAnonymizer(),
-            new StubAiSettings { OwnerNames = OwnerNames },
+            new FixedRouteResolver(),
             NullLogger<HybridCategorizer>.Instance);
 
         var keys = parsed.Select(t => DescriptionNormalizer.Normalize(t.Description)).ToList();
@@ -129,6 +129,7 @@ public class PromptPrivacyTests : CategorizationDbTest
         var flows = new FakeTool("GetCashFlowProjection", """{"events":[{"name":"JAN TESTOWY","amount":-1200.00}]}""");
         var service = new ChatService(
             provider,
+            new FixedRouteResolver(),
             [new GetTransactionsTool(Factory), flows],
             new AllowingBudgetGate(),
             new NullLedger(),
@@ -179,7 +180,7 @@ public class PromptPrivacyTests : CategorizationDbTest
         var provider = new RecordingProvider(request =>
             $$"""[{"index":0,"title":"Nowy odbiorca {{Tokens(request.Prompt).Single()}}","description":"Pierwszy przelew."}]""");
         var commentator = new AnomalyCommentator(
-            provider, new AllowingBudgetGate(), new NullLedger(), new AiPricing(), ProductionAnonymizer(),
+            provider, new FixedRouteResolver(), new AllowingBudgetGate(), new NullLedger(), new AiPricing(), ProductionAnonymizer(),
             NullLogger<AnomalyCommentator>.Instance);
 
         var result = await commentator.CommentAsync([candidate], CancellationToken.None);
@@ -200,7 +201,7 @@ public class PromptPrivacyTests : CategorizationDbTest
             60);
         var provider = new RecordingProvider(request => $"Najpierw wychodzi przelew do {Tokens(request.Prompt).Single()}.");
         var explainer = new CashFlowExplainer(
-            provider, new AllowingBudgetGate(), new NullLedger(), new AiPricing(), ProductionAnonymizer(),
+            provider, new FixedRouteResolver(), new AllowingBudgetGate(), new NullLedger(), new AiPricing(), ProductionAnonymizer(),
             NullLogger<CashFlowExplainer>.Instance);
 
         var explanation = await explainer.ExplainAsync(projection, CancellationToken.None);
@@ -242,7 +243,7 @@ public class PromptPrivacyTests : CategorizationDbTest
         };
         var provider = new RecordingProvider(_ => """{"perGoalRisks":{},"suggestions":[]}""");
         var generator = new AdvisorReportGenerator(
-            provider, new AllowingBudgetGate(), new NullLedger(), new AiPricing(), ProductionAnonymizer(),
+            provider, new FixedRouteResolver(), new AllowingBudgetGate(), new NullLedger(), new AiPricing(), ProductionAnonymizer(),
             NullLogger<AdvisorReportGenerator>.Instance);
 
         await generator.GenerateAsync(
@@ -267,12 +268,13 @@ public class PromptPrivacyTests : CategorizationDbTest
         var settings = new StubAiSettings { OwnerNames = OwnerNames };
         var parser = new AiAssistedParser(
             provider,
+            new FixedRouteResolver(),
+            new AiRouteReadiness([new ClaudeProvider(new KeyedSecretStore())]),
             new AllowingBudgetGate(),
             new NullLedger(),
             new AiPricing(),
             new PromptAnonymizer(settings, new StoredCounterpartyNameSource(Factory)),
             settings,
-            new KeyedSecretStore(),
             NullLogger<AiAssistedParser>.Instance);
         await (await MigratedContextAsync()).DisposeAsync();
 

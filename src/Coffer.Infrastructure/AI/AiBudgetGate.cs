@@ -7,7 +7,9 @@ namespace Coffer.Infrastructure.AI;
 /// Enforces the monthly PLN cap (doc 04). When month-to-date spend plus the prospective
 /// call's estimate would exceed the cap, <see cref="AiPriority.Critical"/> work is still
 /// allowed (categorisation during an import the user just asked for) but logged as a
-/// warning; <see cref="AiPriority.Normal"/> work is blocked.
+/// warning; <see cref="AiPriority.Normal"/> work is blocked. A call estimated at 0 PLN (a
+/// local model) is always allowed, even past the cap: it cannot add to the spend the cap
+/// protects.
 /// </summary>
 public sealed class AiBudgetGate : IAiBudgetGate
 {
@@ -28,6 +30,11 @@ public sealed class AiBudgetGate : IAiBudgetGate
 
     public async Task<bool> CanProceedAsync(decimal estimatedCostPln, AiPriority priority, CancellationToken ct)
     {
+        if (estimatedCostPln <= 0m)
+        {
+            return true;
+        }
+
         var spent = await _ledger.GetCurrentMonthSpendPlnAsync(ct).ConfigureAwait(false);
         var cap = await _settings.GetMonthlyCapPlnAsync(ct).ConfigureAwait(false);
 

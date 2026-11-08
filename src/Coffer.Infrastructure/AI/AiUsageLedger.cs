@@ -30,7 +30,7 @@ public sealed class AiUsageLedger : IAiUsageLedger
         ArgumentNullException.ThrowIfNull(usage);
         ArgumentException.ThrowIfNullOrEmpty(purpose);
 
-        var cost = _pricing.Estimate(usage.Model, usage.InputTokens, usage.OutputTokens);
+        var cost = _pricing.Estimate(usage.Provider, usage.Model, usage.InputTokens, usage.OutputTokens);
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
         db.AiUsageEntries.Add(new AiUsageEntry

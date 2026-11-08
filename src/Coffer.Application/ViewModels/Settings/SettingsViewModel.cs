@@ -219,11 +219,16 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             var ct = CancellationToken.None;
             // A stored value no longer offered (e.g. a retired provider) shows the default, so the
-            // next Save replaces it instead of keeping a choice that fails at call time.
+            // next Save replaces it instead of keeping a choice that fails at call time. Only the
+            // categorisation route is editable here; the per-role pickers arrive in Sprint 31-D.
             SelectedProvider = OfferedOrDefault(
-                Providers, await _settings.GetActiveProviderAsync(ct).ConfigureAwait(true), AiDefaults.ClaudeProvider);
+                Providers,
+                await _settings.GetProviderAsync(AiRole.Categorization, ct).ConfigureAwait(true),
+                AiDefaults.ClaudeProvider);
             CategorizationModel = OfferedOrDefault(
-                Models, await _settings.GetCategorizationModelAsync(ct).ConfigureAwait(true), AiDefaults.CategorizationModel);
+                Models,
+                await _settings.GetModelAsync(AiRole.Categorization, ct).ConfigureAwait(true),
+                AiDefaults.CategorizationModel);
             MonthlyCapPln = await _settings.GetMonthlyCapPlnAsync(ct).ConfigureAwait(true);
             SafetyFloorPln = await _planningSettings.GetSafetyFloorPlnAsync(ct).ConfigureAwait(true);
             AiFallbackParsingEnabled = await _settings.GetAiFallbackParsingEnabledAsync(ct).ConfigureAwait(true);
@@ -262,8 +267,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         try
         {
             var ct = CancellationToken.None;
-            await _settings.SetActiveProviderAsync(SelectedProvider, ct).ConfigureAwait(true);
-            await _settings.SetCategorizationModelAsync(CategorizationModel, ct).ConfigureAwait(true);
+            await _settings.SetProviderAsync(AiRole.Categorization, SelectedProvider, ct).ConfigureAwait(true);
+            await _settings.SetModelAsync(AiRole.Categorization, CategorizationModel, ct).ConfigureAwait(true);
             await _settings.SetMonthlyCapPlnAsync(MonthlyCapPln, ct).ConfigureAwait(true);
             await _planningSettings.SetSafetyFloorPlnAsync(SafetyFloorPln, ct).ConfigureAwait(true);
             await _settings.SetAiFallbackParsingEnabledAsync(AiFallbackParsingEnabled, ct).ConfigureAwait(true);

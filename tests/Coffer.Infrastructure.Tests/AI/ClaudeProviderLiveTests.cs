@@ -30,7 +30,7 @@ public class ClaudeProviderLiveTests
 
     public ClaudeProviderLiveTests(ITestOutputHelper output) => _output = output;
 
-    public static TheoryData<string> DefaultModels => [AiDefaults.CategorizationModel, AiDefaults.ChatModel];
+    public static TheoryData<string> DefaultModels => [AiDefaults.CategorizationModel, AiDefaults.AnalysisModel];
 
     private sealed record CategoryAnswer(int Id, string Category);
 
@@ -43,6 +43,7 @@ public class ClaudeProviderLiveTests
         // Same shape as HybridCategorizer: small answer cap, temperature 0 (dropped where rejected).
         var request = new AiRequest
         {
+            Provider = AiDefaults.ClaudeProvider,
             Model = model,
             SystemPrompt = "You categorize bank transactions. Answer with JSON only: an array of objects "
                 + "{\"id\": number, \"category\": string}, one per transaction, using only the given categories.",
@@ -75,7 +76,7 @@ public class ClaudeProviderLiveTests
             + "spending figure; never guess numbers.";
 
         var first = await provider.CompleteWithToolsAsync(
-            new AiToolRequest { Model = model, SystemPrompt = SystemPrompt, Messages = conversation, Tools = [_spendingTool] },
+            new AiToolRequest { Provider = AiDefaults.ClaudeProvider, Model = model, SystemPrompt = SystemPrompt, Messages = conversation, Tools = [_spendingTool] },
             CancellationToken.None);
 
         _output.WriteLine($"{model} turn 1: {first.Usage.InputTokens} in / {first.Usage.OutputTokens} out");
@@ -92,7 +93,7 @@ public class ClaudeProviderLiveTests
             [new AiToolResult(call.CallId, call.ToolName, """{"month":"2026-10","totalPln":1234.56}""")]));
 
         var second = await provider.CompleteWithToolsAsync(
-            new AiToolRequest { Model = model, SystemPrompt = SystemPrompt, Messages = conversation, Tools = [_spendingTool] },
+            new AiToolRequest { Provider = AiDefaults.ClaudeProvider, Model = model, SystemPrompt = SystemPrompt, Messages = conversation, Tools = [_spendingTool] },
             CancellationToken.None);
 
         _output.WriteLine($"{model} turn 2: {second.Usage.InputTokens} in / {second.Usage.OutputTokens} out");

@@ -12,12 +12,20 @@ namespace Coffer.Infrastructure.AI;
 /// serving both <see cref="IAiSettings"/> and <see cref="IPlanningSettings"/>. Reads fall back to the
 /// per-domain <c>*Defaults</c> until the owner saves a value; writes upsert a single row per key. API
 /// keys never pass through here — they live in <c>ISecretStore</c> (hard rule #6/#11).
+/// <para>
+/// Per-role AI routes (Sprint 31) are additive keys, no migration: the pre-31 keys
+/// <c>ai.activeProvider</c> / <c>ai.categorizationModel</c> keep meaning the
+/// <see cref="AiRole.Categorization"/> route, and <c>ai.analysisProvider</c> / <c>ai.analysisModel</c>
+/// hold the <see cref="AiRole.Analysis"/> route. Absent keys read as Claude with the role's default model.
+/// </para>
 /// </summary>
 public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
 {
     private const string MonthlyCapKey = "ai.monthlyCapPln";
-    private const string ActiveProviderKey = "ai.activeProvider";
+    private const string CategorizationProviderKey = "ai.activeProvider";
     private const string CategorizationModelKey = "ai.categorizationModel";
+    private const string AnalysisProviderKey = "ai.analysisProvider";
+    private const string AnalysisModelKey = "ai.analysisModel";
     private const string AiFallbackParsingEnabledKey = "ai.fallbackParsingEnabled";
     private const string OwnerIdentityNamesKey = "privacy.ownerIdentityNames";
     private const string SafetyFloorKey = "planning.safetyFloorPln";
@@ -41,28 +49,43 @@ public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
     public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct) =>
         SetValueAsync(MonthlyCapKey, capPln.ToString(CultureInfo.InvariantCulture), ct);
 
-    public async Task<string> GetActiveProviderAsync(CancellationToken ct) =>
-        await GetValueAsync(ActiveProviderKey, ct).ConfigureAwait(false) ?? AiDefaults.ClaudeProvider;
+    // A stored provider this build does not know (e.g. "OpenAI", offered before Sprint 31) reads as
+    // Claude: now that the provider routes calls, a retired value must not break the role.
+    public async Task<string> GetProviderAsync(AiRole role, CancellationToken ct)
+    {
+        var stored = await GetValueAsync(ProviderKey(role), ct).ConfigureAwait(false);
+        return AiDefaults.Providers.FirstOrDefault(p => string.Equals(p, stored?.Trim(), StringComparison.OrdinalIgnoreCase))
+            ?? AiDefaults.ClaudeProvider;
+    }
 
-    public Task SetActiveProviderAsync(string provider, CancellationToken ct)
+    public Task SetProviderAsync(AiRole role, string provider, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrEmpty(provider);
-        return SetValueAsync(ActiveProviderKey, provider, ct);
+        return SetValueAsync(ProviderKey(role), provider, ct);
     }
 
-    // A stored model that is no longer offered (e.g. the retired "gpt-4o-mini") reads as the default,
-    // so categorisation never sends Claude a model ID it would reject with a 400.
-    public async Task<string> GetCategorizationModelAsync(CancellationToken ct)
+    // For Claude a stored model that is no longer offered (e.g. the retired "gpt-4o-mini") reads as the
+    // role's default, so a role never sends Claude a model ID it would reject with a 400. Another
+    // provider's models are not a fixed list (Ollama serves whatever the owner pulled), so its stored
+    // model is returned as-is; empty means "not chosen yet" and the route is not ready.
+    public async Task<string> GetModelAsync(AiRole role, CancellationToken ct)
     {
-        var stored = await GetValueAsync(CategorizationModelKey, ct).ConfigureAwait(false);
-        return AiDefaults.ClaudeModels.FirstOrDefault(m => string.Equals(m, stored, StringComparison.OrdinalIgnoreCase))
-            ?? AiDefaults.CategorizationModel;
+        var provider = await GetProviderAsync(role, ct).ConfigureAwait(false);
+        var stored = (await GetValueAsync(ModelKey(role), ct).ConfigureAwait(false))?.Trim();
+
+        if (provider == AiDefaults.ClaudeProvider)
+        {
+            return AiDefaults.ClaudeModels.FirstOrDefault(m => string.Equals(m, stored, StringComparison.OrdinalIgnoreCase))
+                ?? AiDefaults.DefaultModel(role);
+        }
+
+        return stored ?? string.Empty;
     }
 
-    public Task SetCategorizationModelAsync(string model, CancellationToken ct)
+    public Task SetModelAsync(AiRole role, string model, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrEmpty(model);
-        return SetValueAsync(CategorizationModelKey, model, ct);
+        return SetValueAsync(ModelKey(role), model, ct);
     }
 
     public async Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct)
@@ -95,6 +118,20 @@ public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
 
     public Task SetSafetyFloorPlnAsync(decimal floorPln, CancellationToken ct) =>
         SetValueAsync(SafetyFloorKey, floorPln.ToString(CultureInfo.InvariantCulture), ct);
+
+    private static string ProviderKey(AiRole role) => role switch
+    {
+        AiRole.Categorization => CategorizationProviderKey,
+        AiRole.Analysis => AnalysisProviderKey,
+        _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown AI role."),
+    };
+
+    private static string ModelKey(AiRole role) => role switch
+    {
+        AiRole.Categorization => CategorizationModelKey,
+        AiRole.Analysis => AnalysisModelKey,
+        _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown AI role."),
+    };
 
     private async Task<string?> GetValueAsync(string key, CancellationToken ct)
     {

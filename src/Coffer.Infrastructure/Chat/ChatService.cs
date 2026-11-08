@@ -12,6 +12,8 @@ namespace Coffer.Infrastructure.Chat;
 /// repeats until the model returns a final answer or the iteration cap is hit. Every model turn is
 /// metered into the cost ledger (<c>Purpose = "chat"</c>) and the monthly budget gate is consulted
 /// before each turn — chat is non-critical, so it is blocked (no API call) once the cap is reached.
+/// Each question resolves the <see cref="AiRole.Analysis"/> route once and runs every turn of its
+/// loop on that provider + model.
 /// Master password / BIP39 never enter any prompt (hard rule #6); the model can never mutate state
 /// (tools are read-only).
 /// </summary>
@@ -30,6 +32,9 @@ public sealed class ChatService : IChatService
     private const string MissingKeyMessage =
         "Brak skonfigurowanego klucza API. Dodaj klucz w ustawieniach, aby korzystać z asystenta.";
 
+    private const string UnknownProviderMessage =
+        "Wybrany dostawca AI jest niedostępny. Wybierz dostawcę w ustawieniach, aby korzystać z asystenta.";
+
     private const string ErrorMessage =
         "Przepraszam, wystąpił błąd podczas przetwarzania zapytania. Spróbuj ponownie za chwilę.";
 
@@ -37,6 +42,7 @@ public sealed class ChatService : IChatService
         "Nie udało mi się dokończyć odpowiedzi. Spróbuj zadać pytanie inaczej.";
 
     private readonly IAiProvider _provider;
+    private readonly IAiRouteResolver _routes;
     private readonly IReadOnlyDictionary<string, IChatTool> _tools;
     private readonly IReadOnlyList<AiTool> _toolDescriptors;
     private readonly IAiBudgetGate _budgetGate;
@@ -47,6 +53,7 @@ public sealed class ChatService : IChatService
 
     public ChatService(
         IAiProvider provider,
+        IAiRouteResolver routes,
         IEnumerable<IChatTool> tools,
         IAiBudgetGate budgetGate,
         IAiUsageLedger ledger,
@@ -55,6 +62,7 @@ public sealed class ChatService : IChatService
         ILogger<ChatService> logger)
     {
         ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(routes);
         ArgumentNullException.ThrowIfNull(tools);
         ArgumentNullException.ThrowIfNull(budgetGate);
         ArgumentNullException.ThrowIfNull(ledger);
@@ -63,6 +71,7 @@ public sealed class ChatService : IChatService
         ArgumentNullException.ThrowIfNull(logger);
 
         _provider = provider;
+        _routes = routes;
         _tools = tools.ToDictionary(t => t.Name, StringComparer.Ordinal);
         _toolDescriptors = _tools.Values.Select(t => t.ToAiTool()).ToList();
         _budgetGate = budgetGate;
@@ -81,14 +90,16 @@ public sealed class ChatService : IChatService
         // One redaction session per question: the history, the question and every tool result share
         // it, so a counterparty keeps the same pseudonym across the whole request (hard rule #7).
         // Earlier answers were restored for display, so they are redacted again here.
+        AiRoute route;
         IPromptRedactionSession redaction;
         try
         {
+            route = await _routes.ResolveAsync(AiRole.Analysis, ct).ConfigureAwait(false);
             redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogError(ex, "Could not prepare prompt redaction; no chat request was sent.");
+            _logger.LogError(ex, "Could not prepare the AI route or prompt redaction; no chat request was sent.");
             return new ChatTurn(ErrorMessage, []);
         }
 
@@ -110,13 +121,14 @@ public sealed class ChatService : IChatService
         {
             var request = new AiToolRequest
             {
-                Model = AiDefaults.ChatModel,
+                Provider = route.Provider,
+                Model = route.Model,
                 Messages = messages,
                 SystemPrompt = systemPrompt,
                 Tools = _toolDescriptors,
             };
 
-            if (!await CanProceedAsync(systemPrompt, messages, ct).ConfigureAwait(false))
+            if (!await CanProceedAsync(route, systemPrompt, messages, ct).ConfigureAwait(false))
             {
                 _logger.LogInformation("Budget gate blocked a chat turn; no API call made.");
                 return new ChatTurn(BudgetMessage, [], BudgetExceeded: true);
@@ -130,6 +142,11 @@ public sealed class ChatService : IChatService
             catch (MissingAiKeyException)
             {
                 return new ChatTurn(MissingKeyMessage, [], MissingApiKey: true);
+            }
+            catch (UnknownAiProviderException)
+            {
+                // Same "configure AI in Settings" state as a missing key: nothing was sent.
+                return new ChatTurn(UnknownProviderMessage, [], MissingApiKey: true);
             }
             catch (OperationCanceledException)
             {
@@ -206,10 +223,11 @@ public sealed class ChatService : IChatService
     }
 
     private async Task<bool> CanProceedAsync(
-        string systemPrompt, IReadOnlyList<AiChatMessage> messages, CancellationToken ct)
+        AiRoute route, string systemPrompt, IReadOnlyList<AiChatMessage> messages, CancellationToken ct)
     {
         var estimatedInputTokens = EstimateInputTokens(systemPrompt, messages);
-        var estimate = _pricing.EstimateBeforeCall(AiDefaults.ChatModel, estimatedInputTokens, EstimatedOutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(
+            route.Provider, route.Model, estimatedInputTokens, EstimatedOutputTokens);
         return await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false);
     }
 
@@ -235,12 +253,9 @@ public sealed class ChatService : IChatService
             {
                 return await _provider.CompleteWithToolsAsync(request, ct).ConfigureAwait(false);
             }
-            catch (MissingAiKeyException)
+            catch (Exception ex) when (ex is MissingAiKeyException or UnknownAiProviderException or OperationCanceledException)
             {
-                throw;
-            }
-            catch (OperationCanceledException)
-            {
+                // Not configured or cancelled: never retried.
                 throw;
             }
             catch (Exception ex) when (attempt < ProviderAttempts)

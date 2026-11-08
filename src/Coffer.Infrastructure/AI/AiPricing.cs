@@ -3,13 +3,15 @@ using Coffer.Core.Ai;
 namespace Coffer.Infrastructure.AI;
 
 /// <summary>
-/// Static per-model token pricing (doc 04 cost discipline). Rates are USD per million
-/// tokens; PLN is a fixed-rate conversion — good enough for a budget guard, not
-/// accounting. Unknown models fall back to the most expensive Claude rate in the table
-/// (Sonnet 4.6) so the rate never under-reports. Thinking tokens are billed as output, so
-/// <see cref="EstimateBeforeCall"/> adds the full <see cref="ClaudeModelRules.ThinkingHeadroomTokens"/>
-/// for models that think by default: the pre-call estimate covers the most thinking a call can
-/// spend, and the ledger records the real usage afterwards.
+/// Static per-provider, per-model token pricing (doc 04 cost discipline). Rates are USD per
+/// million tokens; PLN is a fixed-rate conversion — good enough for a budget guard, not
+/// accounting. <see cref="AiDefaults.OllamaProvider"/> runs locally and costs nothing. For Claude,
+/// unknown models fall back to the most expensive Claude rate in the table (Sonnet 4.6), and so
+/// does an unknown provider, so the rate never under-reports. Claude bills thinking tokens as
+/// output, so <see cref="EstimateBeforeCall"/> adds the full
+/// <see cref="ClaudeModelRules.ThinkingHeadroomTokens"/> for Claude models that think by default:
+/// the pre-call estimate covers the most thinking a call can spend, and the ledger records the real
+/// usage afterwards.
 /// </summary>
 public sealed class AiPricing : IAiPricing
 {
@@ -34,26 +36,40 @@ public sealed class AiPricing : IAiPricing
     private const decimal UsdToPln = 4.00m;
     private const decimal PerMillion = 1_000_000m;
 
-    public AiCost Estimate(string model, int inputTokens, int outputTokens)
+    public AiCost Estimate(string provider, string model, int inputTokens, int outputTokens)
     {
+        ArgumentException.ThrowIfNullOrEmpty(provider);
         ArgumentException.ThrowIfNullOrEmpty(model);
 
-        var (inputRate, outputRate) = RateFor(model, inputTokens);
+        if (IsLocal(provider))
+        {
+            return new AiCost(0m, 0m);
+        }
+
+        var (inputRate, outputRate) = IsClaude(provider) ? ClaudeRateFor(model, inputTokens) : _fallback;
 
         var usd = ((inputTokens * inputRate) + (outputTokens * outputRate)) / PerMillion;
         var pln = usd * UsdToPln;
         return new AiCost(usd, pln);
     }
 
-    public AiCost EstimateBeforeCall(string model, int inputTokens, int answerTokens)
+    public AiCost EstimateBeforeCall(string provider, string model, int inputTokens, int answerTokens)
     {
+        ArgumentException.ThrowIfNullOrEmpty(provider);
         ArgumentException.ThrowIfNullOrEmpty(model);
 
         // The same output cap ClaudeProvider sends: the answer plus thinking headroom where it applies.
-        return Estimate(model, inputTokens, ClaudeModelRules.MaxTokensFor(model, answerTokens));
+        var outputTokens = IsClaude(provider) ? ClaudeModelRules.MaxTokensFor(model, answerTokens) : answerTokens;
+        return Estimate(provider, model, inputTokens, outputTokens);
     }
 
-    private static (decimal Input, decimal Output) RateFor(string model, int inputTokens)
+    private static bool IsLocal(string provider) =>
+        string.Equals(provider, AiDefaults.OllamaProvider, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsClaude(string provider) =>
+        string.Equals(provider, AiDefaults.ClaudeProvider, StringComparison.OrdinalIgnoreCase);
+
+    private static (decimal Input, decimal Output) ClaudeRateFor(string model, int inputTokens)
     {
         if (string.Equals(model, HaikuFiveFive, StringComparison.OrdinalIgnoreCase)
             && inputTokens > HaikuLongPromptThreshold)

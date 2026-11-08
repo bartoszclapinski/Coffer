@@ -27,7 +27,7 @@ namespace Coffer.Infrastructure.AI;
 /// accepts a full tool round trip without the replay.
 /// </para>
 /// </summary>
-public sealed class ClaudeProvider : IAiProvider
+public sealed class ClaudeProvider : IAiProviderBackend
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -53,6 +53,13 @@ public sealed class ClaudeProvider : IAiProvider
     }
 
     public string ProviderName => AiDefaults.ClaudeProvider;
+
+    /// <summary>Claude is usable once an API key is stored; reading the key makes no network call.</summary>
+    public async Task<bool> IsConfiguredAsync(CancellationToken ct)
+    {
+        var apiKey = await _secrets.GetSecretAsync(AiDefaults.ClaudeApiKeySecret, ct).ConfigureAwait(false);
+        return !string.IsNullOrWhiteSpace(apiKey);
+    }
 
     public async Task<AiResult<string>> CompleteAsync(AiRequest request, CancellationToken ct)
     {
@@ -133,7 +140,7 @@ public sealed class ClaudeProvider : IAiProvider
         var apiKey = await _secrets.GetSecretAsync(AiDefaults.ClaudeApiKeySecret, ct).ConfigureAwait(false);
         if (string.IsNullOrEmpty(apiKey))
         {
-            throw new InvalidOperationException(
+            throw new MissingAiKeyException(
                 "No Claude API key configured. Set it in Settings before using AI features.");
         }
 

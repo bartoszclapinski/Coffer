@@ -141,7 +141,7 @@ public class ChatServiceTests
     }
 
     [Fact]
-    public async Task Ask_PassesToolMenuAndChatModelToProvider()
+    public async Task Ask_PassesToolMenuAndAnalysisRouteToProvider()
     {
         var tool = new FakeTool("GetTotalSpent", "{}");
         var provider = new ScriptedProvider();
@@ -152,8 +152,41 @@ public class ChatServiceTests
         await service.AskAsync("pytanie", [], CancellationToken.None);
 
         var request = provider.Requests.Should().ContainSingle().Subject;
-        request.Model.Should().Be(AiDefaults.ChatModel);
+        request.Provider.Should().Be(AiDefaults.ClaudeProvider);
+        request.Model.Should().Be(AiDefaults.AnalysisModel);
         request.Tools.Should().ContainSingle().Which.Name.Should().Be("GetTotalSpent");
+    }
+
+    [Fact]
+    public async Task Ask_SendsAndPricesEveryTurnOnTheAnalysisRoute()
+    {
+        var tool = new FakeTool("GetTotalSpent", "{}");
+        var provider = new ScriptedProvider();
+        provider.Enqueue(AiToolTurn(("GetTotalSpent", "{}")));
+        provider.Enqueue(FinalTurn("Gotowe."));
+        var routes = new FixedRouteResolver(analysis: TestRoutes.Routed);
+        var pricing = new RecordingPricing();
+
+        await Service(provider, [tool], routes: routes, pricing: pricing)
+            .AskAsync("pytanie", [], CancellationToken.None);
+
+        routes.ResolvedRoles.Should().Equal([AiRole.Analysis], "the route is resolved once per question");
+        provider.Requests.Should().HaveCount(2).And.OnlyContain(
+            r => r.Provider == TestRoutes.Routed.Provider && r.Model == TestRoutes.Routed.Model);
+        pricing.PreCallEstimates.Should().HaveCount(2).And.OnlyContain(
+            e => e.Provider == TestRoutes.Routed.Provider && e.Model == TestRoutes.Routed.Model);
+    }
+
+    [Fact]
+    public async Task Ask_UnknownProvider_ReturnsConfigureTurnWithoutRetrying()
+    {
+        var provider = new ScriptedProvider { ThrowUnknownProvider = true };
+        var service = Service(provider, []);
+
+        var turn = await service.AskAsync("pytanie", [], CancellationToken.None);
+
+        turn.MissingApiKey.Should().BeTrue("an unknown provider is the same 'configure AI in Settings' state as a missing key");
+        provider.Attempts.Should().Be(1, "an unconfigured provider is never retried");
     }
 
     [Fact]
@@ -184,13 +217,16 @@ public class ChatServiceTests
         IEnumerable<IChatTool> tools,
         IAiBudgetGate? gate = null,
         IAiUsageLedger? ledger = null,
-        IPromptAnonymizer? anonymizer = null) =>
+        IPromptAnonymizer? anonymizer = null,
+        IAiRouteResolver? routes = null,
+        IAiPricing? pricing = null) =>
         new(
             provider,
+            routes ?? new FixedRouteResolver(),
             tools,
             gate ?? new StubBudgetGate(canProceed: true),
             ledger ?? new RecordingLedger(),
-            new StubPricing(),
+            pricing ?? new RecordingPricing(),
             anonymizer ?? new PassthroughPromptAnonymizer(),
             NullLogger<ChatService>.Instance);
 
@@ -211,14 +247,22 @@ public class ChatServiceTests
         public string ProviderName => "Scripted";
         public List<AiToolRequest> Requests { get; } = [];
         public bool ThrowMissingKey { get; init; }
+        public bool ThrowUnknownProvider { get; init; }
+        public int Attempts { get; private set; }
 
         public void Enqueue(AiToolTurn turn) => _turns.Enqueue(turn);
 
         public Task<AiResult<AiToolTurn>> CompleteWithToolsAsync(AiToolRequest request, CancellationToken ct)
         {
+            Attempts++;
             if (ThrowMissingKey)
             {
                 throw new MissingAiKeyException("no key");
+            }
+
+            if (ThrowUnknownProvider)
+            {
+                throw new UnknownAiProviderException(request.Provider);
             }
 
             Requests.Add(request);
@@ -283,10 +327,5 @@ public class ChatServiceTests
 
         public Task<IReadOnlyList<AiSpendByPurpose>> GetCurrentMonthByPurposeAsync(CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<AiSpendByPurpose>>([]);
-    }
-
-    private sealed class StubPricing : IAiPricing
-    {
-        public AiCost Estimate(string model, int inputTokens, int outputTokens) => new(0.01m, 0.04m);
     }
 }

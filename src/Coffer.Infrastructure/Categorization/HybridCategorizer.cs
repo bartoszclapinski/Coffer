@@ -16,7 +16,8 @@ namespace Coffer.Infrastructure.Categorization;
 /// fields (<see cref="CategorizationPromptInput"/>), anonymised (hard rule #7), sent to the AI
 /// provider in batches behind the <see cref="IAiBudgetGate"/> at
 /// <see cref="AiPriority.Critical"/>, validated, ledgered, and cached with
-/// <see cref="CacheSource.Ai"/>.
+/// <see cref="CacheSource.Ai"/>. Each run resolves the <see cref="AiRole.Categorization"/> route
+/// (provider + model) once and sends and prices every batch on it.
 /// <para>
 /// The AI stage never breaks an import: a denied budget, a missing key, a network error, or
 /// malformed output (after one retry) leaves the affected descriptions uncategorised
@@ -43,7 +44,7 @@ public sealed class HybridCategorizer : ICategorizer
     private readonly IAiUsageLedger _ledger;
     private readonly IAiPricing _pricing;
     private readonly IPromptAnonymizer _anonymizer;
-    private readonly IAiSettings _settings;
+    private readonly IAiRouteResolver _routes;
     private readonly ILogger<HybridCategorizer> _logger;
 
     public HybridCategorizer(
@@ -54,7 +55,7 @@ public sealed class HybridCategorizer : ICategorizer
         IAiUsageLedger ledger,
         IAiPricing pricing,
         IPromptAnonymizer anonymizer,
-        IAiSettings settings,
+        IAiRouteResolver routes,
         ILogger<HybridCategorizer> logger)
     {
         ArgumentNullException.ThrowIfNull(contextFactory);
@@ -64,7 +65,7 @@ public sealed class HybridCategorizer : ICategorizer
         ArgumentNullException.ThrowIfNull(ledger);
         ArgumentNullException.ThrowIfNull(pricing);
         ArgumentNullException.ThrowIfNull(anonymizer);
-        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(routes);
         ArgumentNullException.ThrowIfNull(logger);
 
         _contextFactory = contextFactory;
@@ -74,7 +75,7 @@ public sealed class HybridCategorizer : ICategorizer
         _ledger = ledger;
         _pricing = pricing;
         _anonymizer = anonymizer;
-        _settings = settings;
+        _routes = routes;
         _logger = logger;
     }
 
@@ -180,25 +181,27 @@ public sealed class HybridCategorizer : ICategorizer
         CancellationToken ct)
     {
         var resolved = new Dictionary<string, Guid?>(StringComparer.Ordinal);
-        var model = await _settings.GetCategorizationModelAsync(ct).ConfigureAwait(false);
         var categoryList = string.Join(", ", categories.Select(c => c.Name));
+        AiRoute route;
         IPromptRedactionSession redaction;
         try
         {
+            route = await _routes.ResolveAsync(AiRole.Categorization, ct).ConfigureAwait(false);
             redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Never send unredacted text and never break the import: leave the unknowns uncategorised.
             _logger.LogWarning(
-                ex, "Could not prepare prompt redaction; leaving {Count} description(s) uncategorised.", unknowns.Count);
+                ex, "Could not prepare the AI route or prompt redaction; leaving {Count} description(s) uncategorised.",
+                unknowns.Count);
             return resolved;
         }
 
         for (var offset = 0; offset < unknowns.Count; offset += BatchSize)
         {
             var batch = unknowns.Skip(offset).Take(BatchSize).ToList();
-            var indexes = await CategorizeBatchAsync(batch, categories, categoryList, model, redaction, ct)
+            var indexes = await CategorizeBatchAsync(batch, categories, categoryList, route, redaction, ct)
                 .ConfigureAwait(false);
             if (indexes is null)
             {
@@ -225,7 +228,7 @@ public sealed class HybridCategorizer : ICategorizer
         IReadOnlyList<string> batch,
         IReadOnlyList<(Guid Id, string Name)> categories,
         string categoryList,
-        string model,
+        AiRoute route,
         IPromptRedactionSession redaction,
         CancellationToken ct)
     {
@@ -233,7 +236,7 @@ public sealed class HybridCategorizer : ICategorizer
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
         var estOutputTokens = batch.Count * OutputTokensPerItem;
-        var estimate = _pricing.EstimateBeforeCall(model, estInputTokens, estOutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, estOutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Critical, ct).ConfigureAwait(false))
         {
             _logger.LogInformation(
@@ -247,7 +250,8 @@ public sealed class HybridCategorizer : ICategorizer
             var request = new AiRequest
             {
                 Prompt = attempt == 1 ? prompt : prompt + RetryAddendum(batch.Count, categories.Count),
-                Model = model,
+                Provider = route.Provider,
+                Model = route.Model,
                 SystemPrompt = SystemPrompt,
                 MaxTokens = 512,
                 Temperature = 0.0,
@@ -270,6 +274,14 @@ public sealed class HybridCategorizer : ICategorizer
             catch (OperationCanceledException)
             {
                 throw;
+            }
+            catch (Exception ex) when (ex is MissingAiKeyException or UnknownAiProviderException)
+            {
+                // Not configured, not transient: a retry would fail the same way.
+                _logger.LogWarning(
+                    "AI categorisation is not configured ({Reason}); leaving a batch of {Count} uncategorised.",
+                    ex.GetType().Name, batch.Count);
+                return null;
             }
             catch (Exception ex)
             {

@@ -48,13 +48,15 @@ public sealed class StubAiSettings : IAiSettings
 
     public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct) => Task.CompletedTask;
 
-    public Task<string> GetActiveProviderAsync(CancellationToken ct) => Task.FromResult(AiDefaults.ClaudeProvider);
+    public Task<string> GetProviderAsync(AiRole role, CancellationToken ct) =>
+        Task.FromResult(AiDefaults.ClaudeProvider);
 
-    public Task SetActiveProviderAsync(string provider, CancellationToken ct) => Task.CompletedTask;
+    public Task SetProviderAsync(AiRole role, string provider, CancellationToken ct) => Task.CompletedTask;
 
-    public Task<string> GetCategorizationModelAsync(CancellationToken ct) => Task.FromResult(AiDefaults.CategorizationModel);
+    public Task<string> GetModelAsync(AiRole role, CancellationToken ct) =>
+        Task.FromResult(AiDefaults.DefaultModel(role));
 
-    public Task SetCategorizationModelAsync(string model, CancellationToken ct) => Task.CompletedTask;
+    public Task SetModelAsync(AiRole role, string model, CancellationToken ct) => Task.CompletedTask;
 
     public Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct) => Task.FromResult(true);
 

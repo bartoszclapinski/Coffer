@@ -13,6 +13,10 @@ internal sealed class FakeAiSettings : IAiSettings
 
     public string CategorizationModel { get; set; } = AiDefaults.CategorizationModel;
 
+    public string AnalysisProvider { get; set; } = AiDefaults.ClaudeProvider;
+
+    public string AnalysisModel { get; set; } = AiDefaults.AnalysisModel;
+
     public Task<decimal> GetMonthlyCapPlnAsync(CancellationToken ct) => Task.FromResult(MonthlyCapPln);
 
     public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct)
@@ -21,19 +25,37 @@ internal sealed class FakeAiSettings : IAiSettings
         return Task.CompletedTask;
     }
 
-    public Task<string> GetActiveProviderAsync(CancellationToken ct) => Task.FromResult(ActiveProvider);
+    public Task<string> GetProviderAsync(AiRole role, CancellationToken ct) =>
+        Task.FromResult(role == AiRole.Categorization ? ActiveProvider : AnalysisProvider);
 
-    public Task SetActiveProviderAsync(string provider, CancellationToken ct)
+    public Task SetProviderAsync(AiRole role, string provider, CancellationToken ct)
     {
-        ActiveProvider = provider;
+        if (role == AiRole.Categorization)
+        {
+            ActiveProvider = provider;
+        }
+        else
+        {
+            AnalysisProvider = provider;
+        }
+
         return Task.CompletedTask;
     }
 
-    public Task<string> GetCategorizationModelAsync(CancellationToken ct) => Task.FromResult(CategorizationModel);
+    public Task<string> GetModelAsync(AiRole role, CancellationToken ct) =>
+        Task.FromResult(role == AiRole.Categorization ? CategorizationModel : AnalysisModel);
 
-    public Task SetCategorizationModelAsync(string model, CancellationToken ct)
+    public Task SetModelAsync(AiRole role, string model, CancellationToken ct)
     {
-        CategorizationModel = model;
+        if (role == AiRole.Categorization)
+        {
+            CategorizationModel = model;
+        }
+        else
+        {
+            AnalysisModel = model;
+        }
+
         return Task.CompletedTask;
     }
 

@@ -5,10 +5,14 @@ namespace Coffer.Core.Ai;
 /// <see cref="AiRequest"/> used by categorisation, chat is a multi-turn loop, so the running
 /// conversation is carried as <see cref="Messages"/> and the available read-only tools as
 /// <see cref="Tools"/>. The orchestrator re-sends the grown conversation each iteration until the
-/// model returns a final text answer.
+/// model returns a final text answer. <see cref="Provider"/> is required for the same reason as on
+/// <see cref="AiRequest"/>.
 /// </summary>
 public sealed record AiToolRequest
 {
+    /// <summary>The registered provider that serves this request (e.g. <see cref="AiDefaults.ClaudeProvider"/>).</summary>
+    public required string Provider { get; init; }
+
     public required string Model { get; init; }
 
     public required IReadOnlyList<AiChatMessage> Messages { get; init; }

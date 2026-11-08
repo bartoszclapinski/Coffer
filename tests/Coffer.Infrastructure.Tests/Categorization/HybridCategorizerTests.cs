@@ -162,19 +162,53 @@ public class HybridCategorizerTests : CategorizationDbTest
         ai.CallCount.Should().Be(0, "a blocked budget gate never calls the provider");
     }
 
+    [Fact]
+    public async Task Categorize_SendsAndPricesEveryBatchOnTheCategorizationRoute()
+    {
+        await SeedCategoryAsync("Inne");
+        var unknowns = Enumerable.Range(0, 35).Select(i => $"sklep nr {i}").ToList();
+        var ai = new FakeAiProvider();
+        ai.Enqueue(Enumerable.Repeat(0, 30).ToArray());
+        ai.Enqueue(Enumerable.Repeat(0, 5).ToArray());
+        var routes = new FixedRouteResolver(categorization: TestRoutes.Routed);
+        var pricing = new RecordingPricing();
+
+        await Categorizer(ai, routes: routes, pricing: pricing).CategorizeAsync(unknowns, CancellationToken.None);
+
+        routes.ResolvedRoles.Should().Equal([AiRole.Categorization], "the route is resolved once per run");
+        ai.Requests.Should().HaveCount(2).And.OnlyContain(
+            r => r.Provider == TestRoutes.Routed.Provider && r.Model == TestRoutes.Routed.Model);
+        pricing.PreCallEstimates.Should().HaveCount(2).And.OnlyContain(
+            e => e.Provider == TestRoutes.Routed.Provider && e.Model == TestRoutes.Routed.Model);
+    }
+
+    [Fact]
+    public async Task Categorize_UnknownProvider_GivesUpWithoutRetrying()
+    {
+        await SeedCategoryAsync("Inne");
+        var ai = new FakeAiProvider { ThrowUnknownProvider = true };
+
+        var result = await Categorizer(ai).CategorizeAsync(["cokolwiek"], CancellationToken.None);
+
+        result["cokolwiek"].Should().BeNull();
+        ai.CallCount.Should().Be(1, "an unconfigured provider is not a transient failure, so it is not retried");
+    }
+
     private HybridCategorizer Categorizer(
         FakeAiProvider provider,
         IAiUsageLedger? ledger = null,
-        IAiBudgetGate? gate = null) =>
+        IAiBudgetGate? gate = null,
+        IAiRouteResolver? routes = null,
+        IAiPricing? pricing = null) =>
         new(
             Factory,
             new RuleEngine(NullLogger<RuleEngine>.Instance),
             provider,
             gate ?? new StubBudgetGate(canProceed: true),
             ledger ?? new StubLedger(),
-            new AiPricing(),
+            pricing ?? new AiPricing(),
             new FixedPromptAnonymizer(),
-            new StubSettings(),
+            routes ?? new FixedRouteResolver(),
             NullLogger<HybridCategorizer>.Instance);
 
     private async Task<Guid> SeedCategoryAsync(string name)
@@ -223,6 +257,7 @@ public class HybridCategorizerTests : CategorizationDbTest
         public int CallCount { get; private set; }
         public List<AiRequest> Requests { get; } = [];
         public bool Throw { get; init; }
+        public bool ThrowUnknownProvider { get; init; }
 
         public void Enqueue(int[] indexes) => _responses.Enqueue(indexes);
 
@@ -233,6 +268,11 @@ public class HybridCategorizerTests : CategorizationDbTest
             if (Throw)
             {
                 throw new InvalidOperationException("simulated provider failure");
+            }
+
+            if (ThrowUnknownProvider)
+            {
+                throw new UnknownAiProviderException(request.Provider);
             }
 
             var indexes = _responses.Count > 0 ? _responses.Dequeue() : [];
@@ -275,19 +315,5 @@ public class HybridCategorizerTests : CategorizationDbTest
 
         public Task<IReadOnlyList<AiSpendByPurpose>> GetCurrentMonthByPurposeAsync(CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<AiSpendByPurpose>>([]);
-    }
-
-    private sealed class StubSettings : IAiSettings
-    {
-        public Task<decimal> GetMonthlyCapPlnAsync(CancellationToken ct) => Task.FromResult(AiDefaults.MonthlyCapPln);
-        public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct) => Task.CompletedTask;
-        public Task<string> GetActiveProviderAsync(CancellationToken ct) => Task.FromResult(AiDefaults.ClaudeProvider);
-        public Task SetActiveProviderAsync(string provider, CancellationToken ct) => Task.CompletedTask;
-        public Task<string> GetCategorizationModelAsync(CancellationToken ct) => Task.FromResult(AiDefaults.CategorizationModel);
-        public Task SetCategorizationModelAsync(string model, CancellationToken ct) => Task.CompletedTask;
-        public Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct) => Task.FromResult(AiDefaults.AiFallbackParsingEnabled);
-        public Task SetAiFallbackParsingEnabledAsync(bool enabled, CancellationToken ct) => Task.CompletedTask;
-        public Task<string?> GetOwnerIdentityNamesAsync(CancellationToken ct) => Task.FromResult<string?>(null);
-        public Task SetOwnerIdentityNamesAsync(string? names, CancellationToken ct) => Task.CompletedTask;
     }
 }

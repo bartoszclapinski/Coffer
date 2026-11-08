@@ -1,20 +1,37 @@
 namespace Coffer.Core.Ai;
 
-/// <summary>Shared AI constants: provider labels, default model/cap, secret and purpose keys.</summary>
+/// <summary>
+/// Shared AI constants: provider labels, default models/cap, secret and purpose keys. The default
+/// models are settings defaults only — AI consumers never read them directly; they resolve their
+/// role's route through <see cref="IAiRouteResolver"/>.
+/// </summary>
 public static class AiDefaults
 {
     /// <summary>The only wired remote provider (doc 04 lists the deferred ones).</summary>
     public const string ClaudeProvider = "Claude";
 
-    /// <summary>Cheap batch categorisation model (doc 04 / CLAUDE.md cost discipline).</summary>
+    /// <summary>
+    /// The local Ollama provider. Calls cost nothing. Its provider implementation arrives in Sprint 31-C;
+    /// until it is registered, a route naming it fails as an unknown provider.
+    /// </summary>
+    public const string OllamaProvider = "Ollama";
+
+    /// <summary>The provider names a stored route may hold; anything else reads as <see cref="ClaudeProvider"/>.</summary>
+    public static IReadOnlyList<string> Providers { get; } = [ClaudeProvider, OllamaProvider];
+
+    /// <summary>Default <see cref="AiRole.Categorization"/> model: cheap batch categorisation (doc 04 / CLAUDE.md cost discipline).</summary>
     public const string CategorizationModel = "claude-haiku-5-5";
 
     /// <summary>
-    /// Reasoning-tier model for chat (doc 04 / CLAUDE.md cost discipline): chat needs reasoning,
-    /// not the cheap categorisation model. User-selectable chat-model settings arrive with the
-    /// Settings UI in 12-B; until then chat uses this default.
+    /// Default <see cref="AiRole.Analysis"/> model: chat, advisor report, anomaly commentary, cash-flow
+    /// explanation and AI fallback parsing need reasoning, not the cheap categorisation model
+    /// (doc 04 / CLAUDE.md cost discipline).
     /// </summary>
-    public const string ChatModel = "claude-sonnet-5-5";
+    public const string AnalysisModel = "claude-sonnet-5-5";
+
+    /// <summary>The Claude model a role uses until the owner picks another.</summary>
+    public static string DefaultModel(AiRole role) =>
+        role == AiRole.Categorization ? CategorizationModel : AnalysisModel;
 
     /// <summary>
     /// The Claude models the owner can pick: current generation first, the 4.x models kept as a

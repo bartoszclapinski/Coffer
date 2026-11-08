@@ -195,16 +195,36 @@ public class AdvisorReportGeneratorTests
         provider.Requests.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task Generate_SendsAndPricesTheCallOnTheAnalysisRoute()
+    {
+        var provider = new ScriptedProvider("""{"perGoalRisks":{},"suggestions":[]}""");
+        var routes = new FixedRouteResolver(analysis: TestRoutes.Routed);
+        var pricing = new RecordingPricing();
+
+        await Generator(provider, routes: routes, pricing: pricing)
+            .GenerateAsync([Result()], Ctx(), [Spend()], _day, CancellationToken.None);
+
+        routes.ResolvedRoles.Should().Equal([AiRole.Analysis]);
+        var request = provider.Requests.Should().ContainSingle().Subject;
+        request.Provider.Should().Be(TestRoutes.Routed.Provider);
+        request.Model.Should().Be(TestRoutes.Routed.Model);
+        pricing.PreCallEstimates.Should().Equal([(TestRoutes.Routed.Provider, TestRoutes.Routed.Model)]);
+    }
+
     private static AdvisorReportGenerator Generator(
         ScriptedProvider provider,
         IAiBudgetGate? gate = null,
         IAiUsageLedger? ledger = null,
-        IPromptAnonymizer? anonymizer = null) =>
+        IPromptAnonymizer? anonymizer = null,
+        IAiRouteResolver? routes = null,
+        IAiPricing? pricing = null) =>
         new(
             provider,
+            routes ?? new FixedRouteResolver(),
             gate ?? new StubBudgetGate(canProceed: true),
             ledger ?? new RecordingLedger(),
-            new StubPricing(),
+            pricing ?? new RecordingPricing(),
             anonymizer ?? new PassthroughPromptAnonymizer(),
             NullLogger<AdvisorReportGenerator>.Instance);
 
@@ -317,10 +337,5 @@ public class AdvisorReportGeneratorTests
 
         public Task<IReadOnlyList<AiSpendByPurpose>> GetCurrentMonthByPurposeAsync(CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<AiSpendByPurpose>>([]);
-    }
-
-    private sealed class StubPricing : IAiPricing
-    {
-        public AiCost Estimate(string model, int inputTokens, int outputTokens) => new(0.01m, 0.04m);
     }
 }

@@ -1,18 +1,15 @@
 namespace Coffer.Core.Ai;
 
 /// <summary>
-/// Provider-neutral AI completion surface (doc 04), implemented per vendor
-/// (<c>ClaudeProvider</c> now; a local Ollama provider in Sprint 31) over
-/// <c>Microsoft.Extensions.AI</c>. Categorisation uses only
-/// <see cref="CompleteJsonAsync{TResult}"/>; chat (Phase 7) uses
+/// Provider-neutral AI completion surface (doc 04). Consumers depend on this interface and get the
+/// routing provider, which dispatches each request to the <see cref="IAiProviderBackend"/> named by
+/// the request's <c>Provider</c> (<c>ClaudeProvider</c> now; a local Ollama provider in Sprint 31).
+/// Categorisation uses only <see cref="CompleteJsonAsync{TResult}"/>; chat (Phase 7) uses
 /// <see cref="CompleteWithToolsAsync"/>; <see cref="StreamAsync"/> is a stub.
-/// Every call returns token usage for the cost ledger.
+/// Every call returns token usage (with the provider that served it) for the cost ledger.
 /// </summary>
 public interface IAiProvider
 {
-    /// <summary>Vendor label written to the ledger (e.g. <c>"Claude"</c>).</summary>
-    string ProviderName { get; }
-
     Task<AiResult<string>> CompleteAsync(AiRequest request, CancellationToken ct);
 
     Task<AiResult<TResult>> CompleteJsonAsync<TResult>(AiRequest request, CancellationToken ct);

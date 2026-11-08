@@ -11,7 +11,7 @@ namespace Coffer.Infrastructure.Planning;
 /// 16-C cash-flow narrator: turns the deterministic <see cref="CashFlowProjection"/> into a few
 /// sentences of prose explaining the timing — when money leaves, when it arrives, and where the
 /// running balance is tightest (doc 04 / Sprint-14 "the engine calculates, the AI explains"). One
-/// provider call per run on <see cref="AiDefaults.ChatModel"/>, gated by <see cref="IAiBudgetGate"/>
+/// provider call per run on the <see cref="AiRole.Analysis"/> route, gated by <see cref="IAiBudgetGate"/>
 /// at <see cref="AiPriority.Normal"/> and metered once as <see cref="AiPurpose.CashFlowExplain"/>. The
 /// prompt is anonymised (hard rule #7) and the model is told to reuse only the figures it is given.
 /// Any failure — over budget, offline, empty reply — yields a deterministic engine-only summary so the
@@ -35,6 +35,7 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
         + "Reply with plain prose only, no markdown, no lists.";
 
     private readonly IAiProvider _provider;
+    private readonly IAiRouteResolver _routes;
     private readonly IAiBudgetGate _budgetGate;
     private readonly IAiUsageLedger _ledger;
     private readonly IAiPricing _pricing;
@@ -43,6 +44,7 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
 
     public CashFlowExplainer(
         IAiProvider provider,
+        IAiRouteResolver routes,
         IAiBudgetGate budgetGate,
         IAiUsageLedger ledger,
         IAiPricing pricing,
@@ -50,12 +52,14 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
         ILogger<CashFlowExplainer> logger)
     {
         ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(routes);
         ArgumentNullException.ThrowIfNull(budgetGate);
         ArgumentNullException.ThrowIfNull(ledger);
         ArgumentNullException.ThrowIfNull(pricing);
         ArgumentNullException.ThrowIfNull(anonymizer);
         ArgumentNullException.ThrowIfNull(logger);
         _provider = provider;
+        _routes = routes;
         _budgetGate = budgetGate;
         _ledger = ledger;
         _pricing = pricing;
@@ -72,23 +76,24 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
             return EngineOnly(projection);
         }
 
+        AiRoute route;
         IPromptRedactionSession redaction;
         try
         {
+            route = await _routes.ResolveAsync(AiRole.Analysis, ct).ConfigureAwait(false);
             redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Without a redaction session nothing may be sent; fall back to the engine summary.
-            _logger.LogWarning(ex, "Could not prepare prompt redaction; using engine-only cash-flow summary.");
+            // Without a route or a redaction session nothing may be sent; fall back to the engine summary.
+            _logger.LogWarning(ex, "Could not prepare the AI route or prompt redaction; using engine-only cash-flow summary.");
             return EngineOnly(projection);
         }
 
         var prompt = BuildPrompt(projection, redaction);
-        var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
-        var estimate = _pricing.EstimateBeforeCall(model, estInputTokens, OutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, OutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
         {
             _logger.LogInformation(
@@ -102,7 +107,8 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
             var request = new AiRequest
             {
                 Prompt = prompt,
-                Model = model,
+                Provider = route.Provider,
+                Model = route.Model,
                 SystemPrompt = SystemPrompt,
                 MaxTokens = OutputTokens + 128,
                 Temperature = 0.4,

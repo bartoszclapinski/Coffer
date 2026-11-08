@@ -8,8 +8,8 @@ namespace Coffer.Infrastructure.AI;
 
 /// <summary>
 /// 13-B commentary: rewrites the templated title/description of the top anomaly candidates into
-/// natural Polish with the reasoning-tier model (doc 04, "statistics detect, AI explains"). One
-/// batched provider call per run, gated by <see cref="IAiBudgetGate"/> at
+/// natural Polish on the <see cref="AiRole.Analysis"/> route (doc 04, "statistics detect, AI
+/// explains"). One batched provider call per run, gated by <see cref="IAiBudgetGate"/> at
 /// <see cref="AiPriority.Normal"/> and metered once as <see cref="AiPurpose.AnomalyComment"/>.
 /// The prompt is anonymised (hard rule #7). Any failure — over budget, offline, malformed JSON —
 /// returns the candidates untouched so the deterministic templated text always survives.
@@ -30,6 +30,7 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
         + "the same index values.";
 
     private readonly IAiProvider _provider;
+    private readonly IAiRouteResolver _routes;
     private readonly IAiBudgetGate _budgetGate;
     private readonly IAiUsageLedger _ledger;
     private readonly IAiPricing _pricing;
@@ -38,6 +39,7 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
 
     public AnomalyCommentator(
         IAiProvider provider,
+        IAiRouteResolver routes,
         IAiBudgetGate budgetGate,
         IAiUsageLedger ledger,
         IAiPricing pricing,
@@ -45,12 +47,14 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
         ILogger<AnomalyCommentator> logger)
     {
         ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(routes);
         ArgumentNullException.ThrowIfNull(budgetGate);
         ArgumentNullException.ThrowIfNull(ledger);
         ArgumentNullException.ThrowIfNull(pricing);
         ArgumentNullException.ThrowIfNull(anonymizer);
         ArgumentNullException.ThrowIfNull(logger);
         _provider = provider;
+        _routes = routes;
         _budgetGate = budgetGate;
         _ledger = ledger;
         _pricing = pricing;
@@ -69,24 +73,25 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
             return candidates;
         }
 
+        AiRoute route;
         IPromptRedactionSession redaction;
         try
         {
+            route = await _routes.ResolveAsync(AiRole.Analysis, ct).ConfigureAwait(false);
             redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Without a redaction session nothing may be sent; the templated text survives.
-            _logger.LogWarning(ex, "Could not prepare prompt redaction; keeping templated anomaly text.");
+            // Without a route or a redaction session nothing may be sent; the templated text survives.
+            _logger.LogWarning(ex, "Could not prepare the AI route or prompt redaction; keeping templated anomaly text.");
             return candidates;
         }
 
         var prompt = BuildPrompt(candidates, redaction);
-        var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
         var estOutputTokens = candidates.Count * OutputTokensPerItem;
-        var estimate = _pricing.EstimateBeforeCall(model, estInputTokens, estOutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, estOutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
         {
             _logger.LogInformation(
@@ -100,7 +105,8 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
             var request = new AiRequest
             {
                 Prompt = prompt,
-                Model = model,
+                Provider = route.Provider,
+                Model = route.Model,
                 SystemPrompt = SystemPrompt,
                 MaxTokens = candidates.Count * OutputTokensPerItem + 128,
                 Temperature = 0.4,

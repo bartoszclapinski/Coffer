@@ -37,7 +37,14 @@ public record AiRequest
 }
 ```
 
-Implemented today: `ClaudeProvider` (Anthropic.SDK over `IChatClient`). **OpenAI is deferred** — it was offered in Settings without an implementation and was removed in Sprint 31; the OpenAI mentions below describe a possible future provider, not current behaviour. A local Ollama provider and per-role provider routing arrive in Sprint 31 (31-B / 31-C).
+Implemented today: `ClaudeProvider` (Anthropic.SDK over `IChatClient`). **OpenAI is deferred** — it was offered in Settings without an implementation and was removed in Sprint 31; the OpenAI mentions below describe a possible future provider, not current behaviour. A local Ollama provider arrives in Sprint 31-C.
+
+Per-role routing (Sprint 31-B):
+
+- **Two roles** (`AiRole`): `Categorization` and `Analysis` (chat, advisor report, anomaly commentary, cash-flow explanation, AI fallback parsing). Each has its own provider + model in `IAiSettings` (keys `ai.activeProvider` / `ai.categorizationModel` for categorization — the pre-31 keys — and `ai.analysisProvider` / `ai.analysisModel` for analysis; absent keys read as Claude with `claude-haiku-5-5` / `claude-sonnet-5-5`). A stored provider this build does not know (e.g. `OpenAI`) reads as Claude.
+- **Route per call.** Every consumer asks `IAiRouteResolver.ResolveAsync(role)` on each call and sends `AiRequest.Provider` / `AiToolRequest.Provider` + `Model` from the route; no consumer reads a default model. `Provider` is `required` on both requests, so a forgotten provider is a compile error rather than a silent fallback to a remote vendor.
+- **One routing provider.** The `IAiProvider` in DI is `AiProviderRouter`; concrete providers are registered as `IAiProviderBackend` and the router dispatches by name. An unknown provider throws `UnknownAiProviderException` before anything is sent; consumers treat it like `MissingAiKeyException` (not configured, never retried). There is no automatic fallback to another provider.
+- **Provider-aware cost and readiness.** `IAiPricing` prices by provider + model (Ollama: 0 PLN); the budget gate always allows a call estimated at 0 PLN, even past the cap; the ledger still records local usage (tokens, provider, model). `IAiRouteReadiness` answers "usable without a call" (provider registered, model set, Claude key stored) — the AI fallback parser uses it.
 
 Claude request rules (`ClaudeModelRules`, Sprint 31):
 

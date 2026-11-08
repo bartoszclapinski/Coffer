@@ -2,8 +2,9 @@ namespace Coffer.Core.Ai;
 
 /// <summary>
 /// User-configurable AI settings, persisted in the encrypted DB. The monthly cap feeds
-/// the budget gate; the active provider and categorisation model drive which vendor and
-/// model categorisation uses. Sensible defaults apply until the owner changes them.
+/// the budget gate; each <see cref="AiRole"/> has its own provider + model (read through
+/// <see cref="IAiRouteResolver"/> by the AI consumers). Sensible defaults apply until the
+/// owner changes them: every role defaults to Claude with <see cref="AiDefaults.DefaultModel"/>.
 /// </summary>
 public interface IAiSettings
 {
@@ -11,13 +12,21 @@ public interface IAiSettings
 
     Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct);
 
-    Task<string> GetActiveProviderAsync(CancellationToken ct);
+    /// <summary>
+    /// The provider the role runs on. A stored provider this build does not know (e.g. the retired
+    /// "OpenAI") reads as <see cref="AiDefaults.ClaudeProvider"/>.
+    /// </summary>
+    Task<string> GetProviderAsync(AiRole role, CancellationToken ct);
 
-    Task SetActiveProviderAsync(string provider, CancellationToken ct);
+    Task SetProviderAsync(AiRole role, string provider, CancellationToken ct);
 
-    Task<string> GetCategorizationModelAsync(CancellationToken ct);
+    /// <summary>
+    /// The model the role runs on. For Claude a stored model that is no longer offered reads as the
+    /// role's default; for another provider the stored model is returned as-is (empty when unset).
+    /// </summary>
+    Task<string> GetModelAsync(AiRole role, CancellationToken ct);
 
-    Task SetCategorizationModelAsync(string model, CancellationToken ct);
+    Task SetModelAsync(AiRole role, string model, CancellationToken ct);
 
     /// <summary>
     /// Whether the AI-assisted fallback parser may run for statements from banks with no

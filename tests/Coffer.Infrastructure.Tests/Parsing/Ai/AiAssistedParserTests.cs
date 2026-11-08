@@ -65,6 +65,37 @@ public class AiAssistedParserTests
     }
 
     [Fact]
+    public async Task ParseAsync_RouteNotReady_ThrowsUnsupportedBankWithoutCallingProvider()
+    {
+        var provider = new FakeAiProvider(TwoTransactionsJson);
+        var readiness = new FixedRouteReadiness(isReady: false);
+        var routes = new FixedRouteResolver(analysis: TestRoutes.Routed);
+        var parser = Build(provider, routes: routes, readiness: readiness);
+
+        var act = () => parser.ParseAsync(CsvInput("anything"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnsupportedBankException>();
+        readiness.Checked.Should().Equal([TestRoutes.Routed], "readiness is asked about the resolved analysis route");
+        provider.LastRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ParseAsync_SendsAndPricesTheCallOnTheAnalysisRoute()
+    {
+        var provider = new FakeAiProvider(TwoTransactionsJson);
+        var routes = new FixedRouteResolver(analysis: TestRoutes.Routed);
+        var pricing = new RecordingPricing();
+        var parser = Build(provider, routes: routes, readiness: new FixedRouteReadiness(isReady: true), pricing: pricing);
+
+        await parser.ParseAsync(CsvInput("anything"), CancellationToken.None);
+
+        routes.ResolvedRoles.Should().Equal([AiRole.Analysis]);
+        provider.LastRequest!.Provider.Should().Be(TestRoutes.Routed.Provider);
+        provider.LastRequest.Model.Should().Be(TestRoutes.Routed.Model);
+        pricing.PreCallEstimates.Should().Equal([(TestRoutes.Routed.Provider, TestRoutes.Routed.Model)]);
+    }
+
+    [Fact]
     public async Task ParseAsync_BudgetDenied_ThrowsUnsupportedBank()
     {
         var parser = Build(new FakeAiProvider(TwoTransactionsJson), budgetAllows: false);
@@ -151,18 +182,23 @@ public class AiAssistedParserTests
         string? apiKey = "sk-test",
         bool budgetAllows = true,
         string? ownerNames = null,
-        IAiUsageLedger? ledger = null)
+        IAiUsageLedger? ledger = null,
+        IAiRouteResolver? routes = null,
+        IAiRouteReadiness? readiness = null,
+        IAiPricing? pricing = null)
     {
         var settings = new FakeSettings { Enabled = enabled, OwnerNames = ownerNames };
-        var secrets = new FakeSecretStore(apiKey);
+        // The production readiness over a Claude backend: the default Claude route is ready only with a key.
+        var claude = new ClaudeProvider(new FakeSecretStore(apiKey));
         return new AiAssistedParser(
             provider,
+            routes ?? new FixedRouteResolver(),
+            readiness ?? new AiRouteReadiness([claude]),
             new FakeBudgetGate(budgetAllows),
             ledger ?? new RecordingLedger(),
-            new FakePricing(),
+            pricing ?? new RecordingPricing(),
             new PromptAnonymizer(settings, new StaticCounterpartyNameSource()),
             settings,
-            secrets,
             NullLogger<AiAssistedParser>.Instance);
     }
 
@@ -175,11 +211,12 @@ public class AiAssistedParserTests
 
         public string? LastPrompt { get; private set; }
 
-        public string ProviderName => "Fake";
+        public AiRequest? LastRequest { get; private set; }
 
         public Task<AiResult<TResult>> CompleteJsonAsync<TResult>(AiRequest request, CancellationToken ct)
         {
             LastPrompt = request.Prompt;
+            LastRequest = request;
             var value = JsonSerializer.Deserialize<TResult>(json, _options)!;
             return Task.FromResult(new AiResult<TResult>(value, new AiUsage("Fake", request.Model, 100, 50)));
         }
@@ -216,11 +253,6 @@ public class AiAssistedParserTests
             Task.FromResult<IReadOnlyList<AiSpendByPurpose>>([]);
     }
 
-    private sealed class FakePricing : IAiPricing
-    {
-        public AiCost Estimate(string model, int inputTokens, int outputTokens) => new(0.01m, 0.04m);
-    }
-
     private sealed class FakeSecretStore(string? key) : ISecretStore
     {
         public Task<string?> GetSecretAsync(string name, CancellationToken ct) => Task.FromResult(key);
@@ -248,13 +280,14 @@ public class AiAssistedParserTests
 
         public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<string> GetActiveProviderAsync(CancellationToken ct) => Task.FromResult(AiDefaults.ClaudeProvider);
+        public Task<string> GetProviderAsync(AiRole role, CancellationToken ct) =>
+            Task.FromResult(AiDefaults.ClaudeProvider);
 
-        public Task SetActiveProviderAsync(string provider, CancellationToken ct) => Task.CompletedTask;
+        public Task SetProviderAsync(AiRole role, string provider, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<string> GetCategorizationModelAsync(CancellationToken ct) =>
-            Task.FromResult(AiDefaults.CategorizationModel);
+        public Task<string> GetModelAsync(AiRole role, CancellationToken ct) =>
+            Task.FromResult(AiDefaults.DefaultModel(role));
 
-        public Task SetCategorizationModelAsync(string model, CancellationToken ct) => Task.CompletedTask;
+        public Task SetModelAsync(AiRole role, string model, CancellationToken ct) => Task.CompletedTask;
     }
 }

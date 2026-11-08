@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text;
 using Coffer.Core.Ai;
 using Coffer.Core.Parsing;
-using Coffer.Core.Security;
 using Coffer.Shared.Parsing;
 using Microsoft.Extensions.Logging;
 using UglyToad.PdfPig;
@@ -11,14 +10,14 @@ namespace Coffer.Infrastructure.Parsing.Ai;
 
 /// <summary>
 /// Last-resort fallback parser for banks with no deterministic parser (doc 03 §"AI-assisted
-/// fallback parser"). It extracts the statement text, anonymises it, and asks the reasoning-tier
-/// model for the transactions as structured JSON — the one parser whose output is not
+/// fallback parser"). It extracts the statement text, anonymises it, and asks the
+/// <see cref="AiRole.Analysis"/> route for the transactions as structured JSON — the one parser whose output is not
 /// deterministic, so it always reports <see cref="ParserConfidence.Medium"/> and a review warning.
 /// </summary>
 /// <remarks>
 /// Wired into <c>StatementParserRegistry</c> as the explicit fallback, not as a keyed parser, so a
-/// deterministic parser always wins for a known bank+format. The opt-in / API-key / budget gating
-/// lives here (not in the registry): when AI parsing is unavailable it throws
+/// deterministic parser always wins for a known bank+format. The opt-in / route-readiness / budget
+/// gating lives here (not in the registry): when AI parsing is unavailable it throws
 /// <see cref="UnsupportedBankException"/> so the import flow's existing catch path lights up with no
 /// call-site change. The prompt is anonymised (hard rule #7), including the owner's name from
 /// settings; the account number is never trusted from the model (left empty, like the PKO CSV
@@ -55,39 +54,43 @@ public sealed class AiAssistedParser : IStatementParser
         + "invent nothing. If a value is unknown use null.";
 
     private readonly IAiProvider _provider;
+    private readonly IAiRouteResolver _routes;
+    private readonly IAiRouteReadiness _readiness;
     private readonly IAiBudgetGate _budgetGate;
     private readonly IAiUsageLedger _ledger;
     private readonly IAiPricing _pricing;
     private readonly IPromptAnonymizer _anonymizer;
     private readonly IAiSettings _settings;
-    private readonly ISecretStore _secretStore;
     private readonly ILogger<AiAssistedParser> _logger;
 
     public AiAssistedParser(
         IAiProvider provider,
+        IAiRouteResolver routes,
+        IAiRouteReadiness readiness,
         IAiBudgetGate budgetGate,
         IAiUsageLedger ledger,
         IAiPricing pricing,
         IPromptAnonymizer anonymizer,
         IAiSettings settings,
-        ISecretStore secretStore,
         ILogger<AiAssistedParser> logger)
     {
         ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(routes);
+        ArgumentNullException.ThrowIfNull(readiness);
         ArgumentNullException.ThrowIfNull(budgetGate);
         ArgumentNullException.ThrowIfNull(ledger);
         ArgumentNullException.ThrowIfNull(pricing);
         ArgumentNullException.ThrowIfNull(anonymizer);
         ArgumentNullException.ThrowIfNull(settings);
-        ArgumentNullException.ThrowIfNull(secretStore);
         ArgumentNullException.ThrowIfNull(logger);
         _provider = provider;
+        _routes = routes;
+        _readiness = readiness;
         _budgetGate = budgetGate;
         _ledger = ledger;
         _pricing = pricing;
         _anonymizer = anonymizer;
         _settings = settings;
-        _secretStore = secretStore;
         _logger = logger;
     }
 
@@ -107,7 +110,9 @@ public sealed class AiAssistedParser : IStatementParser
             throw new UnsupportedBankException(AiFallbackBankCode);
         }
 
-        if (!await HasApiKeyAsync(ct).ConfigureAwait(false))
+        // Provider-aware: Claude needs its API key, a local provider needs none.
+        var route = await _routes.ResolveAsync(AiRole.Analysis, ct).ConfigureAwait(false);
+        if (!await _readiness.IsReadyAsync(route, ct).ConfigureAwait(false))
         {
             throw new UnsupportedBankException(AiFallbackBankCode);
         }
@@ -127,10 +132,9 @@ public sealed class AiAssistedParser : IStatementParser
         }
 
         var prompt = redaction.RedactDocument(text);
-        var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
-        var estimate = _pricing.EstimateBeforeCall(model, estInputTokens, EstimatedOutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, EstimatedOutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
         {
             _logger.LogInformation("Budget gate blocked the AI fallback parse; surfacing as unsupported bank.");
@@ -140,7 +144,8 @@ public sealed class AiAssistedParser : IStatementParser
         var request = new AiRequest
         {
             Prompt = prompt,
-            Model = model,
+            Provider = route.Provider,
+            Model = route.Model,
             SystemPrompt = SystemPrompt,
             MaxTokens = 4096,
             Temperature = 0.1,
@@ -150,13 +155,6 @@ public sealed class AiAssistedParser : IStatementParser
         await _ledger.RecordAsync(response.Usage, AiPurpose.ParserFallback, ct).ConfigureAwait(false);
 
         return MapResult(response.Value, warnings, redaction);
-    }
-
-    private async Task<bool> HasApiKeyAsync(CancellationToken ct)
-    {
-        // Claude is the only wired provider; 31-B makes this check provider-aware (Ollama needs no key).
-        var key = await _secretStore.GetSecretAsync(AiDefaults.ClaudeApiKeySecret, ct).ConfigureAwait(false);
-        return !string.IsNullOrWhiteSpace(key);
     }
 
     private static (string Text, bool Truncated) ExtractText(StatementInput input)
