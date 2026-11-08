@@ -53,11 +53,31 @@ public class PromptAnonymizerTests
     [InlineData("BLIK OD: 48500600700 DO: 48501234567", "500600700")]
     [InlineData("zwrot na nr 500 600 700 dzięki", "500 600 700")]
     [InlineData("zwrot na nr 500-600-700", "500-600-700")]
+    [InlineData("tel. 501 23 45 67 po 18", "501 23 45 67")]
+    [InlineData("Numer stacjonarny +48 12 345 67 89", "345 67 89")]
+    [InlineData("kontakt 48 501234567", "501234567")]
     public void Redact_RedactsPolishPhoneNumbers(string text, string digits)
     {
         var result = Redactor().Redact(text);
 
         result.Should().Contain("[PHONE]").And.NotContain(digits);
+    }
+
+    [Theory]
+    [InlineData("zwrot od jan.testowy@example.com za bilety", "jan.testowy@example.com")]
+    [InlineData("Przelew na LT123250012345678901 Revolut", "LT123250012345678901")]
+    [InlineData("Rachunek DE89 3704 0044 0532 0130 00 wplata", "3704 0044 0532")]
+    [InlineData("NRPL61109010140000071219812874 zwrot", "109010140000071219812874")]
+    [InlineData("na konto PL61-1090-1014-0000-0712-1981-2874", "1090-1014")]
+    public void Redact_RedactsEmailsAndForeignOrOddlyWrittenAccounts(string text, string leaked)
+    {
+        Redactor().Redact(text).Should().NotContain(leaked);
+    }
+
+    [Fact]
+    public void Redact_GroupedForeignIban_DoesNotSwallowTheNextWord()
+    {
+        Redactor().Redact("DE89 3704 0044 0532 0130 00 PRZELEW").Should().Be("[IBAN] PRZELEW");
     }
 
     [Theory]
@@ -69,6 +89,8 @@ public class PromptAnonymizerTests
     [InlineData("WYNAGRODZENIE 01/2026 PIT37")]
     [InlineData("Lokalizacja: Adres: BIEDRONKA 1234 Miasto: TORUN Kraj: POLSKA")]
     [InlineData("Tytuł: Zakupy spożywcze, napoje i przekąski")]
+    [InlineData("ZAMOWIENIE AB12CD34 SKLEP")]
+    [InlineData("Data 2026 01 05 godz 12 30")]
     public void Redact_KeepsMerchantsAmountsAndDates(string text)
     {
         Redactor().Redact(text).Should().Be(text);

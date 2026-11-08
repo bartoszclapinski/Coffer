@@ -128,7 +128,9 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
             var response = await _provider.CompleteJsonAsync<ReportDto>(request, ct).ConfigureAwait(false);
             await _ledger.RecordAsync(response.Usage, AiPurpose.AdvisorReport, ct).ConfigureAwait(false);
 
-            return BuildReport(results, response.Value, date);
+            // Placeholders ([PARTY_n]) the model echoed back are turned into names again: the report
+            // stays on the device.
+            return BuildReport(results, response.Value, date, redaction.Restore);
         }
         catch (OperationCanceledException)
         {
@@ -190,7 +192,8 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
     private static AdvisorReport BuildReport(
         IReadOnlyList<GoalFeasibilityResult> results,
         ReportDto? dto,
-        DateOnly date)
+        DateOnly date,
+        Func<string, string> restore)
     {
         if (dto is null)
         {
@@ -225,7 +228,7 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
                         ReportId = reportId,
                         Kind = AdvisorEntryKind.Risk,
                         GoalId = goalId,
-                        Description = risk.Trim(),
+                        Description = restore(risk.Trim()),
                     });
                 }
             }
@@ -245,10 +248,12 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
                     Id = Guid.NewGuid(),
                     ReportId = reportId,
                     Kind = AdvisorEntryKind.Suggestion,
-                    Title = s.Title.Trim(),
+                    Title = restore(s.Title.Trim()),
                     Savings = s.Savings,
-                    Description = s.Description.Trim(),
-                    CategoryAffected = string.IsNullOrWhiteSpace(s.CategoryAffected) ? null : s.CategoryAffected.Trim(),
+                    Description = restore(s.Description.Trim()),
+                    CategoryAffected = string.IsNullOrWhiteSpace(s.CategoryAffected)
+                        ? null
+                        : restore(s.CategoryAffected.Trim()),
                 });
             }
         }

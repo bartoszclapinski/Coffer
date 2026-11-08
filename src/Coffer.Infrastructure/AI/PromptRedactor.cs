@@ -35,6 +35,7 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
     public const string IbanPlaceholder = "[IBAN]";
     public const string NipPlaceholder = "[NIP]";
     public const string PeselPlaceholder = "[PESEL]";
+    public const string EmailPlaceholder = "[EMAIL]";
 
     private const string PartyTokenPrefix = "PARTY_";
 
@@ -107,12 +108,15 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
 
         var result = ReplaceLabelledValues(masked, fields);
 
+        result = EmailRegex().Replace(result, EmailPlaceholder);
         result = IbanRegex().Replace(result, IbanPlaceholder);
+        result = ForeignIbanRegex().Replace(result, m => CountDigits(m.Value) >= MinIbanDigits ? IbanPlaceholder : m.Value);
         result = NipRegex().Replace(result, NipPlaceholder);
         result = AccountRegex().Replace(result, AccountPlaceholder);
         result = PrefixedPhoneRegex().Replace(result, PhonePlaceholder);
         result = CountryCodePhoneRegex().Replace(result, PhonePlaceholder);
         result = GroupedPhoneRegex().Replace(result, PhonePlaceholder);
+        result = PairedPhoneRegex().Replace(result, PhonePlaceholder);
         result = PeselRegex().Replace(result, PeselPlaceholder);
 
         if (_ownerRegex is not null)
@@ -391,12 +395,13 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
     [GeneratedRegex(@"\b\d{2}(?:[\s]\d{4}){5,6}\b|\b\d{20,26}\b")]
     private static partial Regex AccountRegex();
 
-    // "+48 500 600 700", "+48500600700", "0048-500-600-700".
-    [GeneratedRegex(@"(?<![\d+])(?:\+|00)48[ -]?\d{3}[ -]?\d{3}[ -]?\d{3}(?!\d)")]
+    // "+48 500 600 700", "+48500600700", "0048-500-600-700", landlines "+48 12 345 67 89": the
+    // explicit prefix makes any grouping of the nine digits safe to take.
+    [GeneratedRegex(@"(?<![\d+])(?:\+|00)48(?:[ -]?\d){9}(?!\d)")]
     private static partial Regex PrefixedPhoneRegex();
 
     // "48500600700" (BLIK "OD: 48… DO: 48…") or "48 500 600 700": the country code without "+".
-    [GeneratedRegex(@"(?<![\d+])48(?:\d{9}|[ -]\d{3}[ -]\d{3}[ -]\d{3})(?!\d)")]
+    [GeneratedRegex(@"(?<![\d+])48(?:\d{9}|[ -]\d{9}|[ -]\d{3}[ -]\d{3}[ -]\d{3})(?!\d)")]
     private static partial Regex CountryCodePhoneRegex();
 
     // A bare mobile number written in 3-3-3 groups ("500 600 700", "500-600-700"). Plain-space or
@@ -415,4 +420,25 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
 
     [GeneratedRegex(@"\[PARTY_\d+\]")]
     private static partial Regex PartyTokenRegex();
+
+    // Below this many digits a "XX00…" run is a product or terminal code, not an account.
+    private const int MinIbanDigits = 10;
+
+    private static int CountDigits(string value) => value.Count(char.IsAsciiDigit);
+
+    // "jan.kowalski@example.com" — an e-mail address identifies a person as well as a name does.
+    [GeneratedRegex(@"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")]
+    private static partial Regex EmailRegex();
+
+    // Any IBAN after the Polish one: country code + check digits + 11–30 letters/digits, written solid
+    // ("LT123250012345678901", also inside "NRPL61…") or in 4-character groups ("DE89 3704 0044 …",
+    // "PL61-1090-…"). Grouped forms take digit groups only after the first, so a following word is not
+    // swallowed. The caller also requires at least MinIbanDigits digits.
+    [GeneratedRegex(@"[A-Z]{2}\d{2}(?:[A-Z0-9]{11,30}(?![A-Za-z0-9])|[ -][A-Z0-9]{4}(?:[ -]\d{4}){1,6}(?:[ -]\d{1,3})?(?!\d))")]
+    private static partial Regex ForeignIbanRegex();
+
+    // A mobile number in 3-2-2-2 groups ("501 23 45 67", "501-23-45-67"), the other common spelling.
+    // The same amount/decimal guards as GroupedPhoneRegex.
+    [GeneratedRegex(@"(?<!\d)(?<!\d[.,])\d{3}[ -]\d{2}[ -]\d{2}[ -]\d{2}(?!\d)(?![.,]\d)")]
+    private static partial Regex PairedPhoneRegex();
 }

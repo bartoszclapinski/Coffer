@@ -161,6 +161,28 @@ public class AdvisorReportGeneratorTests
     }
 
     [Fact]
+    public async Task Generate_PlaceholdersEchoedByTheModel_AreRestoredInTheStoredReport()
+    {
+        var json = string.Create(CultureInfo.InvariantCulture, $$"""
+            {
+              "perGoalRisks": { "{{_goalId}}": ["Wydatki na [PARTY_1] rosną."] },
+              "suggestions": [
+                { "title": "Mniej dla [PARTY_1]", "savings": 50, "description": "Ogranicz [PARTY_1].", "categoryAffected": "Prezenty dla [PARTY_1]" }
+              ]
+            }
+            """);
+        var generator = Generator(new ScriptedProvider(json), anonymizer: new RestoringPromptAnonymizer());
+
+        var report = await generator.GenerateAsync([Result()], Ctx(), [Spend()], _day, CancellationToken.None);
+
+        report.Entries.Single(e => e.Kind == AdvisorEntryKind.Risk).Description.Should().Be("Wydatki na Jan Testowy rosną.");
+        var suggestion = report.Entries.Single(e => e.Kind == AdvisorEntryKind.Suggestion);
+        suggestion.Title.Should().Be("Mniej dla Jan Testowy");
+        suggestion.Description.Should().Be("Ogranicz Jan Testowy.");
+        suggestion.CategoryAffected.Should().Be("Prezenty dla Jan Testowy");
+    }
+
+    [Fact]
     public async Task Generate_NoResults_ReturnsEmptyEngineReport_WithoutCallingProvider()
     {
         var provider = new ScriptedProvider("""{"perGoalRisks":{},"suggestions":[]}""");
@@ -213,6 +235,23 @@ public class AdvisorReportGeneratorTests
         SeasonalityModifiers = new Dictionary<int, decimal>(),
         Today = _day,
     };
+
+    private sealed class RestoringPromptAnonymizer : IPromptAnonymizer
+    {
+        public Task<IPromptRedactionSession> BeginSessionAsync(CancellationToken ct) =>
+            Task.FromResult<IPromptRedactionSession>(new Session());
+
+        private sealed class Session : IPromptRedactionSession
+        {
+            public bool HasOwnerNames => true;
+
+            public string Redact(string text) => text;
+
+            public string RedactDocument(string text) => text;
+
+            public string Restore(string text) => text.Replace("[PARTY_1]", "Jan Testowy", StringComparison.Ordinal);
+        }
+    }
 
     private sealed class ScriptedProvider : IAiProvider
     {

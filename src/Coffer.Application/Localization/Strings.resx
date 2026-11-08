@@ -161,7 +161,7 @@
     <value>Account holder name</value>
   </data>
   <data name="Settings.AiFallback.OwnerNameHint" xml:space="preserve">
-    <value>Redacted from statement text before it reaches the AI provider. Separate several spellings or aliases with commas. Leave empty to skip name redaction (the statement header may then be sent un-redacted).</value>
+    <value>Replaced with a placeholder in everything sent to the AI provider (statements, categorization, chat, alerts, reports). Matching ignores case, diacritics and word order. Separate several forms with commas and add every form your statements use: with a middle name, a double surname, or an inflected form (e.g. "Kowalskiego"). Leave empty to skip name redaction (your name may then be sent un-redacted).</value>
   </data>
   <data name="Settings.Save" xml:space="preserve">
     <value>Save settings</value>
