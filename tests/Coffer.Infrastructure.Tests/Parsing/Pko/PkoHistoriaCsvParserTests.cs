@@ -72,6 +72,20 @@ public class PkoHistoriaCsvParserTests
     }
 
     [Fact]
+    public async Task Parse_TaxTransferIdentifierField_IsNotTakenAsMerchant()
+    {
+        // Synthetic tax transfer: the identifier field comes before the payee name.
+        const string csv =
+            "\"Data operacji\",\"Data waluty\",\"Typ transakcji\",\"Kwota\",\"Waluta\",\"Saldo po transakcji\",\"Opis transakcji\",\"\",\"\",\"\",\"\",\"\"\n" +
+            "\"2026-01-05\",\"2026-01-05\",\"Przelew podatkowy\",\"-100.00\",\"PLN\",\"900.00\",\"Przelew podatkowy\",\"Nazwa i nr identyfikatora: N 0000000000\",\"Nazwa odbiorcy: URZAD SKARBOWY\",\"Tytul: PIT\",\"\",\"\"\n";
+
+        var result = await ParseAsync(CsvStatementInputFactory.FromCsv(csv));
+
+        result.Transactions.Should().ContainSingle();
+        result.Transactions[0].Merchant.Should().Be("URZAD SKARBOWY");
+    }
+
+    [Fact]
     public async Task Parse_AccountNumberAbsent_EmptyWithWarning()
     {
         var result = await ParseAsync(CsvStatementInputFactory.FromGoldenFile());

@@ -212,15 +212,18 @@ public sealed class PkoHistoriaCsvParser : IStatementParser
 
     private static string? TryExtractMerchant(string field)
     {
-        // Labelled sub-field e.g. "Nazwa nadawcy/odbiorcy: JAN KOWALSKI".
-        const string label = "Nazwa ";
-        if (!field.StartsWith(label, StringComparison.OrdinalIgnoreCase))
+        // Labelled counterparty sub-field: "Nazwa nadawcy: …", "Nazwa odbiorcy: …" or
+        // "Nazwa nadawcy/odbiorcy: …". Other "Nazwa …" labels are not a counterparty — a tax
+        // transfer's "Nazwa i nr identyfikatora: …" carries an identifier type and number.
+        var colon = field.IndexOf(':', StringComparison.Ordinal);
+        if (colon < 0 || colon == field.Length - 1)
         {
             return null;
         }
 
-        var colon = field.IndexOf(':', StringComparison.Ordinal);
-        if (colon < 0 || colon == field.Length - 1)
+        var label = field[..colon].Trim();
+        if (!label.StartsWith("Nazwa nadawcy", StringComparison.OrdinalIgnoreCase)
+            && !label.StartsWith("Nazwa odbiorcy", StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }

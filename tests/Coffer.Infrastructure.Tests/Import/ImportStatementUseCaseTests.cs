@@ -173,6 +173,25 @@ public class ImportStatementUseCaseTests : IDisposable
     }
 
     [Fact]
+    public async Task Execute_OverlappingExportWithMoreRepeats_AddsOnlyTheNewOccurrence()
+    {
+        // A mid-day export held one coffee; the full-day export later holds both plus the bakery.
+        var accountId = await SeedAccountAsync();
+        var useCase = CreateUseCase();
+        await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(PkoHeader + CoffeeRow), accountId), null, CancellationToken.None);
+
+        var summary = await useCase.ExecuteAsync(
+            new ImportRequest(CsvStatementInputFactory.FromCsv(IdenticalRowsCsv), accountId), null, CancellationToken.None);
+
+        summary.Added.Should().Be(2, "only the second coffee and the bakery are new");
+        summary.Skipped.Should().Be(1);
+
+        await using var db = _factory.CreateDbContext();
+        (await db.Transactions.CountAsync(t => t.Amount == -12.00m)).Should().Be(2);
+    }
+
+    [Fact]
     public async Task Execute_RowImportedBeforeOccurrenceIndexing_StillDeduplicates()
     {
         // Simulates a vault where an older version imported this file and collapsed the two
