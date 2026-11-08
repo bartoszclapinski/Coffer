@@ -233,7 +233,7 @@ public sealed class HybridCategorizer : ICategorizer
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
         var estOutputTokens = batch.Count * OutputTokensPerItem;
-        var estimate = _pricing.Estimate(model, estInputTokens, estOutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(model, estInputTokens, estOutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Critical, ct).ConfigureAwait(false))
         {
             _logger.LogInformation(

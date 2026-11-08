@@ -105,7 +105,7 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
         var estOutputTokens = (results.Count * OutputTokensPerGoal) + OutputTokensForSuggestions;
-        var estimate = _pricing.Estimate(model, estInputTokens, estOutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(model, estInputTokens, estOutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
         {
             _logger.LogInformation(

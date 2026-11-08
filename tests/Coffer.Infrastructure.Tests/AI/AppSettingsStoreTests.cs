@@ -41,6 +41,39 @@ public class AppSettingsStoreTests : CategorizationDbTest
         (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be("claude-sonnet-4-6");
     }
 
+    [Theory]
+    [InlineData("gpt-4o-mini")]
+    [InlineData("gpt-4o")]
+    [InlineData("claude-3-haiku-20240307")]
+    public async Task GetCategorizationModel_StoredModelNoLongerOffered_ReturnsDefault(string stored)
+    {
+        await using (await MigratedContextAsync())
+        {
+        }
+
+        var store = new AppSettingsStore(Factory);
+
+        await store.SetCategorizationModelAsync(stored, CancellationToken.None);
+
+        (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be(AiDefaults.CategorizationModel);
+    }
+
+    [Fact]
+    public async Task GetCategorizationModel_EveryOfferedModel_RoundTrips()
+    {
+        await using (await MigratedContextAsync())
+        {
+        }
+
+        var store = new AppSettingsStore(Factory);
+
+        foreach (var model in AiDefaults.ClaudeModels)
+        {
+            await store.SetCategorizationModelAsync(model, CancellationToken.None);
+            (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be(model);
+        }
+    }
+
     [Fact]
     public async Task SetThenGet_AiFallbackParsingAndOwnerName_RoundTrips()
     {

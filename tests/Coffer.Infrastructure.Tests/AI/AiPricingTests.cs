@@ -17,18 +17,51 @@ public class AiPricingTests
         cost.Pln.Should().Be(24.00m); // _usdToPln = 4.00
     }
 
+    // Money stays decimal (hard rule #1): the rates are typed decimal, never passed as double.
+    public static TheoryData<string, decimal, decimal> PublishedRates => new()
+    {
+        { "claude-haiku-5-5", 0.10m, 0.50m },
+        { "claude-sonnet-5-5", 2.00m, 10.00m },
+        { "claude-haiku-4-5", 1.00m, 5.00m },
+        { "claude-sonnet-4-6", 3.00m, 15.00m },
+    };
+
     [Theory]
-    [InlineData("claude-haiku-5-5", 0.10, 0.50)]
-    [InlineData("claude-sonnet-5-5", 2.00, 10.00)]
-    [InlineData("claude-haiku-4-5", 1.00, 5.00)]
-    [InlineData("claude-sonnet-4-6", 3.00, 15.00)]
-    public void Estimate_EachOfferedModel_UsesItsPublishedRate(string model, double input, double output)
+    [MemberData(nameof(PublishedRates))]
+    public void Estimate_EachOfferedModel_UsesItsPublishedRate(string model, decimal input, decimal output)
     {
         var inputOnly = _pricing.Estimate(model, inputTokens: 100_000, outputTokens: 0);
         var outputOnly = _pricing.Estimate(model, inputTokens: 0, outputTokens: 1_000_000);
 
-        inputOnly.Usd.Should().Be((decimal)input / 10m);
-        outputOnly.Usd.Should().Be((decimal)output);
+        inputOnly.Usd.Should().Be(input / 10m);
+        outputOnly.Usd.Should().Be(output);
+    }
+
+    [Fact]
+    public void EstimateBeforeCall_ModelThatThinksByDefault_AddsTheThinkingHeadroom()
+    {
+        // Sonnet 5.5 bills thinking as output (10 USD/Mtok): the gate prices the answer plus the
+        // full headroom, the most thinking the call can spend.
+        var cost = _pricing.EstimateBeforeCall("claude-sonnet-5-5", inputTokens: 0, answerTokens: 600);
+
+        cost.Usd.Should().Be((600 + ClaudeModelRules.ThinkingHeadroomTokens) * 10.00m / 1_000_000m);
+        cost.Should().Be(_pricing.Estimate("claude-sonnet-5-5", 0, 600 + ClaudeModelRules.ThinkingHeadroomTokens));
+    }
+
+    [Fact]
+    public void EstimateBeforeCall_ModelWithoutDefaultThinking_PricesTheAnswerAlone()
+    {
+        var cost = _pricing.EstimateBeforeCall("claude-haiku-4-5", inputTokens: 1_000, answerTokens: 600);
+
+        cost.Should().Be(_pricing.Estimate("claude-haiku-4-5", 1_000, 600));
+    }
+
+    [Fact]
+    public void EstimateBeforeCall_UnknownModel_AssumesThinkingAndTheFallbackRate()
+    {
+        var cost = _pricing.EstimateBeforeCall("some-future-model", inputTokens: 0, answerTokens: 0);
+
+        cost.Usd.Should().Be(ClaudeModelRules.ThinkingHeadroomTokens * 15.00m / 1_000_000m);
     }
 
     [Fact]

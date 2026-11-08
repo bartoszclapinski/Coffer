@@ -20,8 +20,11 @@ namespace Coffer.Infrastructure.AI;
 /// current models. Thinking blocks a model returns are not replayed in the chat tool loop — the
 /// orchestrator carries only text and tool calls; with adaptive thinking a turn without thinking is
 /// a valid turn, and Anthropic.SDK 5.10.0 would re-send an empty (display-omitted) thinking block as
-/// a malformed <c>redacted_thinking</c> block. The live check (<c>ClaudeProviderLiveTests</c>) runs
-/// a full tool round trip to prove the API accepts this.
+/// a malformed <c>redacted_thinking</c> block. Anthropic recommends replaying thinking blocks with
+/// tool results on the 5.5 models, so the model answers a tool-result turn without its earlier
+/// reasoning; replaying them is follow-up work once the SDK serialises them correctly. The live
+/// check (<c>ClaudeProviderLiveTests</c>, skipped without a key) checks, when run, that the API
+/// accepts a full tool round trip without the replay.
 /// </para>
 /// </summary>
 public sealed class ClaudeProvider : IAiProvider

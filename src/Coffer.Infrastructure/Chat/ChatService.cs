@@ -209,7 +209,7 @@ public sealed class ChatService : IChatService
         string systemPrompt, IReadOnlyList<AiChatMessage> messages, CancellationToken ct)
     {
         var estimatedInputTokens = EstimateInputTokens(systemPrompt, messages);
-        var estimate = _pricing.Estimate(AiDefaults.ChatModel, estimatedInputTokens, EstimatedOutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(AiDefaults.ChatModel, estimatedInputTokens, EstimatedOutputTokens);
         return await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false);
     }
 

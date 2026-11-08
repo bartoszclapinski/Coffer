@@ -50,8 +50,14 @@ public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
         return SetValueAsync(ActiveProviderKey, provider, ct);
     }
 
-    public async Task<string> GetCategorizationModelAsync(CancellationToken ct) =>
-        await GetValueAsync(CategorizationModelKey, ct).ConfigureAwait(false) ?? AiDefaults.CategorizationModel;
+    // A stored model that is no longer offered (e.g. the retired "gpt-4o-mini") reads as the default,
+    // so categorisation never sends Claude a model ID it would reject with a 400.
+    public async Task<string> GetCategorizationModelAsync(CancellationToken ct)
+    {
+        var stored = await GetValueAsync(CategorizationModelKey, ct).ConfigureAwait(false);
+        return AiDefaults.ClaudeModels.FirstOrDefault(m => string.Equals(m, stored, StringComparison.OrdinalIgnoreCase))
+            ?? AiDefaults.CategorizationModel;
+    }
 
     public Task SetCategorizationModelAsync(string model, CancellationToken ct)
     {

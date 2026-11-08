@@ -54,7 +54,7 @@ No `using Avalonia.*`, no `using Microsoft.Maui.*`, no `using System.Windows.*`,
 - `Parsers/` — base classes, `PdfPigParser` helpers
 - `Parsers/Pko/`, `Parsers/MBank/`, `Parsers/Ing/`, etc. — bank-specific parsers
 - `Parsers/AiAssisted/` — fallback parser using LLM
-- `AI/Providers/` — `ClaudeProvider`, `OpenAiProvider`, `ProviderFactory`
+- `AI/Providers/` — `ClaudeProvider` (an OpenAI provider is deferred, see doc 04), `ProviderFactory`
 - `AI/Categorization/` — `HybridCategorizer`, `RuleEngine`, `BatchCategorizer`, `CategoryCache`
 - `AI/Chat/` — tool calling host, tool implementations
 - `AI/Anomalies/` — statistical detectors, LLM commentary

@@ -16,6 +16,13 @@ public static class AiDefaults
     /// </summary>
     public const string ChatModel = "claude-sonnet-5-5";
 
+    /// <summary>
+    /// The Claude models the owner can pick: current generation first, the 4.x models kept as a
+    /// fallback. A stored model outside this list (e.g. a retired OpenAI model) reads as the default.
+    /// </summary>
+    public static IReadOnlyList<string> ClaudeModels { get; } =
+        ["claude-haiku-5-5", "claude-sonnet-5-5", "claude-haiku-4-5", "claude-sonnet-4-6"];
+
     /// <summary>Default monthly budget cap in PLN (doc 04).</summary>
     public const decimal MonthlyCapPln = 20m;
 

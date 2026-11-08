@@ -88,7 +88,7 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
         var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
-        var estimate = _pricing.Estimate(model, estInputTokens, OutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(model, estInputTokens, OutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
         {
             _logger.LogInformation(

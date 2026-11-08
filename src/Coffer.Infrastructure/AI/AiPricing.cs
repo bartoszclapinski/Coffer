@@ -6,7 +6,10 @@ namespace Coffer.Infrastructure.AI;
 /// Static per-model token pricing (doc 04 cost discipline). Rates are USD per million
 /// tokens; PLN is a fixed-rate conversion — good enough for a budget guard, not
 /// accounting. Unknown models fall back to the most expensive Claude rate in the table
-/// (Sonnet 4.6) so an estimate never under-reports.
+/// (Sonnet 4.6) so the rate never under-reports. Thinking tokens are billed as output, so
+/// <see cref="EstimateBeforeCall"/> adds the full <see cref="ClaudeModelRules.ThinkingHeadroomTokens"/>
+/// for models that think by default: the pre-call estimate covers the most thinking a call can
+/// spend, and the ledger records the real usage afterwards.
 /// </summary>
 public sealed class AiPricing : IAiPricing
 {
@@ -40,6 +43,14 @@ public sealed class AiPricing : IAiPricing
         var usd = ((inputTokens * inputRate) + (outputTokens * outputRate)) / PerMillion;
         var pln = usd * UsdToPln;
         return new AiCost(usd, pln);
+    }
+
+    public AiCost EstimateBeforeCall(string model, int inputTokens, int answerTokens)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(model);
+
+        // The same output cap ClaudeProvider sends: the answer plus thinking headroom where it applies.
+        return Estimate(model, inputTokens, ClaudeModelRules.MaxTokensFor(model, answerTokens));
     }
 
     private static (decimal Input, decimal Output) RateFor(string model, int inputTokens)

@@ -187,8 +187,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     public ObservableCollection<string> Providers { get; } = [AiDefaults.ClaudeProvider];
 
     // Current generation first; the 4.x models stay selectable as a fallback.
-    public ObservableCollection<string> Models { get; } =
-        ["claude-haiku-5-5", "claude-sonnet-5-5", "claude-haiku-4-5", "claude-sonnet-4-6"];
+    public ObservableCollection<string> Models { get; } = new(AiDefaults.ClaudeModels);
 
     public IReadOnlyList<LanguageOption> Languages { get; } =
     [

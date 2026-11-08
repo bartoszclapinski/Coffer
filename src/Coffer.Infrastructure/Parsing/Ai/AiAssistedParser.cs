@@ -130,7 +130,7 @@ public sealed class AiAssistedParser : IStatementParser
         var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
-        var estimate = _pricing.Estimate(model, estInputTokens, EstimatedOutputTokens);
+        var estimate = _pricing.EstimateBeforeCall(model, estInputTokens, EstimatedOutputTokens);
         if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
         {
             _logger.LogInformation("Budget gate blocked the AI fallback parse; surfacing as unsupported bank.");

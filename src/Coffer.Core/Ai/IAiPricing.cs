@@ -10,5 +10,15 @@ public sealed record AiCost(decimal Usd, decimal Pln);
 /// </summary>
 public interface IAiPricing
 {
+    /// <summary>Cost of exactly these token counts — what the ledger records after a call.</summary>
     AiCost Estimate(string model, int inputTokens, int outputTokens);
+
+    /// <summary>
+    /// The budget gate's estimate before a call whose answer is expected to take up to
+    /// <paramref name="answerTokens"/> output tokens. A provider may bill more output than the
+    /// answer (e.g. thinking tokens), so an implementation adds that allowance here. The default
+    /// prices the answer alone.
+    /// </summary>
+    AiCost EstimateBeforeCall(string model, int inputTokens, int answerTokens) =>
+        Estimate(model, inputTokens, answerTokens);
 }

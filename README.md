@@ -73,7 +73,7 @@ Coffer.sln
 - EF Core 9 + SQLite + SQLCipher (encrypted at rest)
 - CommunityToolkit.Mvvm
 - PdfPig for PDF parsing
-- Anthropic.SDK + OpenAI SDK + Microsoft.Extensions.AI abstraction
+- Anthropic.SDK + Microsoft.Extensions.AI abstraction (an OpenAI provider is deferred, see doc 04)
 - LiveChartsCore.SkiaSharpView for charts
 - Serilog, FluentValidation, xUnit + FluentAssertions + Bogus + FsCheck
 

@@ -42,9 +42,9 @@ Implemented today: `ClaudeProvider` (Anthropic.SDK over `IChatClient`). **OpenAI
 Claude request rules (`ClaudeModelRules`, Sprint 31):
 
 - **No `temperature` on Claude 4.7+** (Opus 4.7/4.8, the 5.x family): those models return HTTP 400 for a non-default value. It is still sent to Haiku 4.5 / Sonnet 4.6.
-- **Thinking headroom.** The 5.x models think by default (adaptive) and thinking counts against `max_tokens`, so they get +8192 tokens on top of the answer cap; otherwise a categorization batch capped at 512 tokens could lose its JSON answer to thinking. Thinking is not switched off: Anthropic.SDK 5.10.0 cannot send `{"type":"disabled"}`, and Sonnet 5.5 rejects it. Only generated tokens are billed, and the ledger records real usage.
+- **Thinking headroom.** The 5.x models think by default (adaptive) and thinking counts against `max_tokens`, so they get +8192 tokens on top of the answer cap; otherwise a categorization batch capped at 512 tokens could lose its JSON answer to thinking. Thinking is not switched off: Anthropic.SDK 5.10.0 cannot send `{"type":"disabled"}`, and Sonnet 5.5 rejects it. Thinking tokens are billed as output, so the budget gate's pre-call estimate (`IAiPricing.EstimateBeforeCall`) adds the full 8192-token headroom for these models — the estimate stays an upper bound on thinking; the ledger records the real usage afterwards.
 - **No forced `tool_choice`, no assistant prefill** — both return 400 on current models.
-- **Thinking blocks are not replayed in the chat tool loop** (the loop carries text + tool calls only); a live check (`ClaudeProviderLiveTests`, skipped unless `COFFER_LIVE_CLAUDE_KEY` is set) runs a full tool round trip against each default model.
+- **Thinking blocks are not replayed in the chat tool loop** (the loop carries text + tool calls only). Anthropic's guidance for the 5.5 models is to pass thinking blocks back unchanged with tool results; that is not done because Anthropic.SDK 5.10.0 re-sends an empty (display-omitted) thinking block as a malformed `redacted_thinking`. The model therefore answers a tool-result turn without its earlier reasoning. A live check (`ClaudeProviderLiveTests`, skipped unless `COFFER_LIVE_CLAUDE_KEY` is set) checks, when run, that the API accepts a full tool round trip without the replay on each default model; it has not been run yet (see the Sprint 31 log). Replaying thinking blocks is follow-up work once the SDK serialises them correctly.
 
 ## Categorization — hybrid pipeline
 
@@ -367,12 +367,12 @@ Categorization cache is the single biggest cost saver. Same merchant string → 
 ### Rate limit (429)
 
 - Honor `Retry-After` header
-- Switch provider if available (e.g., Claude rate-limited → try OpenAI for the same request)
+- Switch provider if available (e.g., Claude rate-limited → try a second provider for the same request; a second remote provider is deferred)
 - Never silently fail; log to Serilog with full request context (anonymized)
 
 ### Bad JSON output
 
-- Use strict JSON mode where supported (`response_format: json_object` on OpenAI)
+- Use strict JSON mode where supported (e.g. `response_format: json_object` on a deferred OpenAI provider)
 - For Claude: validate JSON, on parse failure do one retry with a "your previous response was not valid JSON, retry" addendum
 - After 2 failures: log raw response for inspection, return error to caller, do NOT swallow silently
 
