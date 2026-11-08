@@ -194,6 +194,35 @@ public class HybridCategorizerTests : CategorizationDbTest
         ai.CallCount.Should().Be(1, "an unconfigured provider is not a transient failure, so it is not retried");
     }
 
+    [Fact]
+    public async Task Categorize_RouteWithoutModel_LeavesUncategorisedWithoutThrowing()
+    {
+        // A local provider picked before any model was chosen: the real pricing rejects the empty
+        // model, which must not break the import (it runs CategorizeAsync unguarded).
+        await SeedCategoryAsync("Inne");
+        var ai = new FakeAiProvider();
+        var routes = FixedRouteResolver.Always(TestRoutes.OllamaWithoutModel);
+
+        var result = await Categorizer(ai, routes: routes, pricing: new AiPricing())
+            .CategorizeAsync(["cokolwiek"], CancellationToken.None);
+
+        result["cokolwiek"].Should().BeNull();
+        ai.CallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Categorize_RouteNotConfigured_LeavesUncategorisedWithoutThrowing()
+    {
+        await SeedCategoryAsync("Inne");
+        var ai = new FakeAiProvider();
+
+        var result = await Categorizer(ai, routes: new NotConfiguredRouteResolver())
+            .CategorizeAsync(["cokolwiek"], CancellationToken.None);
+
+        result["cokolwiek"].Should().BeNull();
+        ai.CallCount.Should().Be(0);
+    }
+
     private HybridCategorizer Categorizer(
         FakeAiProvider provider,
         IAiUsageLedger? ledger = null,

@@ -1,5 +1,6 @@
 using Coffer.Core.Ai;
 using Coffer.Core.Chat;
+using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Chat;
 using Coffer.Infrastructure.Tests.AI;
 using FluentAssertions;
@@ -185,8 +186,37 @@ public class ChatServiceTests
 
         var turn = await service.AskAsync("pytanie", [], CancellationToken.None);
 
-        turn.MissingApiKey.Should().BeTrue("an unknown provider is the same 'configure AI in Settings' state as a missing key");
+        turn.AiNotConfigured.Should().BeTrue("an unknown provider is a 'configure AI in Settings' state");
+        turn.MissingApiKey.Should().BeFalse("it is not a key problem; a local provider needs no key");
         provider.Attempts.Should().Be(1, "an unconfigured provider is never retried");
+    }
+
+    [Fact]
+    public async Task Ask_RouteWithoutModel_ReturnsNotConfiguredTurnWithoutCallingTheProvider()
+    {
+        var provider = new ScriptedProvider();
+        var service = Service(provider, [], routes: new NotConfiguredRouteResolver());
+
+        var turn = await service.AskAsync("pytanie", [], CancellationToken.None);
+
+        turn.AiNotConfigured.Should().BeTrue();
+        turn.MissingApiKey.Should().BeFalse();
+        provider.Attempts.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Ask_EmptyModelReachesPricing_AnswersInsteadOfThrowing()
+    {
+        // Defence in depth: even if a route with an empty model got past the resolver, the real
+        // pricing's ArgumentException must not escape the chat service.
+        var provider = new ScriptedProvider();
+        var service = Service(
+            provider, [], routes: FixedRouteResolver.Always(TestRoutes.OllamaWithoutModel), pricing: new AiPricing());
+
+        var turn = await service.AskAsync("pytanie", [], CancellationToken.None);
+
+        turn.Answer.Should().NotBeNullOrEmpty();
+        provider.Attempts.Should().Be(0, "nothing is sent when the turn cannot be priced");
     }
 
     [Fact]

@@ -93,17 +93,18 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
         var prompt = BuildPrompt(projection, redaction);
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
-        var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, OutputTokens);
-        if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
-        {
-            _logger.LogInformation(
-                "Budget gate blocked the cash-flow explanation for {Count} event(s); using engine-only summary.",
-                projection.Events.Count);
-            return EngineOnly(projection);
-        }
-
         try
         {
+            // Priced and gated inside the guarded block: a pricing or budget-read failure degrades too.
+            var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, OutputTokens);
+            if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
+            {
+                _logger.LogInformation(
+                    "Budget gate blocked the cash-flow explanation for {Count} event(s); using engine-only summary.",
+                    projection.Events.Count);
+                return EngineOnly(projection);
+            }
+
             var request = new AiRequest
             {
                 Prompt = prompt,

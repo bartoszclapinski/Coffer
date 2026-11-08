@@ -115,6 +115,33 @@ public class AnomalyCommentatorTests
         pricing.PreCallEstimates.Should().Equal([(TestRoutes.Routed.Provider, TestRoutes.Routed.Model)]);
     }
 
+    [Fact]
+    public async Task Comment_RouteWithoutModel_KeepsTemplatedText()
+    {
+        var provider = new ScriptedProvider("[]");
+        IReadOnlyList<AnomalyCandidate> candidates = [Candidate("high-amount:1")];
+        var commentator = Commentator(
+            provider, routes: FixedRouteResolver.Always(TestRoutes.OllamaWithoutModel), pricing: new AiPricing());
+
+        var result = await commentator.CommentAsync(candidates, CancellationToken.None);
+
+        result.Should().BeSameAs(candidates);
+        provider.Requests.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Comment_RouteNotConfigured_KeepsTemplatedText()
+    {
+        var provider = new ScriptedProvider("[]");
+        IReadOnlyList<AnomalyCandidate> candidates = [Candidate("high-amount:1")];
+
+        var result = await Commentator(provider, routes: new NotConfiguredRouteResolver())
+            .CommentAsync(candidates, CancellationToken.None);
+
+        result.Should().BeSameAs(candidates);
+        provider.Requests.Should().BeEmpty();
+    }
+
     private static AnomalyCommentator Commentator(
         ScriptedProvider provider,
         IAiBudgetGate? gate = null,

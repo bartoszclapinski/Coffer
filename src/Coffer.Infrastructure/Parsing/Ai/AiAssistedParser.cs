@@ -111,7 +111,17 @@ public sealed class AiAssistedParser : IStatementParser
         }
 
         // Provider-aware: Claude needs its API key, a local provider needs none.
-        var route = await _routes.ResolveAsync(AiRole.Analysis, ct).ConfigureAwait(false);
+        AiRoute route;
+        try
+        {
+            route = await _routes.ResolveAsync(AiRole.Analysis, ct).ConfigureAwait(false);
+        }
+        catch (AiRouteNotConfiguredException)
+        {
+            // No model chosen for the analysis role: unavailable, like a missing key.
+            throw new UnsupportedBankException(AiFallbackBankCode);
+        }
+
         if (!await _readiness.IsReadyAsync(route, ct).ConfigureAwait(false))
         {
             throw new UnsupportedBankException(AiFallbackBankCode);

@@ -137,6 +137,12 @@
                            TextWrapping="Wrap" />
             </Border>
             <Border Background="{DynamicResource Coffer.NegTint}" CornerRadius="8" Padding="14,10"
+                    IsVisible="{Binding AiNotConfigured}">
+                <TextBlock Text="{l:Localize Chat.AiNotConfigured}"
+                           Foreground="{DynamicResource Coffer.Neg}"
+                           TextWrapping="Wrap" />
+            </Border>
+            <Border Background="{DynamicResource Coffer.NegTint}" CornerRadius="8" Padding="14,10"
                     IsVisible="{Binding BudgetExceeded}">
                 <TextBlock Text="{l:Localize Chat.BudgetExceeded}"
                            Foreground="{DynamicResource Coffer.Neg}"

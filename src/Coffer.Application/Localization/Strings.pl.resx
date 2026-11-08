@@ -382,6 +382,9 @@
   <data name="Chat.MissingApiKey" xml:space="preserve">
     <value>Brak skonfigurowanego klucza API. Dodaj klucz w Ustawieniach, aby korzystać z asystenta.</value>
   </data>
+  <data name="Chat.AiNotConfigured" xml:space="preserve">
+    <value>AI nie jest skonfigurowane. Wybierz dostawcę i model w Ustawieniach, aby korzystać z asystenta.</value>
+  </data>
   <data name="Chat.BudgetExceeded" xml:space="preserve">
     <value>Miesięczny budżet AI został wyczerpany. Zwiększ limit w Ustawieniach, aby kontynuować.</value>
   </data>

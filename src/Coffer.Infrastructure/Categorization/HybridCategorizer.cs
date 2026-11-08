@@ -19,8 +19,9 @@ namespace Coffer.Infrastructure.Categorization;
 /// <see cref="CacheSource.Ai"/>. Each run resolves the <see cref="AiRole.Categorization"/> route
 /// (provider + model) once and sends and prices every batch on it.
 /// <para>
-/// The AI stage never breaks an import: a denied budget, a missing key, a network error, or
-/// malformed output (after one retry) leaves the affected descriptions uncategorised
+/// The AI stage never breaks an import: a denied budget, a missing key, a route that is not
+/// configured (unknown provider, no model chosen), a network error, or malformed output (after one
+/// retry) leaves the affected descriptions uncategorised
 /// (<c>null</c>) and logs — the owner can recategorise later. The DB connection is not held
 /// open across the network calls: cache/rule resolution and the AI write-back are two separate
 /// short-lived contexts.
@@ -236,8 +237,22 @@ public sealed class HybridCategorizer : ICategorizer
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
         var estOutputTokens = batch.Count * OutputTokensPerItem;
-        var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, estOutputTokens);
-        if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Critical, ct).ConfigureAwait(false))
+        bool allowed;
+        try
+        {
+            var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, estOutputTokens);
+            allowed = await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Critical, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Pricing or the budget read failed: nothing was sent, and the import must not break.
+            _logger.LogWarning(
+                ex, "Could not price or budget-check AI categorisation; leaving a batch of {Count} uncategorised.",
+                batch.Count);
+            return null;
+        }
+
+        if (!allowed)
         {
             _logger.LogInformation(
                 "Budget gate blocked AI categorisation of {Count} description(s); leaving them uncategorised.",

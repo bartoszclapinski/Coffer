@@ -61,6 +61,14 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _categorizationModel = AiDefaults.CategorizationModel;
 
+    // True once the owner picks a provider or model on this screen. Save writes the route only then:
+    // the pickers offer Claude only (until 31-D), so a stored route they cannot show (e.g. a local
+    // Ollama route) is displayed as Claude and must not be overwritten when another setting is saved.
+    private bool _routeEdited;
+
+    // Set while Load fills the pickers, so loading does not count as an edit.
+    private bool _loadingRoute;
+
     [ObservableProperty]
     private decimal _monthlyCapPln = AiDefaults.MonthlyCapPln;
 
@@ -195,6 +203,18 @@ public sealed partial class SettingsViewModel : ObservableObject
         new(AppLanguage.English, "English"),
     ];
 
+    partial void OnSelectedProviderChanged(string value) => MarkRouteEdited();
+
+    partial void OnCategorizationModelChanged(string value) => MarkRouteEdited();
+
+    private void MarkRouteEdited()
+    {
+        if (!_loadingRoute)
+        {
+            _routeEdited = true;
+        }
+    }
+
     partial void OnSelectedLanguageChanged(LanguageOption value)
     {
         if (value is null || value.Language == _localizer.Current)
@@ -218,17 +238,22 @@ public sealed partial class SettingsViewModel : ObservableObject
         try
         {
             var ct = CancellationToken.None;
-            // A stored value no longer offered (e.g. a retired provider) shows the default, so the
-            // next Save replaces it instead of keeping a choice that fails at call time. Only the
-            // categorisation route is editable here; the per-role pickers arrive in Sprint 31-D.
-            SelectedProvider = OfferedOrDefault(
-                Providers,
-                await _settings.GetProviderAsync(AiRole.Categorization, ct).ConfigureAwait(true),
-                AiDefaults.ClaudeProvider);
-            CategorizationModel = OfferedOrDefault(
-                Models,
-                await _settings.GetModelAsync(AiRole.Categorization, ct).ConfigureAwait(true),
-                AiDefaults.CategorizationModel);
+            // A stored route the pickers do not offer shows the default, but is only replaced if the
+            // owner then picks a provider or model (see _routeEdited). Only the categorisation route
+            // is editable here; the per-role pickers arrive in Sprint 31-D.
+            var route = await _settings.GetRouteAsync(AiRole.Categorization, ct).ConfigureAwait(true);
+            _loadingRoute = true;
+            try
+            {
+                SelectedProvider = OfferedOrDefault(Providers, route.Provider, AiDefaults.ClaudeProvider);
+                CategorizationModel = OfferedOrDefault(Models, route.Model, AiDefaults.CategorizationModel);
+                _routeEdited = false;
+            }
+            finally
+            {
+                _loadingRoute = false;
+            }
+
             MonthlyCapPln = await _settings.GetMonthlyCapPlnAsync(ct).ConfigureAwait(true);
             SafetyFloorPln = await _planningSettings.GetSafetyFloorPlnAsync(ct).ConfigureAwait(true);
             AiFallbackParsingEnabled = await _settings.GetAiFallbackParsingEnabledAsync(ct).ConfigureAwait(true);
@@ -267,8 +292,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         try
         {
             var ct = CancellationToken.None;
-            await _settings.SetProviderAsync(AiRole.Categorization, SelectedProvider, ct).ConfigureAwait(true);
-            await _settings.SetModelAsync(AiRole.Categorization, CategorizationModel, ct).ConfigureAwait(true);
+            if (_routeEdited)
+            {
+                await _settings.SetRouteAsync(
+                    AiRole.Categorization, new AiRoute(SelectedProvider, CategorizationModel), ct).ConfigureAwait(true);
+                _routeEdited = false;
+            }
+
             await _settings.SetMonthlyCapPlnAsync(MonthlyCapPln, ct).ConfigureAwait(true);
             await _planningSettings.SetSafetyFloorPlnAsync(SafetyFloorPln, ct).ConfigureAwait(true);
             await _settings.SetAiFallbackParsingEnabledAsync(AiFallbackParsingEnabled, ct).ConfigureAwait(true);

@@ -13,20 +13,20 @@ public interface IAiSettings
     Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct);
 
     /// <summary>
-    /// The provider the role runs on. A stored provider this build does not know (e.g. the retired
-    /// "OpenAI") reads as <see cref="AiDefaults.ClaudeProvider"/>.
+    /// The provider + model the role runs on, read together so the two always belong to the same
+    /// saved route. Nothing stored (or the retired "OpenAI") reads as <see cref="AiDefaults.ClaudeProvider"/>;
+    /// any other provider name is returned as stored, so a provider this build does not have fails
+    /// closed at the router instead of silently moving to a remote vendor. For Claude a stored model
+    /// that is no longer offered reads as the role's default; for another provider the stored model is
+    /// returned as-is (empty when unset — the route is then not usable).
     /// </summary>
-    Task<string> GetProviderAsync(AiRole role, CancellationToken ct);
-
-    Task SetProviderAsync(AiRole role, string provider, CancellationToken ct);
+    Task<AiRoute> GetRouteAsync(AiRole role, CancellationToken ct);
 
     /// <summary>
-    /// The model the role runs on. For Claude a stored model that is no longer offered reads as the
-    /// role's default; for another provider the stored model is returned as-is (empty when unset).
+    /// Saves the role's provider + model in one write. The provider must be one of
+    /// <see cref="AiDefaults.Providers"/> and the model must not be empty.
     /// </summary>
-    Task<string> GetModelAsync(AiRole role, CancellationToken ct);
-
-    Task SetModelAsync(AiRole role, string model, CancellationToken ct);
+    Task SetRouteAsync(AiRole role, AiRoute route, CancellationToken ct);
 
     /// <summary>
     /// Whether the AI-assisted fallback parser may run for statements from banks with no

@@ -91,17 +91,18 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
         var estOutputTokens = candidates.Count * OutputTokensPerItem;
-        var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, estOutputTokens);
-        if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
-        {
-            _logger.LogInformation(
-                "Budget gate blocked AI commentary for {Count} anomaly candidate(s); keeping templated text.",
-                candidates.Count);
-            return candidates;
-        }
-
         try
         {
+            // Priced and gated inside the guarded block: a pricing or budget-read failure degrades too.
+            var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, estOutputTokens);
+            if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
+            {
+                _logger.LogInformation(
+                    "Budget gate blocked AI commentary for {Count} anomaly candidate(s); keeping templated text.",
+                    candidates.Count);
+                return candidates;
+            }
+
             var request = new AiRequest
             {
                 Prompt = prompt,

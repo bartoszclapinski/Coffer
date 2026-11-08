@@ -75,6 +75,19 @@ public class ChatViewModelTests
     }
 
     [Fact]
+    public async Task Send_AiNotConfigured_SetsItsOwnFlagNotTheKeyFlag()
+    {
+        var service = new FakeChatService(new ChatTurn("Skonfiguruj AI.", [], AiNotConfigured: true));
+        var vm = Vm(service);
+        vm.InputText = "pytanie";
+
+        await vm.SendCommand.ExecuteAsync(null);
+
+        vm.AiNotConfigured.Should().BeTrue();
+        vm.MissingApiKey.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Send_BudgetExceeded_SetsFlag()
     {
         var service = new FakeChatService(new ChatTurn("Budżet wyczerpany.", [], BudgetExceeded: true));

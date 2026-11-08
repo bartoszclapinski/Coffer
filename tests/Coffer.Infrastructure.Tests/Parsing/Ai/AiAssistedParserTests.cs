@@ -80,6 +80,32 @@ public class AiAssistedParserTests
     }
 
     [Fact]
+    public async Task ParseAsync_RouteNotConfigured_ThrowsUnsupportedBankWithoutCallingProvider()
+    {
+        var provider = new FakeAiProvider(TwoTransactionsJson);
+        var parser = Build(provider, routes: new NotConfiguredRouteResolver());
+
+        var act = () => parser.ParseAsync(CsvInput("anything"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnsupportedBankException>();
+        provider.LastRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ParseAsync_RouteWithoutModel_IsNotReady_ThrowsUnsupportedBank()
+    {
+        // The production readiness rejects an empty model before pricing ever sees it.
+        var provider = new FakeAiProvider(TwoTransactionsJson);
+        var parser = Build(
+            provider, routes: FixedRouteResolver.Always(TestRoutes.OllamaWithoutModel), pricing: new AiPricing());
+
+        var act = () => parser.ParseAsync(CsvInput("anything"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnsupportedBankException>();
+        provider.LastRequest.Should().BeNull();
+    }
+
+    [Fact]
     public async Task ParseAsync_SendsAndPricesTheCallOnTheAnalysisRoute()
     {
         var provider = new FakeAiProvider(TwoTransactionsJson);
@@ -280,14 +306,9 @@ public class AiAssistedParserTests
 
         public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<string> GetProviderAsync(AiRole role, CancellationToken ct) =>
-            Task.FromResult(AiDefaults.ClaudeProvider);
+        public Task<AiRoute> GetRouteAsync(AiRole role, CancellationToken ct) =>
+            Task.FromResult(new AiRoute(AiDefaults.ClaudeProvider, AiDefaults.DefaultModel(role)));
 
-        public Task SetProviderAsync(AiRole role, string provider, CancellationToken ct) => Task.CompletedTask;
-
-        public Task<string> GetModelAsync(AiRole role, CancellationToken ct) =>
-            Task.FromResult(AiDefaults.DefaultModel(role));
-
-        public Task SetModelAsync(AiRole role, string model, CancellationToken ct) => Task.CompletedTask;
+        public Task SetRouteAsync(AiRole role, AiRoute route, CancellationToken ct) => Task.CompletedTask;
     }
 }

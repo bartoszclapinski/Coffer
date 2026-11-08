@@ -27,11 +27,14 @@ public sealed record ChatMessage(
 /// Outcome of a single user question. <see cref="Answer"/> is the assistant's reply text;
 /// <see cref="ToolTraces"/> are the read-only tools that ran. <see cref="BudgetExceeded"/> is set
 /// when the monthly cap blocked the call (no API request was made); <see cref="MissingApiKey"/>
-/// when no chat API key is configured. In both blocked cases <see cref="Answer"/> carries a
-/// friendly Polish explanation and no tools ran.
+/// when no chat API key is configured; <see cref="AiNotConfigured"/> when the analysis route cannot be
+/// used (a provider this build does not have, or no model chosen) — a provider problem, not a key
+/// problem. In every blocked case <see cref="Answer"/> carries a friendly Polish explanation and no
+/// tools ran.
 /// </summary>
 public sealed record ChatTurn(
     string Answer,
     IReadOnlyList<ChatToolTrace> ToolTraces,
     bool BudgetExceeded = false,
-    bool MissingApiKey = false);
+    bool MissingApiKey = false,
+    bool AiNotConfigured = false);

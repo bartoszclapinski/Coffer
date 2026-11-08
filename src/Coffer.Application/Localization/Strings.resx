@@ -382,6 +382,9 @@
   <data name="Chat.MissingApiKey" xml:space="preserve">
     <value>No API key configured. Add a key in Settings to use the assistant.</value>
   </data>
+  <data name="Chat.AiNotConfigured" xml:space="preserve">
+    <value>AI is not configured. Choose a provider and model in Settings to use the assistant.</value>
+  </data>
   <data name="Chat.BudgetExceeded" xml:space="preserve">
     <value>The monthly AI budget has been used up. Increase the limit in Settings to continue.</value>
   </data>

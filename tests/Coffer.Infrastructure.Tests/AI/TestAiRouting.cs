@@ -29,6 +29,16 @@ public sealed class FixedRouteResolver : IAiRouteResolver
     }
 }
 
+/// <summary>
+/// A resolver whose role has no model chosen, as the real <c>AiRouteResolver</c> reports it: every
+/// call throws <see cref="AiRouteNotConfiguredException"/>.
+/// </summary>
+public sealed class NotConfiguredRouteResolver : IAiRouteResolver
+{
+    public Task<AiRoute> ResolveAsync(AiRole role, CancellationToken ct) =>
+        Task.FromException<AiRoute>(new AiRouteNotConfiguredException(role));
+}
+
 /// <summary>Readiness with a fixed answer, for consumer tests that are not about readiness.</summary>
 public sealed class FixedRouteReadiness(bool isReady) : IAiRouteReadiness
 {
@@ -68,4 +78,10 @@ public sealed class RecordingPricing : IAiPricing
 public static class TestRoutes
 {
     public static AiRoute Routed { get; } = new("RoutedVendor", "routed-model-1");
+
+    /// <summary>
+    /// A local provider with no model chosen (the store's "not chosen yet" state). Real
+    /// <c>AiPricing</c> rejects its empty model, so a consumer must not let that escape.
+    /// </summary>
+    public static AiRoute OllamaWithoutModel { get; } = new(AiDefaults.OllamaProvider, string.Empty);
 }

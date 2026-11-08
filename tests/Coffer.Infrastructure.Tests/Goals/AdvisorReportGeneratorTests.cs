@@ -212,6 +212,32 @@ public class AdvisorReportGeneratorTests
         pricing.PreCallEstimates.Should().Equal([(TestRoutes.Routed.Provider, TestRoutes.Routed.Model)]);
     }
 
+    [Fact]
+    public async Task Generate_RouteWithoutModel_ReturnsEngineOnlyReport()
+    {
+        var provider = new ScriptedProvider("""{"perGoalRisks":{},"suggestions":[]}""");
+        var generator = Generator(
+            provider, routes: FixedRouteResolver.Always(TestRoutes.OllamaWithoutModel), pricing: new AiPricing());
+
+        var report = await generator.GenerateAsync([Result()], Ctx(), [Spend()], _day, CancellationToken.None);
+
+        report.GeneratedByAi.Should().BeFalse();
+        report.Entries.Should().ContainSingle();
+        provider.Requests.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Generate_RouteNotConfigured_ReturnsEngineOnlyReport()
+    {
+        var provider = new ScriptedProvider("""{"perGoalRisks":{},"suggestions":[]}""");
+        var generator = Generator(provider, routes: new NotConfiguredRouteResolver());
+
+        var report = await generator.GenerateAsync([Result()], Ctx(), [Spend()], _day, CancellationToken.None);
+
+        report.GeneratedByAi.Should().BeFalse();
+        provider.Requests.Should().BeEmpty();
+    }
+
     private static AdvisorReportGenerator Generator(
         ScriptedProvider provider,
         IAiBudgetGate? gate = null,

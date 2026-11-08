@@ -78,15 +78,10 @@ public class AiBudgetGateTests
 
         public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<string> GetProviderAsync(AiRole role, CancellationToken ct) =>
-            Task.FromResult(AiDefaults.ClaudeProvider);
+        public Task<AiRoute> GetRouteAsync(AiRole role, CancellationToken ct) =>
+            Task.FromResult(new AiRoute(AiDefaults.ClaudeProvider, AiDefaults.DefaultModel(role)));
 
-        public Task SetProviderAsync(AiRole role, string provider, CancellationToken ct) => Task.CompletedTask;
-
-        public Task<string> GetModelAsync(AiRole role, CancellationToken ct) =>
-            Task.FromResult(AiDefaults.DefaultModel(role));
-
-        public Task SetModelAsync(AiRole role, string model, CancellationToken ct) => Task.CompletedTask;
+        public Task SetRouteAsync(AiRole role, AiRoute route, CancellationToken ct) => Task.CompletedTask;
 
         public Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct) =>
             Task.FromResult(AiDefaults.AiFallbackParsingEnabled);

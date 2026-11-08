@@ -110,17 +110,18 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
         var estOutputTokens = (results.Count * OutputTokensPerGoal) + OutputTokensForSuggestions;
-        var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, estOutputTokens);
-        if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
-        {
-            _logger.LogInformation(
-                "Budget gate blocked the advisor report for {Count} goal(s); using engine-only risks.",
-                results.Count);
-            return EngineOnlyReport(results, date);
-        }
-
         try
         {
+            // Priced and gated inside the guarded block: a pricing or budget-read failure degrades too.
+            var estimate = _pricing.EstimateBeforeCall(route.Provider, route.Model, estInputTokens, estOutputTokens);
+            if (!await _budgetGate.CanProceedAsync(estimate.Pln, AiPriority.Normal, ct).ConfigureAwait(false))
+            {
+                _logger.LogInformation(
+                    "Budget gate blocked the advisor report for {Count} goal(s); using engine-only risks.",
+                    results.Count);
+                return EngineOnlyReport(results, date);
+            }
+
             var request = new AiRequest
             {
                 Prompt = prompt,

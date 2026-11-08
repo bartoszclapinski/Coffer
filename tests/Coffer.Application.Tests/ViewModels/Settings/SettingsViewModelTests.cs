@@ -74,6 +74,39 @@ public class SettingsViewModelTests
     }
 
     [Fact]
+    public async Task Save_AfterLoad_WithoutRouteChange_LeavesAStoredLocalRouteUntouched()
+    {
+        // The pickers offer Claude only (until 31-D), so a stored Ollama route shows as Claude. Saving
+        // another setting must not switch the route to a remote vendor.
+        var settings = new FakeAiSettings { ActiveProvider = AiDefaults.OllamaProvider, CategorizationModel = "qwen2.5:3b" };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.MonthlyCapPln = 50m;
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        settings.MonthlyCapPln.Should().Be(50m);
+        settings.ActiveProvider.Should().Be(AiDefaults.OllamaProvider);
+        settings.CategorizationModel.Should().Be("qwen2.5:3b");
+        settings.SetRouteCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Save_AfterLoad_WithModelPicked_WritesTheRoute()
+    {
+        var settings = new FakeAiSettings { ActiveProvider = AiDefaults.OllamaProvider, CategorizationModel = "qwen2.5:3b" };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.CategorizationModel = "claude-sonnet-5-5";
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        settings.ActiveProvider.Should().Be(AiDefaults.ClaudeProvider);
+        settings.CategorizationModel.Should().Be("claude-sonnet-5-5");
+        settings.SetRouteCalls.Should().Be(1);
+    }
+
+    [Fact]
     public async Task Load_PopulatesAiFallbackToggleAndOwnerName()
     {
         var settings = new FakeAiSettings { AiFallbackParsingEnabled = true, OwnerIdentityNames = "Jan Kowalski" };

@@ -17,21 +17,23 @@ Defaults moved to the 5.5 generation in Sprint 31 (Haiku 5.5: $0.10 / $0.50 per 
 
 Use `Microsoft.Extensions.AI` to swap providers without touching call sites.
 
+The shape of the abstraction (simplified; the source of truth is `src/Coffer.Core/Ai/IAiProvider.cs`, `AiRequest.cs`, `AiToolRequest.cs` and `AiResult.cs` — tools go through a separate `AiToolRequest`, vision attachments are not built yet):
+
 ```csharp
 public interface IAiProvider
 {
-    Task<string> CompleteAsync(AiRequest request, CancellationToken ct);
-    Task<TResult> CompleteJsonAsync<TResult>(AiRequest request, CancellationToken ct);
+    Task<AiResult<string>> CompleteAsync(AiRequest request, CancellationToken ct);
+    Task<AiResult<TResult>> CompleteJsonAsync<TResult>(AiRequest request, CancellationToken ct);
+    Task<AiResult<AiToolTurn>> CompleteWithToolsAsync(AiToolRequest request, CancellationToken ct);
     IAsyncEnumerable<string> StreamAsync(AiRequest request, CancellationToken ct);
 }
 
-public record AiRequest
+public sealed record AiRequest
 {
     public required string Prompt { get; init; }
+    public required string Provider { get; init; }   // from the role's route; never defaulted
     public required string Model { get; init; }
     public string? SystemPrompt { get; init; }
-    public IReadOnlyList<AiTool>? Tools { get; init; }
-    public IReadOnlyList<AiAttachment>? Attachments { get; init; }    // for vision
     public int MaxTokens { get; init; } = 1000;
     public double Temperature { get; init; } = 0.3;
 }
@@ -41,9 +43,9 @@ Implemented today: `ClaudeProvider` (Anthropic.SDK over `IChatClient`). **OpenAI
 
 Per-role routing (Sprint 31-B):
 
-- **Two roles** (`AiRole`): `Categorization` and `Analysis` (chat, advisor report, anomaly commentary, cash-flow explanation, AI fallback parsing). Each has its own provider + model in `IAiSettings` (keys `ai.activeProvider` / `ai.categorizationModel` for categorization — the pre-31 keys — and `ai.analysisProvider` / `ai.analysisModel` for analysis; absent keys read as Claude with `claude-haiku-5-5` / `claude-sonnet-5-5`). A stored provider this build does not know (e.g. `OpenAI`) reads as Claude.
-- **Route per call.** Every consumer asks `IAiRouteResolver.ResolveAsync(role)` on each call and sends `AiRequest.Provider` / `AiToolRequest.Provider` + `Model` from the route; no consumer reads a default model. `Provider` is `required` on both requests, so a forgotten provider is a compile error rather than a silent fallback to a remote vendor.
-- **One routing provider.** The `IAiProvider` in DI is `AiProviderRouter`; concrete providers are registered as `IAiProviderBackend` and the router dispatches by name. An unknown provider throws `UnknownAiProviderException` before anything is sent; consumers treat it like `MissingAiKeyException` (not configured, never retried). There is no automatic fallback to another provider.
+- **Two roles** (`AiRole`): `Categorization` and `Analysis` (chat, advisor report, anomaly commentary, cash-flow explanation, AI fallback parsing). Each has its own provider + model in `IAiSettings` (keys `ai.activeProvider` / `ai.categorizationModel` for categorization — the pre-31 keys — and `ai.analysisProvider` / `ai.analysisModel` for analysis; absent keys read as Claude with `claude-haiku-5-5` / `claude-sonnet-5-5`). A route is read (`GetRouteAsync`) and written (`SetRouteAsync`) as one provider + model pair, so the two never come from different saves. Only the retired `OpenAI` (offered before Sprint 31, never implemented — those calls really ran on Claude) reads as Claude; any other unknown provider name is kept and fails closed at the router, never silently moved to a remote vendor. `SetRouteAsync` accepts only `AiDefaults.Providers` and a non-empty model.
+- **Route per call.** Every consumer asks `IAiRouteResolver.ResolveAsync(role)` on each call and sends `AiRequest.Provider` / `AiToolRequest.Provider` + `Model` from the route; no consumer reads a default model. `Provider` is `required` on both requests, so a forgotten provider is a compile error rather than a silent fallback to a remote vendor. A stored route without a model (a local provider picked before any model was chosen) makes the resolver throw `AiRouteNotConfiguredException`, so nothing prices or sends an empty model.
+- **One routing provider.** The `IAiProvider` in DI is `AiProviderRouter`; concrete providers are registered as `IAiProviderBackend` and the router dispatches by name. An unknown provider throws `UnknownAiProviderException` before anything is sent. Consumers treat it, `AiRouteNotConfiguredException` and `MissingAiKeyException` as "not configured" (never retried): categorization leaves descriptions uncategorised, the advisor / anomaly / cash-flow features fall back to their engine-only or templated text, the fallback parser reports the bank as unsupported, and chat shows a "configure AI in Settings" banner (`ChatTurn.AiNotConfigured`, separate from the missing-key banner). Pricing and the budget check sit inside each consumer's guarded block, so a failure there degrades the same way. There is no automatic fallback to another provider.
 - **Provider-aware cost and readiness.** `IAiPricing` prices by provider + model (Ollama: 0 PLN); the budget gate always allows a call estimated at 0 PLN, even past the cap; the ledger still records local usage (tokens, provider, model). `IAiRouteReadiness` answers "usable without a call" (provider registered, model set, Claude key stored) — the AI fallback parser uses it.
 
 Claude request rules (`ClaudeModelRules`, Sprint 31):

@@ -1,6 +1,7 @@
 using Coffer.Core.Ai;
 using Coffer.Core.Domain;
 using Coffer.Core.Planning;
+using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Planning;
 using Coffer.Infrastructure.Tests.AI;
 using FluentAssertions;
@@ -110,6 +111,32 @@ public class CashFlowExplainerTests
         request.Provider.Should().Be(TestRoutes.Routed.Provider);
         request.Model.Should().Be(TestRoutes.Routed.Model);
         pricing.PreCallEstimates.Should().Equal([(TestRoutes.Routed.Provider, TestRoutes.Routed.Model)]);
+    }
+
+    [Fact]
+    public async Task Explain_RouteWithoutModel_FallsBackToEngineOnly()
+    {
+        var provider = new ScriptedProvider("Opis.");
+        var explainer = Explainer(
+            provider, routes: FixedRouteResolver.Always(TestRoutes.OllamaWithoutModel), pricing: new AiPricing());
+
+        var result = await explainer.ExplainAsync(Projection(), CancellationToken.None);
+
+        result.GeneratedByAi.Should().BeFalse();
+        result.Narrative.Should().NotBeNullOrEmpty();
+        provider.Requests.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Explain_RouteNotConfigured_FallsBackToEngineOnly()
+    {
+        var provider = new ScriptedProvider("Opis.");
+
+        var result = await Explainer(provider, routes: new NotConfiguredRouteResolver())
+            .ExplainAsync(Projection(), CancellationToken.None);
+
+        result.GeneratedByAi.Should().BeFalse();
+        provider.Requests.Should().BeEmpty();
     }
 
     private static CashFlowExplainer Explainer(

@@ -32,8 +32,8 @@ public sealed class ChatService : IChatService
     private const string MissingKeyMessage =
         "Brak skonfigurowanego klucza API. Dodaj klucz w ustawieniach, aby korzystać z asystenta.";
 
-    private const string UnknownProviderMessage =
-        "Wybrany dostawca AI jest niedostępny. Wybierz dostawcę w ustawieniach, aby korzystać z asystenta.";
+    private const string NotConfiguredMessage =
+        "AI nie jest skonfigurowane. Wybierz dostawcę i model w ustawieniach, aby korzystać z asystenta.";
 
     private const string ErrorMessage =
         "Przepraszam, wystąpił błąd podczas przetwarzania zapytania. Spróbuj ponownie za chwilę.";
@@ -97,6 +97,11 @@ public sealed class ChatService : IChatService
             route = await _routes.ResolveAsync(AiRole.Analysis, ct).ConfigureAwait(false);
             redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
         }
+        catch (AiRouteNotConfiguredException)
+        {
+            // No model chosen for the analysis role: a "configure AI in Settings" state, nothing sent.
+            return NotConfiguredTurn();
+        }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(ex, "Could not prepare the AI route or prompt redaction; no chat request was sent.");
@@ -128,7 +133,19 @@ public sealed class ChatService : IChatService
                 Tools = _toolDescriptors,
             };
 
-            if (!await CanProceedAsync(route, systemPrompt, messages, ct).ConfigureAwait(false))
+            bool allowed;
+            try
+            {
+                allowed = await CanProceedAsync(route, systemPrompt, messages, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Pricing or the budget read failed: nothing was sent; answer instead of throwing.
+                _logger.LogError(ex, "Could not price or budget-check a chat turn; no API call made.");
+                return new ChatTurn(ErrorMessage, traces);
+            }
+
+            if (!allowed)
             {
                 _logger.LogInformation("Budget gate blocked a chat turn; no API call made.");
                 return new ChatTurn(BudgetMessage, [], BudgetExceeded: true);
@@ -145,8 +162,9 @@ public sealed class ChatService : IChatService
             }
             catch (UnknownAiProviderException)
             {
-                // Same "configure AI in Settings" state as a missing key: nothing was sent.
-                return new ChatTurn(UnknownProviderMessage, [], MissingApiKey: true);
+                // The route names a provider this build does not have: nothing was sent. Not a key
+                // problem (a local provider needs no key), so it gets its own flag and banner.
+                return NotConfiguredTurn();
             }
             catch (OperationCanceledException)
             {
@@ -221,6 +239,8 @@ public sealed class ChatService : IChatService
 
         return results;
     }
+
+    private static ChatTurn NotConfiguredTurn() => new(NotConfiguredMessage, [], AiNotConfigured: true);
 
     private async Task<bool> CanProceedAsync(
         AiRoute route, string systemPrompt, IReadOnlyList<AiChatMessage> messages, CancellationToken ct)

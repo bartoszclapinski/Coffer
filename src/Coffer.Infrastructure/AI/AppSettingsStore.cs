@@ -10,7 +10,8 @@ namespace Coffer.Infrastructure.AI;
 /// <summary>
 /// The owner-settings key/value store backed by the <see cref="AppSetting"/> table in the encrypted DB,
 /// serving both <see cref="IAiSettings"/> and <see cref="IPlanningSettings"/>. Reads fall back to the
-/// per-domain <c>*Defaults</c> until the owner saves a value; writes upsert a single row per key. API
+/// per-domain <c>*Defaults</c> until the owner saves a value; writes upsert a row per key (a route's two
+/// keys in one save). API
 /// keys never pass through here — they live in <c>ISecretStore</c> (hard rule #6/#11).
 /// <para>
 /// Per-role AI routes (Sprint 31) are additive keys, no migration: the pre-31 keys
@@ -49,43 +50,66 @@ public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
     public Task SetMonthlyCapPlnAsync(decimal capPln, CancellationToken ct) =>
         SetValueAsync(MonthlyCapKey, capPln.ToString(CultureInfo.InvariantCulture), ct);
 
-    // A stored provider this build does not know (e.g. "OpenAI", offered before Sprint 31) reads as
-    // Claude: now that the provider routes calls, a retired value must not break the role.
-    public async Task<string> GetProviderAsync(AiRole role, CancellationToken ct)
+    public async Task<AiRoute> GetRouteAsync(AiRole role, CancellationToken ct)
     {
-        var stored = await GetValueAsync(ProviderKey(role), ct).ConfigureAwait(false);
-        return AiDefaults.Providers.FirstOrDefault(p => string.Equals(p, stored?.Trim(), StringComparison.OrdinalIgnoreCase))
-            ?? AiDefaults.ClaudeProvider;
-    }
+        var providerKey = ProviderKey(role);
+        var modelKey = ModelKey(role);
 
-    public Task SetProviderAsync(AiRole role, string provider, CancellationToken ct)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(provider);
-        return SetValueAsync(ProviderKey(role), provider, ct);
-    }
+        // One query in one context: the provider and model always come from the same saved route.
+        await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        var stored = await db.AppSettings
+            .AsNoTracking()
+            .Where(s => s.Key == providerKey || s.Key == modelKey)
+            .ToDictionaryAsync(s => s.Key, s => s.Value, StringComparer.Ordinal, ct)
+            .ConfigureAwait(false);
 
-    // For Claude a stored model that is no longer offered (e.g. the retired "gpt-4o-mini") reads as the
-    // role's default, so a role never sends Claude a model ID it would reject with a 400. Another
-    // provider's models are not a fixed list (Ollama serves whatever the owner pulled), so its stored
-    // model is returned as-is; empty means "not chosen yet" and the route is not ready.
-    public async Task<string> GetModelAsync(AiRole role, CancellationToken ct)
-    {
-        var provider = await GetProviderAsync(role, ct).ConfigureAwait(false);
-        var stored = (await GetValueAsync(ModelKey(role), ct).ConfigureAwait(false))?.Trim();
+        var provider = NormalizeProvider(stored.GetValueOrDefault(providerKey));
+        var model = stored.GetValueOrDefault(modelKey)?.Trim();
 
+        // For Claude a stored model that is no longer offered (e.g. the retired "gpt-4o-mini") reads as
+        // the role's default, so a role never sends Claude a model ID it would reject with a 400.
+        // Another provider's models are not a fixed list (Ollama serves whatever the owner pulled), so
+        // its stored model is returned as-is; empty means "not chosen yet" and the route is not usable.
         if (provider == AiDefaults.ClaudeProvider)
         {
-            return AiDefaults.ClaudeModels.FirstOrDefault(m => string.Equals(m, stored, StringComparison.OrdinalIgnoreCase))
+            model = AiDefaults.ClaudeModels.FirstOrDefault(m => string.Equals(m, model, StringComparison.OrdinalIgnoreCase))
                 ?? AiDefaults.DefaultModel(role);
         }
 
-        return stored ?? string.Empty;
+        return new AiRoute(provider, model ?? string.Empty);
     }
 
-    public Task SetModelAsync(AiRole role, string model, CancellationToken ct)
+    public async Task SetRouteAsync(AiRole role, AiRoute route, CancellationToken ct)
     {
-        ArgumentException.ThrowIfNullOrEmpty(model);
-        return SetValueAsync(ModelKey(role), model, ct);
+        ArgumentNullException.ThrowIfNull(route);
+        ArgumentException.ThrowIfNullOrWhiteSpace(route.Model);
+
+        var provider = AiDefaults.Providers.FirstOrDefault(
+                p => string.Equals(p, route.Provider?.Trim(), StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"'{route.Provider}' is not a known AI provider.", nameof(route));
+
+        // Both keys in one SaveChanges, so a concurrent read never sees half of a route change.
+        await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await UpsertAsync(db, ProviderKey(role), provider, ct).ConfigureAwait(false);
+        await UpsertAsync(db, ModelKey(role), route.Model.Trim(), ct).ConfigureAwait(false);
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+    }
+
+    // Nothing stored, or the retired "OpenAI" (offered before Sprint 31 but never implemented, so every
+    // such call really ran on Claude), reads as Claude. A known provider is returned in its canonical
+    // spelling. Any other value is kept as stored: the router then fails closed with
+    // UnknownAiProviderException instead of quietly sending the prompt to a remote vendor.
+    private static string NormalizeProvider(string? stored)
+    {
+        var trimmed = stored?.Trim();
+        if (string.IsNullOrEmpty(trimmed)
+            || string.Equals(trimmed, AiDefaults.RetiredOpenAiProvider, StringComparison.OrdinalIgnoreCase))
+        {
+            return AiDefaults.ClaudeProvider;
+        }
+
+        return AiDefaults.Providers.FirstOrDefault(p => string.Equals(p, trimmed, StringComparison.OrdinalIgnoreCase))
+            ?? trimmed;
     }
 
     public async Task<bool> GetAiFallbackParsingEnabledAsync(CancellationToken ct)
@@ -146,6 +170,13 @@ public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
     private async Task SetValueAsync(string key, string value, CancellationToken ct)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await UpsertAsync(db, key, value, ct).ConfigureAwait(false);
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+    }
+
+    // Stages an insert or update of one key; the caller saves, so several keys can share one save.
+    private static async Task UpsertAsync(CofferDbContext db, string key, string value, CancellationToken ct)
+    {
         var setting = await db.AppSettings
             .FirstOrDefaultAsync(s => s.Key == key, ct)
             .ConfigureAwait(false);
@@ -158,7 +189,5 @@ public sealed class AppSettingsStore : IAiSettings, IPlanningSettings
         {
             setting.Value = value;
         }
-
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 }

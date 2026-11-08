@@ -25,35 +25,25 @@ internal sealed class FakeAiSettings : IAiSettings
         return Task.CompletedTask;
     }
 
-    public Task<string> GetProviderAsync(AiRole role, CancellationToken ct) =>
-        Task.FromResult(role == AiRole.Categorization ? ActiveProvider : AnalysisProvider);
+    public int SetRouteCalls { get; private set; }
 
-    public Task SetProviderAsync(AiRole role, string provider, CancellationToken ct)
+    public Task<AiRoute> GetRouteAsync(AiRole role, CancellationToken ct) =>
+        Task.FromResult(role == AiRole.Categorization
+            ? new AiRoute(ActiveProvider, CategorizationModel)
+            : new AiRoute(AnalysisProvider, AnalysisModel));
+
+    public Task SetRouteAsync(AiRole role, AiRoute route, CancellationToken ct)
     {
+        SetRouteCalls++;
         if (role == AiRole.Categorization)
         {
-            ActiveProvider = provider;
+            ActiveProvider = route.Provider;
+            CategorizationModel = route.Model;
         }
         else
         {
-            AnalysisProvider = provider;
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public Task<string> GetModelAsync(AiRole role, CancellationToken ct) =>
-        Task.FromResult(role == AiRole.Categorization ? CategorizationModel : AnalysisModel);
-
-    public Task SetModelAsync(AiRole role, string model, CancellationToken ct)
-    {
-        if (role == AiRole.Categorization)
-        {
-            CategorizationModel = model;
-        }
-        else
-        {
-            AnalysisModel = model;
+            AnalysisProvider = route.Provider;
+            AnalysisModel = route.Model;
         }
 
         return Task.CompletedTask;

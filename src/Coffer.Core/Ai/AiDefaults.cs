@@ -16,8 +16,15 @@ public static class AiDefaults
     /// </summary>
     public const string OllamaProvider = "Ollama";
 
-    /// <summary>The provider names a stored route may hold; anything else reads as <see cref="ClaudeProvider"/>.</summary>
+    /// <summary>The provider names a route may be saved with.</summary>
     public static IReadOnlyList<string> Providers { get; } = [ClaudeProvider, OllamaProvider];
+
+    /// <summary>
+    /// The one retired provider name a stored route may still hold (offered in Settings before
+    /// Sprint 31, never implemented); it reads as <see cref="ClaudeProvider"/>, which every pre-31
+    /// call actually used. Any other unknown name is kept and fails closed at the router.
+    /// </summary>
+    public const string RetiredOpenAiProvider = "OpenAI";
 
     /// <summary>Default <see cref="AiRole.Categorization"/> model: cheap batch categorisation (doc 04 / CLAUDE.md cost discipline).</summary>
     public const string CategorizationModel = "claude-haiku-5-5";
