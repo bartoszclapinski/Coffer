@@ -1,7 +1,7 @@
 # Sprint 30 — Real-data readiness (vault integrity, AI privacy, import robustness)
 
 **Phase:** — (hardening before the owner's first real-data import; touches doc 02 encryption/backup, doc 03 parsers, doc 04 AI privacy, doc 08 backup)
-**Status:** Planned
+**Status:** In progress
 **Depends on:** sprint-23/24 (`BackupSnapshotWriter`, `BackupService`, `ArchiveExporter`, `RestoreService`, `BackupRetention`), sprint-8/9 (`PkoHistoriaCsvParser`, `FingerprintBankDetector`, `ImportStatementUseCase`, `TransactionHash`), sprint-10 (`PromptAnonymizer`, `HybridCategorizer`), sprint-12/13/14/16 (chat tools, `AnomalyCommentator`, `AdvisorReportGenerator`, `CashFlowExplainer`), sprint-17 (`AiAssistedParser`), and the pre-sprint security fix that pins SQLCipher as the only SQLite provider and fails closed without it. No EF schema change.
 
 ## Goal
@@ -42,11 +42,11 @@ A readiness audit (2026-11-08, adversarially verified) run at the end of Sprint 
 ## Steps
 
 ### 30-A — vault & backup integrity
-- [ ] 30.1 Snapshots via the SQLite online backup API on keyed connections (temp → move); test with a pooled connection held open during the snapshot; the snapshot opens with the same DEK and is not plaintext.
-- [ ] 30.2 `ArchiveExporter` atomic (`.tmp` → verify entries → move); a failure leaves a previous archive intact; DB content taken from a consistent snapshot.
-- [ ] 30.3 Retention keeps the newest 7 regardless of age; "Back up now" writes a distinct timestamped snapshot; restore listing + retention understand both names.
-- [ ] 30.4 Settings Backup panel: newest-snapshot age + last failure.
-- [ ] 30.5 Data root: `COFFER_DATA_DIR` override, Debug → `Coffer.Dev`, Release → `Coffer`; Serilog under the same root; tests.
+- [x] 30.1 Snapshots via the SQLite online backup API on keyed connections (temp → move); test with a pooled connection held open during the snapshot; the snapshot opens with the same DEK and is not plaintext.
+- [x] 30.2 `ArchiveExporter` atomic (`.tmp` → verify entries → move); a failure leaves a previous archive intact; DB content taken from a consistent snapshot.
+- [x] 30.3 Retention keeps the newest 7 regardless of age; "Back up now" writes a distinct timestamped snapshot; restore listing + retention understand both names.
+- [x] 30.4 Settings Backup panel: newest-snapshot age + last failure.
+- [x] 30.5 Data root: `COFFER_DATA_DIR` override, Debug → `Coffer.Dev`, Release → `Coffer`; Serilog under the same root; tests.
 
 ### 30-B — AI privacy
 - [ ] 30.6 `PromptAnonymizer`: PESEL, phone numbers, PKO labelled sub-fields; owner identity names applied on every AI path (categorizer, chat tool results, anomaly commentator, advisor report, cash-flow explainer, AI fallback).
