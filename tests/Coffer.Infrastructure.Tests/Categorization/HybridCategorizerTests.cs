@@ -2,6 +2,7 @@ using Coffer.Core.Ai;
 using Coffer.Core.Domain;
 using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Categorization;
+using Coffer.Infrastructure.Tests.AI;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -70,6 +71,24 @@ public class HybridCategorizerTests : CategorizationDbTest
         ai.Requests.Should().ContainSingle();
         ai.Requests[0].Prompt.Should().Contain("[ACCOUNT]")
             .And.NotContain("61109010140000071219812874", "account numbers are redacted before leaving the process (hard rule #7)");
+    }
+
+    [Fact]
+    public async Task Categorize_LabelledDescription_PromptIsNarrowedButCacheKeyIsTheFullDescription()
+    {
+        var inne = await SeedCategoryAsync("Inne");
+        var ai = new FakeAiProvider();
+        ai.Enqueue([0]);
+        const string key = "NAZWA ODBIORCY: JAN TESTOWY ADRES ODBIORCY: UL. FIKCYJNA 1 TESTOWO TYTUŁ: CZYNSZ LUTY";
+
+        var result = await Categorizer(ai).CategorizeAsync([key], CancellationToken.None);
+
+        ai.Requests[0].Prompt.Should().Contain("1. \"TYTUŁ: CZYNSZ LUTY\"")
+            .And.NotContain("JAN TESTOWY").And.NotContain("FIKCYJNA");
+        result[key].Should().Be(inne);
+        await using var db = Factory.CreateDbContext();
+        (await db.CategoryCache.SingleAsync()).NormalizedDescription.Should().Be(
+            key, "the cache stays keyed by the full description, so earlier cache entries keep hitting");
     }
 
     [Fact]
@@ -154,7 +173,7 @@ public class HybridCategorizerTests : CategorizationDbTest
             gate ?? new StubBudgetGate(canProceed: true),
             ledger ?? new StubLedger(),
             new AiPricing(),
-            new PromptAnonymizer(),
+            new FixedPromptAnonymizer(),
             new StubSettings(),
             NullLogger<HybridCategorizer>.Instance);
 

@@ -132,24 +132,38 @@ Cost per batch of 50: roughly 800 input + 100 output tokens on Haiku ≈ ~$0.000
 
 ### Anonymization before AI
 
-Even for categorization, sensitive fields are redacted:
+Every AI path (categorization, chat tool results, anomaly commentary, advisor report, cash-flow explainer, AI fallback parser) redacts through one choke point (Sprint 30):
 
 ```csharp
-public class PromptAnonymizer
+// Coffer.Core — the only redaction API. There is no synchronous "Anonymize(string)":
+// opening a session always loads the owner identity names and the known counterparties.
+public interface IPromptAnonymizer
 {
-    public string Anonymize(string description)
-    {
-        var s = description;
-        s = Regex.Replace(s, @"\b\d{20,26}\b", "[ACCOUNT]");        // account numbers
-        s = Regex.Replace(s, @"\b\d{3}-\d{2}-\d{2}-\d{3}\b", "[NIP]");
-        s = Regex.Replace(s, @"\bPL\d{26}\b", "[IBAN]");
-        // Keep merchant names as-is — they're useful and not sensitive
-        return s;
-    }
+    Task<IPromptRedactionSession> BeginSessionAsync(CancellationToken ct);
+}
+
+public interface IPromptRedactionSession
+{
+    bool HasOwnerNames { get; }
+    string Redact(string text);          // descriptions and prompts built from them; one session per AI request
+    string RedactDocument(string text);  // a raw statement (CSV/PDF text) sent whole: the AI fallback parser
+    string Restore(string text);         // [PARTY_n] → name, only for output that stays on the device
 }
 ```
 
-Account numbers are useless to the model anyway (no signal in 26 random digits) and removing them protects user privacy.
+`PromptRedactor` (Infrastructure) applies, in order:
+
+1. **GUIDs are set aside** while the digit patterns run, so an id the model must echo back (an advisor goal id ending in `-a12345678901`) is never mistaken for a PESEL.
+2. **Labelled sub-fields** (`StatementDescriptionFields`). PKO labels (`Nazwa / Adres / Rachunek nadawcy/odbiorcy`, `Numer telefonu`, `Nazwa i nr identyfikatora`, `Numer karty`) and common labels of other banks (`Odbiorca`, `Nadawca`, `Kontrahent`, `Zleceniodawca`, `Beneficjent`, `Dane odbiorcy/nadawcy/kontrahenta`, `Nazwa i adres …`; their value is split into name and address). A counterparty name that is a person's becomes a stable per-request pseudonym (`[PARTY_1]`); addresses, phones, identifiers, accounts and card numbers become `[ADDRESS]`, `[PHONE]`, `[ID]`, `[ACCOUNT]`, `[CARD]`. In a parsed description a value runs to the next known label (a quote or semicolon can be part of it: `P.H.U. "ANEX" ANNA NOWAK`); in a raw document it also ends at its CSV field's closing quote (`""` is an escape) or, outside quotes, at a semicolon. `Tytuł:` and `Lokalizacja:` (with its `Adres/Miasto/Kraj` parts) stay readable; a bare `Adres:` outside a `Lokalizacja:` block is the counterparty's address.
+3. **Free-text addresses.** Outside the card location, street addresses (`ul./al./os./pl.` + name + house number, optional `/flat`, `m. n`, postal code) and postal codes (`87-100`) become `[ADDRESS]`; the city alone is kept.
+4. **Patterns.** IBAN, NIP, 20–26-digit account runs, Polish phone numbers (`+48` / `0048` / `48` + 9 digits, 3-3-3 groups), PESEL (isolated 11 digits, not part of a decimal).
+5. **Names.** Owner identity names → `[OWNER]`, then person counterparty names known from stored descriptions (`StoredCounterpartyNameSource`) or learnt from the text's own labels → `[PARTY_n]`. Diacritic- and case-insensitive (`LUKASZ ZDZBLO` = `Łukasz Źdźbło`), and for two- or three-word names in any word order (`NOWAK ANNA` gets the same pseudonym as `ANNA NOWAK`).
+
+**Person or legal entity** (`CounterpartyNames.IsLegalEntity`). Legal-entity counterparties are kept, because they are the category signal for utilities, telcos, offices and employers, and are public register data: capital companies and foreign corporate forms (`SP. Z O.O.`, `S.A.`, `GMBH`, `B.V.`, …), public bodies and organisations (`URZĄD`, `ZUS`, `SPÓŁDZIELNIA`, `WSPÓLNOTA`, …), shop words (`APTEKA`, `KAWIARNIA`, …), names with digits, domains, single-word brands. When unsure, the answer is "person": any common Polish first name, sole-trader markers (`P.H.U.`, `FIRMA`, `USŁUGI`, …) and partnerships named after persons (`S.C.`, `SP. J.`, `SP. K.`) always count as a person, since those names legally contain one. Word count is not a signal.
+
+Merchant-like content (`BIEDRONKA 1234`, a legal-entity counterparty, the transfer title, city), amounts and dates are kept: they are the signal and not personal. The categorizer additionally sends only the lead, a legal-entity counterparty, the title and the location (`CategorizationPromptInput`); its cache key stays the full normalized description.
+
+**Known limits.** A non-PKO export with no labels at all (the counterparty is just a column or a free-text phrase) is protected only by the patterns, the owner names and the names already learnt from labelled data; a person's surname on its own (`dla p. Nowak`) and a person's name inside a longer sole-trader name are not matched elsewhere in the text. Chat redacts JSON tool results value by value (`PromptJson`), so serializer escapes (`Ł`, `+48`) cannot hide a name or phone, and restores pseudonyms in tool arguments and in the displayed answer; the restored answer is redacted again when it is sent back as history.
 
 ## Chat with data — tool calling
 

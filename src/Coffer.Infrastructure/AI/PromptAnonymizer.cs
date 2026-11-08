@@ -1,68 +1,43 @@
-using System.Text.RegularExpressions;
 using Coffer.Core.Ai;
 
 namespace Coffer.Infrastructure.AI;
 
 /// <summary>
-/// Redacts account numbers, IBANs and NIPs from text before it is sent to an AI
-/// provider (hard rule #7). Merchant names are deliberately preserved — they are the
-/// categorisation signal and are not sensitive. Order matters: IBAN (with its country
-/// prefix) is matched before bare account-number runs so <c>PL61…</c> becomes
-/// <c>[IBAN]</c>, not <c>PL[ACCOUNT]</c>.
+/// Opens <see cref="PromptRedactor"/> sessions with everything they need already loaded: the owner's
+/// identity names from <see cref="IAiSettings"/> and the counterparty names known from imported
+/// statements. Resolving both here, rather than having each AI consumer pass them, is what makes
+/// it impossible for a consumer to forget them (hard rule #7): the session is the only redaction API.
 /// </summary>
-public sealed partial class PromptAnonymizer : IPromptAnonymizer
+public sealed class PromptAnonymizer : IPromptAnonymizer
 {
-    public string Anonymize(string text)
-    {
-        if (string.IsNullOrEmpty(text))
-        {
-            return text;
-        }
+    private static readonly char[] _ownerNameSeparators = [',', ';', '\n', '\r'];
 
-        var result = IbanRegex().Replace(text, "[IBAN]");
-        result = NipRegex().Replace(result, "[NIP]");
-        result = AccountRegex().Replace(result, "[ACCOUNT]");
-        return result;
+    private readonly IAiSettings _settings;
+    private readonly ICounterpartyNameSource _counterparties;
+
+    public PromptAnonymizer(IAiSettings settings, ICounterpartyNameSource counterparties)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(counterparties);
+        _settings = settings;
+        _counterparties = counterparties;
     }
 
-    public string Anonymize(string text, IReadOnlyList<string> ownerNames)
+    public async Task<IPromptRedactionSession> BeginSessionAsync(CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(text))
-        {
-            return text;
-        }
-
-        var result = text;
-        if (ownerNames is { Count: > 0 })
-        {
-            foreach (var name in ownerNames)
-            {
-                var trimmed = name?.Trim();
-                if (string.IsNullOrEmpty(trimmed))
-                {
-                    continue;
-                }
-
-                // Whole-word, case-insensitive so "Jan Kowalski" on the header is redacted
-                // without clipping unrelated substrings. Diacritics count as word characters.
-                var pattern = $@"\b{Regex.Escape(trimmed)}\b";
-                result = Regex.Replace(result, pattern, "[NAME]", RegexOptions.IgnoreCase);
-            }
-        }
-
-        return Anonymize(result);
+        var ownerNames = ParseOwnerNames(await _settings.GetOwnerIdentityNamesAsync(ct).ConfigureAwait(false));
+        var counterpartyNames = await _counterparties.GetKnownCounterpartyNamesAsync(ct).ConfigureAwait(false);
+        return new PromptRedactor(ownerNames, counterpartyNames);
     }
 
-    // Polish IBAN: "PL" + 26 digits, optionally grouped in spaces (as bank exports show it).
-    [GeneratedRegex(@"\bPL[\s]?(?:\d[\s]?){26}", RegexOptions.IgnoreCase)]
-    private static partial Regex IbanRegex();
-
-    // NIP: 10 digits, commonly written 123-45-67-890 or 123-456-78-90.
-    [GeneratedRegex(@"\b\d{3}-\d{2,3}-\d{2,3}-\d{2,3}\b")]
-    private static partial Regex NipRegex();
-
-    // Bare domestic account / long digit runs (20–26 digits), allowing the grouping
-    // spaces PKO uses ("82 1020 5604 0000 0102 8996 3017").
-    [GeneratedRegex(@"\b\d{2}(?:[\s]\d{4}){5,6}\b|\b\d{20,26}\b")]
-    private static partial Regex AccountRegex();
+    /// <summary>
+    /// Splits the owner's raw identity-names setting (several spellings or aliases separated by
+    /// commas, semicolons or new lines) into distinct names.
+    /// </summary>
+    public static IReadOnlyList<string> ParseOwnerNames(string? raw) =>
+        string.IsNullOrWhiteSpace(raw)
+            ? []
+            : raw.Split(_ownerNameSeparators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 }

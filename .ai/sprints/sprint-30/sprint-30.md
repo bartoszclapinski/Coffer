@@ -49,10 +49,10 @@ A readiness audit (2026-11-08, adversarially verified) run at the end of Sprint 
 - [x] 30.5 Data root: `COFFER_DATA_DIR` override, Debug → `Coffer.Dev`, Release → `Coffer`; Serilog under the same root; tests.
 
 ### 30-B — AI privacy
-- [ ] 30.6 `PromptAnonymizer`: PESEL, phone numbers, PKO labelled sub-fields; owner identity names applied on every AI path (categorizer, chat tool results, anomaly commentator, advisor report, cash-flow explainer, AI fallback).
-- [ ] 30.7 Categorizer prompt input narrowed to merchant-like fields.
-- [ ] 30.8 Remove counterparty name and statement file name from log events.
-- [ ] 30.9 Tests: synthetic PKO transfer / BLIK-to-phone / tax-transfer (PESEL) rows produce prompts with no name, address, phone or PESEL, per AI consumer.
+- [x] 30.6 `PromptAnonymizer`: PESEL, phone numbers, PKO labelled sub-fields; owner identity names applied on every AI path (categorizer, chat tool results, anomaly commentator, advisor report, cash-flow explainer, AI fallback).
+- [x] 30.7 Categorizer prompt input narrowed to merchant-like fields.
+- [x] 30.8 Remove counterparty name and statement file name from log events.
+- [x] 30.9 Tests: synthetic PKO transfer / BLIK-to-phone / tax-transfer (PESEL) rows produce prompts with no name, address, phone or PESEL, per AI consumer.
 
 ### 30-C — import robustness
 - [x] 30.10 Occurrence-indexed hash for identical rows within one file (first occurrence unchanged); summary reports them.

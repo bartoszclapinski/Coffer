@@ -3,6 +3,7 @@ using Coffer.Core.Ai;
 using Coffer.Core.Domain;
 using Coffer.Core.Goals;
 using Coffer.Infrastructure.AI;
+using Coffer.Infrastructure.Tests.AI;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -58,7 +59,7 @@ public class AdvisorReportGeneratorTests
     public async Task Generate_AnonymisesPromptBeforeSending()
     {
         var provider = new ScriptedProvider("""{"perGoalRisks":{},"suggestions":[]}""");
-        var generator = Generator(provider, anonymizer: new MarkingAnonymizer());
+        var generator = Generator(provider, anonymizer: new MarkingPromptAnonymizer());
 
         await generator.GenerateAsync([Result()], Ctx(), [Spend()], _day, CancellationToken.None);
 
@@ -141,6 +142,47 @@ public class AdvisorReportGeneratorTests
     }
 
     [Fact]
+    public async Task Generate_DigitHeavyGoalId_SurvivesRedactionAndKeepsItsRisks()
+    {
+        // The last GUID segment holds 11 consecutive digits, which on its own looks like a PESEL.
+        var goalId = Guid.Parse("3f2a9c1e-7b4d-4e2a-9c3b-a12345678901");
+        var provider = new ScriptedProvider(request =>
+        {
+            var echoed = System.Text.RegularExpressions.Regex.Match(request.Prompt, @"- goal (\S+):").Groups[1].Value;
+            return $$"""{"perGoalRisks":{"{{echoed}}":["Napięty termin."]},"suggestions":[]}""";
+        });
+        var generator = Generator(provider, anonymizer: new FixedPromptAnonymizer(["Jan Testowy"]));
+
+        var report = await generator.GenerateAsync(
+            [Result() with { GoalId = goalId }], Ctx(), [Spend()], _day, CancellationToken.None);
+
+        provider.Requests.Single().Prompt.Should().Contain(goalId.ToString()).And.NotContain("[PESEL]");
+        report.Entries.Should().ContainSingle(e => e.Kind == AdvisorEntryKind.Risk && e.GoalId == goalId);
+    }
+
+    [Fact]
+    public async Task Generate_PlaceholdersEchoedByTheModel_AreRestoredInTheStoredReport()
+    {
+        var json = string.Create(CultureInfo.InvariantCulture, $$"""
+            {
+              "perGoalRisks": { "{{_goalId}}": ["Wydatki na [PARTY_1] rosną."] },
+              "suggestions": [
+                { "title": "Mniej dla [PARTY_1]", "savings": 50, "description": "Ogranicz [PARTY_1].", "categoryAffected": "Prezenty dla [PARTY_1]" }
+              ]
+            }
+            """);
+        var generator = Generator(new ScriptedProvider(json), anonymizer: new RestoringPromptAnonymizer());
+
+        var report = await generator.GenerateAsync([Result()], Ctx(), [Spend()], _day, CancellationToken.None);
+
+        report.Entries.Single(e => e.Kind == AdvisorEntryKind.Risk).Description.Should().Be("Wydatki na Jan Testowy rosną.");
+        var suggestion = report.Entries.Single(e => e.Kind == AdvisorEntryKind.Suggestion);
+        suggestion.Title.Should().Be("Mniej dla Jan Testowy");
+        suggestion.Description.Should().Be("Ogranicz Jan Testowy.");
+        suggestion.CategoryAffected.Should().Be("Prezenty dla Jan Testowy");
+    }
+
+    [Fact]
     public async Task Generate_NoResults_ReturnsEmptyEngineReport_WithoutCallingProvider()
     {
         var provider = new ScriptedProvider("""{"perGoalRisks":{},"suggestions":[]}""");
@@ -163,7 +205,7 @@ public class AdvisorReportGeneratorTests
             gate ?? new StubBudgetGate(canProceed: true),
             ledger ?? new RecordingLedger(),
             new StubPricing(),
-            anonymizer ?? new PassthroughAnonymizer(),
+            anonymizer ?? new PassthroughPromptAnonymizer(),
             NullLogger<AdvisorReportGenerator>.Instance);
 
     private static GoalFeasibilityResult Result() => new()
@@ -194,14 +236,34 @@ public class AdvisorReportGeneratorTests
         Today = _day,
     };
 
+    private sealed class RestoringPromptAnonymizer : IPromptAnonymizer
+    {
+        public Task<IPromptRedactionSession> BeginSessionAsync(CancellationToken ct) =>
+            Task.FromResult<IPromptRedactionSession>(new Session());
+
+        private sealed class Session : IPromptRedactionSession
+        {
+            public bool HasOwnerNames => true;
+
+            public string Redact(string text) => text;
+
+            public string RedactDocument(string text) => text;
+
+            public string Restore(string text) => text.Replace("[PARTY_1]", "Jan Testowy", StringComparison.Ordinal);
+        }
+    }
+
     private sealed class ScriptedProvider : IAiProvider
     {
         private readonly string? _json;
         private readonly bool _throws;
+        private readonly Func<AiRequest, string>? _respond;
 
         public ScriptedProvider(string json) => _json = json;
 
         public ScriptedProvider(bool throws) => _throws = throws;
+
+        public ScriptedProvider(Func<AiRequest, string> respond) => _respond = respond;
 
         public string ProviderName => "Scripted";
 
@@ -216,7 +278,7 @@ public class AdvisorReportGeneratorTests
             }
 
             var value = System.Text.Json.JsonSerializer.Deserialize<TResult>(
-                _json!, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+                _respond?.Invoke(request) ?? _json!, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
             var usage = new AiUsage(ProviderName, request.Model, 100, 20);
             return Task.FromResult(new AiResult<TResult>(value, usage));
         }
@@ -260,15 +322,5 @@ public class AdvisorReportGeneratorTests
     private sealed class StubPricing : IAiPricing
     {
         public AiCost Estimate(string model, int inputTokens, int outputTokens) => new(0.01m, 0.04m);
-    }
-
-    private sealed class PassthroughAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => text;
-    }
-
-    private sealed class MarkingAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => "ANON:" + text;
     }
 }

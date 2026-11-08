@@ -471,7 +471,8 @@ public sealed partial class CashFlowPlanningViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to confirm flow candidate {Name}", row.Name);
+            // The candidate name is a counterparty (often a person) — keep it out of the plaintext log.
+            _logger.LogError(ex, "Failed to confirm a detected flow candidate");
             row.IsBusy = false;
             ErrorMessage = _localizer["CashFlow.Error.Confirm"];
         }

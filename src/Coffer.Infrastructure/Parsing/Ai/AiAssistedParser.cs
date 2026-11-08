@@ -45,7 +45,8 @@ public sealed class AiAssistedParser : IStatementParser
 
     private const string SystemPrompt =
         "You extract transactions from a Polish bank statement. The user message is the statement text "
-        + "(account/IBAN/NIP and the holder's name are already redacted). Return ONLY JSON matching this "
+        + "(personal data is already replaced by bracketed placeholders such as [PARTY_1]; keep them verbatim). "
+        + "Return ONLY JSON matching this "
         + "shape: {\"currency\":\"PLN\",\"periodFrom\":\"YYYY-MM-DD\",\"periodTo\":\"YYYY-MM-DD\","
         + "\"transactions\":[{\"date\":\"YYYY-MM-DD\",\"bookingDate\":\"YYYY-MM-DD or null\","
         + "\"amount\":-12.34,\"currency\":\"PLN\",\"description\":\"...\",\"merchant\":\"... or null\"}]}. "
@@ -119,13 +120,13 @@ public sealed class AiAssistedParser : IStatementParser
             warnings.Add($"Statement text exceeded {MaxPromptChars} characters and was truncated before sending to the AI.");
         }
 
-        var ownerNames = ParseOwnerNames(await _settings.GetOwnerIdentityNamesAsync(ct).ConfigureAwait(false));
-        if (ownerNames.Count == 0)
+        var redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
+        if (!redaction.HasOwnerNames)
         {
             warnings.Add(OwnerNameUnsetWarning);
         }
 
-        var prompt = _anonymizer.Anonymize(text, ownerNames);
+        var prompt = redaction.RedactDocument(text);
         var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
@@ -148,7 +149,7 @@ public sealed class AiAssistedParser : IStatementParser
         var response = await _provider.CompleteJsonAsync<AiStatementDto>(request, ct).ConfigureAwait(false);
         await _ledger.RecordAsync(response.Usage, AiPurpose.ParserFallback, ct).ConfigureAwait(false);
 
-        return MapResult(response.Value, warnings);
+        return MapResult(response.Value, warnings, redaction);
     }
 
     private async Task<bool> HasApiKeyAsync(CancellationToken ct)
@@ -188,7 +189,7 @@ public sealed class AiAssistedParser : IStatementParser
     // UTF-8 would garble diacritics, so an owner name like "Łucja" would slip past redaction.
     private static string ReadCsvText(StatementInput input) => CsvTextDecoder.ReadAllText(input.Content);
 
-    private ParseResult MapResult(AiStatementDto? dto, List<string> warnings)
+    private static ParseResult MapResult(AiStatementDto? dto, List<string> warnings, IPromptRedactionSession redaction)
     {
         var fallbackCurrency = NormalizeCurrency(dto?.Currency) ?? "PLN";
 
@@ -204,8 +205,9 @@ public sealed class AiAssistedParser : IStatementParser
 
             var bookingDate = TryParseDate(row.BookingDate, out var booking) ? booking : (DateOnly?)null;
             var currency = NormalizeCurrency(row.Currency) ?? fallbackCurrency;
-            var description = row.Description?.Trim() ?? string.Empty;
-            var merchant = string.IsNullOrWhiteSpace(row.Merchant) ? null : row.Merchant.Trim();
+            // The model copied the redacted text: put the counterparty names back for local storage.
+            var description = redaction.Restore(row.Description?.Trim() ?? string.Empty);
+            var merchant = string.IsNullOrWhiteSpace(row.Merchant) ? null : redaction.Restore(row.Merchant.Trim());
 
             transactions.Add(new ParsedTransaction(date, bookingDate, amount, currency, description, merchant));
         }
@@ -250,13 +252,6 @@ public sealed class AiAssistedParser : IStatementParser
         var trimmed = raw?.Trim().ToUpperInvariant();
         return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
-
-    private static IReadOnlyList<string> ParseOwnerNames(string? raw) =>
-        string.IsNullOrWhiteSpace(raw)
-            ? []
-            : raw.Split([',', ';', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
 
     private sealed record AiStatementDto(
         string? Currency,
