@@ -152,6 +152,8 @@ secrets.encrypted          — managed by IKeyVault, in .gitignore
 
 ## NuGet packages — exact list to start
 
+> This was the starting shopping list, kept for orientation; the `.csproj` files are the source of truth. Every real `PackageReference` uses an **exact** version (no `*` ranges) so each restore resolves the same graph — floating ranges are how a fresh restore once swapped SQLCipher out for plain SQLite (see 02-database-and-encryption.md). Some entries below (MAUI, Google Drive, OpenAI, FluentValidation, Bogus) are not referenced yet.
+
 ```
 <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.*" />
 <!-- ".Sqlite.Core" (NOT ".Sqlite"): the non-Core package drags in bundle_e_sqlite3, whose
