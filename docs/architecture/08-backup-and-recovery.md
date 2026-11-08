@@ -16,12 +16,14 @@ Without losing financial history.
 
 ### Layer 1 — daily local snapshot
 
-A hosted background service makes a copy of the encrypted database file once per day.
+A hosted background service makes a snapshot of the encrypted database once per day.
 
-- **Location:** `%AppData%\Coffer\backups\` (desktop), `FileSystem.AppDataDirectory/backups/` (mobile, though mobile rarely originates new data)
-- **Filename:** `coffer-{YYYY-MM-DD}.db`
-- **Retention:** 30 days, rolling. Older files auto-deleted at the start of each new daily run.
+- **Location:** `{data root}\backups\` (desktop), `FileSystem.AppDataDirectory/backups/` (mobile, though mobile rarely originates new data). The desktop data root is `COFFER_DATA_DIR` if set, else `%LocalAppData%\Coffer.Dev` for a Debug build and `%LocalAppData%\Coffer` for a Release build (Sprint 30) — logs live under the same root.
+- **Filename:** `coffer-{YYYY-MM-DD}.db`; "Back up now" writes a distinct `coffer-{YYYY-MM-DD}-manual-{HHMMSS}.db` and never overwrites the daily one. Both kinds are listed for restore.
+- **How:** SQLite's online backup API on keyed, non-pooled connections — source and destination keyed with the same DEK — written to `.tmp` and moved into place. The snapshot is one consistent, encrypted `.db` (WAL frames included, no side-files) that does not conflict with the app's open connections. Only when no DEK is held (the pre-login restore swap; a snapshot attempted while locked) is the encrypted file byte-copied instead, with a share mode that tolerates other open handles.
+- **Retention:** the newest 7 snapshots are always kept; beyond those, daily and manual snapshots older than 30 days are deleted after each run.
 - **Trigger:** runs ~5 minutes after app startup if no snapshot exists for today
+- **Failures:** a failed attempt is recorded (`backups/last-failure.json`, timestamp + exception type) and shown in Settings next to the newest snapshot's age; the next successful snapshot clears it.
 - **Cost:** ~10 MB per snapshot × 30 = 300 MB. Negligible.
 
 ### Layer 2 — monthly backup to Google Drive
@@ -44,6 +46,8 @@ A button in Settings labeled "Export full archive". Produces a `.zip` containing
 - Versions: app version, schema version, schema info history
 
 User decides where it goes — saved as `Coffer-archive-{YYYY-MM-DD}.zip`. They might keep it on a USB drive in a safe.
+
+The database entry comes from a consistent online-backup snapshot (same DEK, single file). The zip is written atomically: built as `{target}.tmp`, re-opened to verify `coffer.db`, `dek.encrypted` and `manifest.json` are present and non-empty, then moved over the target — a failed export leaves an earlier archive at that path untouched (Sprint 30).
 
 ## Pre-migration backup — separate, mandatory
 

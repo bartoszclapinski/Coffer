@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Coffer.Application.ViewModels.Restore;
 
 /// <summary>
-/// View-model behind the restore-from-snapshot dialog (Sprint 24). Lists the available local daily
+/// View-model behind the restore-from-snapshot dialog (Sprint 24). Lists the available local daily and manual
 /// snapshots and stages the owner's choice through <see cref="IRestoreService"/>; the actual swap happens
 /// at the next startup, so this VM only records the request. A snapshot is the same vault (same master
 /// password), so there is no password field. Raises <see cref="CloseRequested"/> once the owner stages a
@@ -71,8 +71,9 @@ public sealed partial class RestoreViewModel : ObservableObject
             foreach (var snapshot in snapshots)
             {
                 Snapshots.Add(new SnapshotRowViewModel(
+                    snapshot.FileName,
                     snapshot.Date,
-                    snapshot.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    FormatWhen(snapshot),
                     FormatSize(snapshot.SizeBytes)));
             }
 
@@ -103,14 +104,14 @@ public sealed partial class RestoreViewModel : ObservableObject
         StatusMessage = "";
         try
         {
-            await _restoreService.StageRestoreAsync(selected.Date, CancellationToken.None).ConfigureAwait(true);
+            await _restoreService.StageRestoreAsync(selected.FileName, CancellationToken.None).ConfigureAwait(true);
             Staged = true;
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
             // A snapshot could vanish between listing and staging; keep the dialog open so the owner sees it.
-            _logger.LogError(ex, "Failed to stage restore from snapshot {Date}", selected.Date);
+            _logger.LogError(ex, "Failed to stage restore from snapshot {File}", selected.FileName);
             StatusMessage = _localizer["Restore.Status.StageFailed"];
         }
         finally
@@ -121,6 +122,18 @@ public sealed partial class RestoreViewModel : ObservableObject
 
     [RelayCommand]
     private void Cancel() => CloseRequested?.Invoke(this, EventArgs.Empty);
+
+    private string FormatWhen(SnapshotInfo snapshot)
+    {
+        var date = snapshot.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        if (snapshot.Kind != SnapshotKind.Manual)
+        {
+            return date;
+        }
+
+        var time = (snapshot.Time ?? TimeOnly.MinValue).ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+        return _localizer.Format("Restore.Row.Manual", date, time);
+    }
 
     private static string FormatSize(long bytes)
     {
@@ -139,5 +152,8 @@ public sealed partial class RestoreViewModel : ObservableObject
     }
 }
 
-/// <summary>One selectable snapshot row: its date (for staging) plus display-ready date and size text.</summary>
-public sealed record SnapshotRowViewModel(DateOnly Date, string DisplayDate, string DisplaySize);
+/// <summary>
+/// One selectable snapshot row: its file name (what gets staged — a day can hold a daily and several manual
+/// snapshots), its date, and display-ready when/size text.
+/// </summary>
+public sealed record SnapshotRowViewModel(string FileName, DateOnly Date, string DisplayDate, string DisplaySize);

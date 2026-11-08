@@ -1237,7 +1237,7 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
     <value>Kopie zapasowe i odzyskiwanie</value>
   </data>
   <data name="Settings.Backup.Hint" xml:space="preserve">
-    <value>Automatyczne dzienne lokalne kopie zaszyfrowanej bazy, przechowywane przez 30 dni.</value>
+    <value>Automatyczne dzienne lokalne kopie zaszyfrowanej bazy, przechowywane przez 30 dni (7 najnowszych jest zawsze zachowywanych).</value>
   </data>
   <data name="Settings.Backup.LastSnapshot" xml:space="preserve">
     <value>Ostatnia kopia</value>
@@ -1247,6 +1247,24 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   </data>
   <data name="Settings.Backup.Never" xml:space="preserve">
     <value>Brak</value>
+  </data>
+  <data name="Settings.Backup.Age.JustNow" xml:space="preserve">
+    <value>przed chwilą</value>
+  </data>
+  <data name="Settings.Backup.Age.Minutes" xml:space="preserve">
+    <value>{0} min temu</value>
+  </data>
+  <data name="Settings.Backup.Age.Hours" xml:space="preserve">
+    <value>{0} godz. temu</value>
+  </data>
+  <data name="Settings.Backup.Age.OneDay" xml:space="preserve">
+    <value>1 dzień temu</value>
+  </data>
+  <data name="Settings.Backup.Age.Days" xml:space="preserve">
+    <value>{0} dni temu</value>
+  </data>
+  <data name="Settings.Backup.LastFailure" xml:space="preserve">
+    <value>Ostatnia próba utworzenia kopii nie powiodła się ({0}). Szczegóły znajdziesz w logu.</value>
   </data>
   <data name="Settings.Backup.Now" xml:space="preserve">
     <value>Utwórz kopię teraz</value>
@@ -1289,6 +1307,9 @@ Aby utworzyć nowy sejf, usuń istniejące pliki i uruchom aplikację ponownie.<
   </data>
   <data name="Restore.Empty" xml:space="preserve">
     <value>Brak dostępnych snapshotów.</value>
+  </data>
+  <data name="Restore.Row.Manual" xml:space="preserve">
+    <value>{0} {1} (kopia ręczna)</value>
   </data>
   <data name="Restore.Restore" xml:space="preserve">
     <value>Przywróć</value>

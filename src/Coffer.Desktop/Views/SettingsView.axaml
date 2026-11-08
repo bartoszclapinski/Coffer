@@ -232,12 +232,30 @@
                         <StackPanel Grid.Column="0" Spacing="2">
                             <TextBlock Text="{l:Localize Settings.Backup.LastSnapshot}" Classes="muted" />
                             <TextBlock Text="{Binding LastDailySnapshotText}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Coffer.Tx}" />
+                            <TextBlock Text="{Binding NewestSnapshotAgeText}"
+                                       Classes="muted"
+                                       IsVisible="{Binding !IsBackupStale}" />
+                            <TextBlock Text="{Binding NewestSnapshotAgeText}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource Coffer.Neg}"
+                                       IsVisible="{Binding IsBackupStale}" />
                         </StackPanel>
                         <StackPanel Grid.Column="1" Spacing="2">
                             <TextBlock Text="{l:Localize Settings.Backup.Count}" Classes="muted" />
                             <TextBlock Text="{Binding DailyBackupCountText}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Coffer.Tx}" />
                         </StackPanel>
                     </Grid>
+
+                    <Border Background="{DynamicResource Coffer.NegTint}"
+                            BorderBrush="{DynamicResource Coffer.Neg}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            IsVisible="{Binding HasBackupFailure}">
+                        <TextBlock Text="{Binding LastBackupFailureText}"
+                                   Foreground="{DynamicResource Coffer.Neg}"
+                                   TextWrapping="Wrap" />
+                    </Border>
 
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Content="{l:Localize Settings.Backup.Now}"

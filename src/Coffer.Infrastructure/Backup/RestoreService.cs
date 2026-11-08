@@ -8,18 +8,24 @@ using Microsoft.Extensions.Logging;
 namespace Coffer.Infrastructure.Backup;
 
 /// <summary>
-/// Restores the encrypted database from a local daily snapshot (doc 08, "Restore flow"). Because a snapshot
-/// is the same vault, this is a plain file swap of already-encrypted bytes — no crypto. A restore is staged
-/// from the running app (<see cref="StageRestoreAsync"/> writes <c>restore-pending.json</c>) and applied at
-/// the next startup (<see cref="ApplyPendingRestoreAsync"/>), before the database is opened, so the swap runs
-/// against a closed file. The previous database is copied to <c>backups/pre-restore/</c> first so a restore
-/// of the wrong snapshot is reversible. File I/O behind <see cref="IVaultPaths"/>; no schema, no network.
+/// Restores the encrypted database from a local snapshot — daily or manual (doc 08, "Restore flow"). Because a
+/// snapshot is the same vault, this is a plain file swap of already-encrypted bytes — no crypto. A restore is
+/// staged from the running app (<see cref="StageRestoreAsync"/> writes <c>restore-pending.json</c>) and applied
+/// at the next startup (<see cref="ApplyPendingRestoreAsync"/>), before the database is opened, so the swap
+/// runs against a closed file. The previous database is copied to <c>backups/pre-restore/</c> first so a
+/// restore of the wrong snapshot is reversible. File I/O behind <see cref="IVaultPaths"/>; no schema, no network.
 /// </summary>
+/// <remarks>
+/// Apply runs before login, so no DEK is held and both the safety copy and the swap use
+/// <see cref="BackupSnapshotWriter"/>'s byte-copy path (temp file then move). Snapshots written by the online
+/// backup are a single <c>.db</c> with no <c>-wal</c>/<c>-shm</c>; the swap drops any live side-file the
+/// snapshot lacks, so a stale <c>-wal</c> of the replaced database is never replayed over the restored one.
+/// </remarks>
 public sealed class RestoreService : IRestoreService
 {
     private const string BackupFolderName = "backups";
     private const string PreRestoreFolderName = "pre-restore";
-    private const string DailyPattern = "coffer-*.db";
+    private const string SnapshotPattern = "coffer-*.db";
     private const string MarkerFileName = "restore-pending.json";
     private const int PreRestoreRetentionDays = 90;
 
@@ -44,38 +50,49 @@ public sealed class RestoreService : IRestoreService
 
     public Task<IReadOnlyList<SnapshotInfo>> ListSnapshotsAsync(CancellationToken ct)
     {
-        var snapshots = new List<SnapshotInfo>();
+        var snapshots = new List<(SnapshotInfo Info, DateTime WrittenAtUtc)>();
         if (Directory.Exists(BackupsDir))
         {
-            foreach (var path in Directory.EnumerateFiles(BackupsDir, DailyPattern))
+            foreach (var path in Directory.EnumerateFiles(BackupsDir, SnapshotPattern))
             {
                 var name = Path.GetFileName(path);
-                if (BackupRetention.ParseDailyDate(name) is { } date)
+                if (BackupRetention.ParseSnapshot(name) is { } parsed)
                 {
-                    snapshots.Add(new SnapshotInfo(date, name, new FileInfo(path).Length));
+                    var file = new FileInfo(path);
+                    snapshots.Add((
+                        new SnapshotInfo(parsed.Date, name, file.Length, parsed.Kind, parsed.Time),
+                        file.LastWriteTimeUtc));
                 }
             }
         }
 
-        IReadOnlyList<SnapshotInfo> ordered = snapshots.OrderByDescending(s => s.Date).ToList();
+        // Newest day first; within a day the most recently written first (a daily name carries no time).
+        IReadOnlyList<SnapshotInfo> ordered = snapshots
+            .OrderByDescending(s => s.Info.Date)
+            .ThenByDescending(s => s.WrittenAtUtc)
+            .Select(s => s.Info)
+            .ToList();
         return Task.FromResult(ordered);
     }
 
-    public async Task<PendingRestore> StageRestoreAsync(DateOnly snapshotDate, CancellationToken ct)
+    public async Task<PendingRestore> StageRestoreAsync(string snapshotFileName, CancellationToken ct)
     {
-        var fileName = SnapshotFileName(snapshotDate);
-        var snapshotPath = Path.Combine(BackupsDir, fileName);
-        if (!File.Exists(snapshotPath))
+        ArgumentException.ThrowIfNullOrWhiteSpace(snapshotFileName);
+        if (ParseSnapshotFileName(snapshotFileName) is not { } parsed)
         {
-            throw new FileNotFoundException(
-                $"No snapshot exists for {snapshotDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}.",
-                snapshotPath);
+            throw new ArgumentException("Not a snapshot file name.", nameof(snapshotFileName));
         }
 
-        var pending = new PendingRestore(snapshotDate, fileName, DateTime.UtcNow);
+        var snapshotPath = Path.Combine(BackupsDir, snapshotFileName);
+        if (!File.Exists(snapshotPath))
+        {
+            throw new FileNotFoundException($"No snapshot named {snapshotFileName} exists.", snapshotPath);
+        }
+
+        var pending = new PendingRestore(parsed.Date, snapshotFileName, DateTime.UtcNow);
         await WriteMarkerAsync(pending, ct).ConfigureAwait(false);
         _logger.LogInformation(
-            "Staged restore from snapshot {Date}; it will be applied on the next startup", snapshotDate);
+            "Staged restore from snapshot {File}; it will be applied on the next startup", snapshotFileName);
         return pending;
     }
 
@@ -112,6 +129,14 @@ public sealed class RestoreService : IRestoreService
             return new RestoreResult(false, null, null);
         }
 
+        if (ParseSnapshotFileName(pending.SnapshotFileName) is null)
+        {
+            // A hand-edited or corrupted marker must never point the swap at an arbitrary file. Leave the marker
+            // so the failure is visible at startup and the owner can cancel it.
+            _logger.LogError("Restore marker names an invalid snapshot; leaving the marker for the owner to cancel");
+            throw new InvalidDataException("The restore marker does not name a valid snapshot.");
+        }
+
         var snapshotPath = Path.Combine(BackupsDir, pending.SnapshotFileName);
         if (!File.Exists(snapshotPath))
         {
@@ -135,10 +160,11 @@ public sealed class RestoreService : IRestoreService
         }
 
         // Restore the snapshot's exact on-disk set: drop any live side-file first so a stale -wal/-shm from
-        // the replaced database cannot corrupt the restored one, then copy the snapshot over.
+        // the replaced database cannot corrupt the restored one (an online-backup snapshot has none), then
+        // copy the snapshot over via a temp file. No DEK exists before login, hence the byte-copy path.
         DeleteQuietly(dbFile + "-wal");
         DeleteQuietly(dbFile + "-shm");
-        await BackupSnapshotWriter.CopyDatabaseAsync(snapshotPath, dbFile, ct).ConfigureAwait(false);
+        await BackupSnapshotWriter.WriteSnapshotAsync(snapshotPath, dbFile, dek: null, ct).ConfigureAwait(false);
 
         // Only now, with the database in place, clear the marker — an interrupted apply simply re-runs.
         DeleteQuietly(MarkerPath);
@@ -154,7 +180,7 @@ public sealed class RestoreService : IRestoreService
         Directory.CreateDirectory(PreRestoreDir);
         var stamp = DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
         var destination = Path.Combine(PreRestoreDir, $"coffer-{stamp}.db");
-        await BackupSnapshotWriter.CopyDatabaseAsync(dbFile, destination, ct).ConfigureAwait(false);
+        await BackupSnapshotWriter.WriteSnapshotAsync(dbFile, destination, dek: null, ct).ConfigureAwait(false);
         _logger.LogInformation("Pre-restore safety copy written to {Path}", destination);
         return destination;
     }
@@ -167,7 +193,7 @@ public sealed class RestoreService : IRestoreService
         }
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var names = Directory.EnumerateFiles(PreRestoreDir, DailyPattern).Select(Path.GetFileName).OfType<string>();
+        var names = Directory.EnumerateFiles(PreRestoreDir, SnapshotPattern).Select(Path.GetFileName).OfType<string>();
         foreach (var name in BackupRetention.SelectExpired(
             names, today, PreRestoreRetentionDays, BackupRetention.ParsePreMigrationDate))
         {
@@ -186,8 +212,9 @@ public sealed class RestoreService : IRestoreService
         File.Move(tmp, MarkerPath, overwrite: true);
     }
 
-    private static string SnapshotFileName(DateOnly date) =>
-        $"coffer-{date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}.db";
+    // A bare file name (no directory part) that parses as a daily or manual snapshot name.
+    private static SnapshotName? ParseSnapshotFileName(string fileName) =>
+        Path.GetFileName(fileName) == fileName ? BackupRetention.ParseSnapshot(fileName) : null;
 
     private void DeleteQuietly(string path)
     {

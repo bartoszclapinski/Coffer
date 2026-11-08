@@ -1,3 +1,4 @@
+using System.Globalization;
 using Coffer.Application.Tests.Fakes;
 using Coffer.Application.ViewModels.Settings;
 using Coffer.Core.Ai;
@@ -325,6 +326,70 @@ public class SettingsViewModelTests
 
         vm.LastDailySnapshotText.Should().Be("2026-07-03");
         vm.DailyBackupCountText.Should().Be("4");
+        vm.HasBackupFailure.Should().BeFalse();
+        vm.LastBackupFailureText.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Load_WithARecentSnapshot_ShowsItsAgeAndIsNotStale()
+    {
+        var newest = DateTime.UtcNow.AddHours(-3).AddMinutes(-5);
+        var backup = new FakeBackupService { Status = new(new DateOnly(2026, 7, 3), 2, null, newest) };
+        var vm = CreateWithBackup(backup, new FakeArchiveExporter(), new FakeFilePicker());
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.NewestSnapshotAgeText.Should().Be("Settings.Backup.Age.Hours");
+        vm.IsBackupStale.Should().BeFalse();
+        vm.LastDailySnapshotText.Should().Be(newest.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture));
+    }
+
+    [Fact]
+    public async Task Load_WithAnOldSnapshot_FlagsItAsStale()
+    {
+        var backup = new FakeBackupService
+        {
+            Status = new(new DateOnly(2026, 7, 3), 2, null, DateTime.UtcNow.AddDays(-5)),
+        };
+        var vm = CreateWithBackup(backup, new FakeArchiveExporter(), new FakeFilePicker());
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.NewestSnapshotAgeText.Should().Be("Settings.Backup.Age.Days");
+        vm.IsBackupStale.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Load_WithARecordedFailure_ShowsIt()
+    {
+        var backup = new FakeBackupService
+        {
+            Status = new(null, 0, null, null, new DateTime(2026, 7, 3, 8, 0, 0, DateTimeKind.Utc)),
+        };
+        var vm = CreateWithBackup(backup, new FakeArchiveExporter(), new FakeFilePicker());
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.HasBackupFailure.Should().BeTrue();
+        vm.LastBackupFailureText.Should().Be("Settings.Backup.LastFailure");
+        vm.LastDailySnapshotText.Should().Be("Settings.Backup.Never");
+        vm.NewestSnapshotAgeText.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task BackupNow_WhenItFails_ShowsTheFailureInTheBackupPanel()
+    {
+        var backup = new FakeBackupService
+        {
+            NowThrow = new IOException("disk"),
+            StatusAfterFailure = new(null, 0, null, null, DateTime.UtcNow),
+        };
+        var vm = CreateWithBackup(backup, new FakeArchiveExporter(), new FakeFilePicker());
+
+        await vm.BackupNowCommand.ExecuteAsync(null);
+
+        vm.StatusMessage.Should().Be("Settings.Backup.Status.Failed");
+        vm.HasBackupFailure.Should().BeTrue();
     }
 
     [Fact]

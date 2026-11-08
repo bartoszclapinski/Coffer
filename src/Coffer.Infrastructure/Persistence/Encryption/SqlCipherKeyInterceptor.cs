@@ -54,8 +54,23 @@ public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposab
     {
         ArgumentNullException.ThrowIfNull(connection);
 
+        KeyConnection(connection, _dek ?? throw new ObjectDisposedException(nameof(SqlCipherKeyInterceptor)));
+
+        base.ConnectionOpened(connection, eventData);
+    }
+
+    /// <summary>
+    /// Keys an already-open connection with <paramref name="dek"/> and fails closed exactly like the
+    /// interceptor does. Used by code paths that open their own raw connections outside EF — the backup
+    /// snapshot writer (online backup API) — so they can never read or write the vault in plaintext.
+    /// </summary>
+    internal static void KeyConnection(DbConnection connection, byte[] dek)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(dek);
+
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = BuildPragmaKeyCommand();
+        cmd.CommandText = BuildPragmaKeyCommand(dek);
         cmd.ExecuteNonQuery();
         cmd.CommandText = string.Empty;
 
@@ -71,8 +86,6 @@ public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposab
             connection.Close();
             throw;
         }
-
-        base.ConnectionOpened(connection, eventData);
     }
 
     public override async Task ConnectionOpenedAsync(
@@ -127,10 +140,11 @@ public sealed class SqlCipherKeyInterceptor : DbConnectionInterceptor, IDisposab
         }
     }
 
-    private string BuildPragmaKeyCommand()
-    {
-        var dek = _dek ?? throw new ObjectDisposedException(nameof(SqlCipherKeyInterceptor));
+    private string BuildPragmaKeyCommand() =>
+        BuildPragmaKeyCommand(_dek ?? throw new ObjectDisposedException(nameof(SqlCipherKeyInterceptor)));
 
+    private static string BuildPragmaKeyCommand(byte[] dek)
+    {
         Span<char> buffer = stackalloc char[CommandPrefix.Length + (dek.Length * 2) + CommandSuffix.Length];
         CommandPrefix.CopyTo(buffer);
         WriteHexUpper(dek, buffer.Slice(CommandPrefix.Length, dek.Length * 2));

@@ -12,6 +12,12 @@ internal sealed class FakeBackupService : IBackupService
 
     public int NowCalls { get; private set; }
 
+    /// <summary>When set, "Back up now" fails with this exception (after <see cref="StatusAfterFailure"/> applies).</summary>
+    public Exception? NowThrow { get; set; }
+
+    /// <summary>The status the service reports once a "Back up now" attempt has failed.</summary>
+    public BackupStatus? StatusAfterFailure { get; set; }
+
     public Task<BackupResult> CreateDailySnapshotAsync(DateOnly today, CancellationToken ct)
     {
         DailyCalls++;
@@ -21,7 +27,13 @@ internal sealed class FakeBackupService : IBackupService
     public Task<BackupResult> CreateSnapshotNowAsync(DateOnly today, CancellationToken ct)
     {
         NowCalls++;
-        return Task.FromResult(new BackupResult(true, "coffer-today.db"));
+        if (NowThrow is not null)
+        {
+            Status = StatusAfterFailure ?? Status;
+            return Task.FromException<BackupResult>(NowThrow);
+        }
+
+        return Task.FromResult(new BackupResult(true, "coffer-today-manual.db"));
     }
 
     public Task<BackupStatus> GetStatusAsync(CancellationToken ct) => Task.FromResult(Status);
@@ -51,7 +63,7 @@ internal sealed class FakeRestoreService : IRestoreService
 
     public int StageCalls { get; private set; }
 
-    public DateOnly? LastStagedDate { get; private set; }
+    public string? LastStagedFileName { get; private set; }
 
     public Exception? StageThrow { get; set; }
 
@@ -60,17 +72,17 @@ internal sealed class FakeRestoreService : IRestoreService
     public Task<IReadOnlyList<SnapshotInfo>> ListSnapshotsAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<SnapshotInfo>>([.. Snapshots]);
 
-    public Task<PendingRestore> StageRestoreAsync(DateOnly snapshotDate, CancellationToken ct)
+    public Task<PendingRestore> StageRestoreAsync(string snapshotFileName, CancellationToken ct)
     {
         StageCalls++;
-        LastStagedDate = snapshotDate;
+        LastStagedFileName = snapshotFileName;
         if (StageThrow is not null)
         {
             return Task.FromException<PendingRestore>(StageThrow);
         }
 
-        var fileName = $"coffer-{snapshotDate:yyyy-MM-dd}.db";
-        Pending = new PendingRestore(snapshotDate, fileName, DateTime.UnixEpoch);
+        var date = BackupRetention.ParseSnapshot(snapshotFileName)?.Date ?? DateOnly.MinValue;
+        Pending = new PendingRestore(date, snapshotFileName, DateTime.UnixEpoch);
         return Task.FromResult(Pending);
     }
 
