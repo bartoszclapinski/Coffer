@@ -48,6 +48,8 @@ public sealed class AiProviderUnavailableException : Exception
                 $"{provider} at {endpoint} has no model '{model}'. Pull it or choose another model in Settings.",
             AiProviderUnavailableReason.ModelUnsupported =>
                 $"{provider} at {endpoint}: model '{model}' does not support this request (e.g. tool calling).",
+            AiProviderUnavailableReason.ContextTooLong =>
+                $"{provider} at {endpoint}: the request is too long for the context window{modelPart}.",
             _ => $"{provider} at {endpoint} rejected the request{modelPart}.",
         };
     }

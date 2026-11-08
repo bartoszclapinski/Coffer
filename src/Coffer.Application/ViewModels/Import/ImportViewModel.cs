@@ -296,7 +296,11 @@ public sealed partial class ImportViewModel : ObservableObject
             // The AI fallback parser could not reach its provider (e.g. Ollama not running). The message
             // names only the endpoint and model; the reason code is enough for the log.
             _logger.LogWarning("Import failed — AI provider unavailable ({Reason})", ex.Reason);
-            ErrorMessage = _localizer["Import.Error.AiUnavailable"];
+            // A statement too long for a local model's context window is refused, not cut — say so, since
+            // "check that Ollama runs" would not help.
+            ErrorMessage = ex.Reason == AiProviderUnavailableReason.ContextTooLong
+                ? _localizer["Import.Error.AiContextTooLong"]
+                : _localizer["Import.Error.AiUnavailable"];
         }
         catch (OperationCanceledException)
         {

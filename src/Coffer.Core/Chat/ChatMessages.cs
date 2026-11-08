@@ -29,7 +29,8 @@ public sealed record ChatMessage(
 /// when the monthly cap blocked the call (no API request was made); <see cref="MissingApiKey"/>
 /// when no chat API key is configured; <see cref="AiNotConfigured"/> when the analysis route cannot be
 /// used (a provider this build does not have, or no model chosen) — a provider problem, not a key
-/// problem. In every blocked case <see cref="Answer"/> carries a friendly Polish explanation and no
+/// problem; <see cref="AiUnavailable"/> when the provider could not answer (e.g. Ollama not running, the
+/// model not installed, or the conversation too long for its context window). In every blocked case <see cref="Answer"/> carries a friendly Polish explanation and no
 /// tools ran.
 /// </summary>
 public sealed record ChatTurn(
@@ -37,4 +38,5 @@ public sealed record ChatTurn(
     IReadOnlyList<ChatToolTrace> ToolTraces,
     bool BudgetExceeded = false,
     bool MissingApiKey = false,
-    bool AiNotConfigured = false);
+    bool AiNotConfigured = false,
+    bool AiUnavailable = false);

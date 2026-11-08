@@ -88,6 +88,20 @@ public class ChatViewModelTests
     }
 
     [Fact]
+    public async Task Send_AiUnavailable_SetsItsOwnFlag()
+    {
+        var service = new FakeChatService(new ChatTurn("Model AI nie mógł odpowiedzieć.", [], AiUnavailable: true));
+        var vm = Vm(service);
+        vm.InputText = "pytanie";
+
+        await vm.SendCommand.ExecuteAsync(null);
+
+        vm.AiUnavailable.Should().BeTrue();
+        vm.AiNotConfigured.Should().BeFalse();
+        vm.MissingApiKey.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Send_BudgetExceeded_SetsFlag()
     {
         var service = new FakeChatService(new ChatTurn("Budżet wyczerpany.", [], BudgetExceeded: true));

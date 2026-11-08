@@ -9,8 +9,9 @@ namespace Coffer.Infrastructure.Tests.AI.Ollama;
 
 /// <summary>
 /// <see cref="OllamaProvider"/> over a fake <see cref="HttpMessageHandler"/>: the <c>/api/chat</c> request
-/// shape (model, no streaming, context window, max tokens, temperature, JSON schema format, thinking off for
-/// JSON), answers read from <c>content</c> only, tool calls in both directions, usage, and every failure
+/// shape (model, no streaming, no silent truncation, context window, max tokens, temperature, JSON schema
+/// format, thinking off for text and JSON), answers read from <c>content</c> only, empty or cut-off answers
+/// rejected, tool calls in both directions, usage, and every failure
 /// mapped to <see cref="AiProviderUnavailableException"/> without prompt text.
 /// </summary>
 public class OllamaProviderTests
@@ -51,11 +52,13 @@ public class OllamaProviderTests
         var body = handler.SingleBody();
         body["model"]!.GetValue<string>().Should().Be(Model);
         body["stream"]!.GetValue<bool>().Should().BeFalse();
+        body["truncate"]!.GetValue<bool>().Should().BeFalse("an over-long prompt must fail, not lose its start");
         body["options"]!["num_ctx"]!.GetValue<int>().Should().Be(16384);
         body["options"]!["num_predict"]!.GetValue<int>().Should().Be(700);
         body["options"]!["temperature"]!.GetValue<double>().Should().Be(0.4);
         body.ContainsKey("format").Should().BeFalse();
-        body.ContainsKey("think").Should().BeFalse("text completions keep the model's own thinking default");
+        body["think"]!.GetValue<bool>().Should().BeFalse(
+            "a thinking model would otherwise spend a short num_predict on reasoning and answer nothing");
         body.ContainsKey("tools").Should().BeFalse();
 
         var messages = body["messages"]!.AsArray();
@@ -95,6 +98,7 @@ public class OllamaProviderTests
         result.Value.Should().Equal(0, 1, 3);
         var body = handler.SingleBody();
         body["think"]!.GetValue<bool>().Should().BeFalse();
+        body["truncate"]!.GetValue<bool>().Should().BeFalse();
         body["options"]!["num_predict"]!.GetValue<int>().Should().Be(512);
         body["options"]!["temperature"]!.GetValue<double>().Should().Be(0.0);
 
@@ -308,6 +312,52 @@ public class OllamaProviderTests
     }
 
     [Fact]
+    public async Task Complete_EmptyAnswerCutOffAtTheTokenLimit_ThrowsInsteadOfReturningEmpty()
+    {
+        var handler = new FakeOllamaHandler().Respond(
+            FakeOllamaHandler.TextResponse("", thinking: "Okay, let me think about the cash flow...", doneReason: "length"));
+        var provider = Provider(handler);
+
+        var act = () => provider.CompleteAsync(Request(), CancellationToken.None);
+
+        (await act.Should().ThrowAsync<InvalidOperationException>()).Which.Message.Should().Contain("token limit");
+    }
+
+    [Fact]
+    public async Task Complete_EmptyAnswer_Throws()
+    {
+        var handler = new FakeOllamaHandler().Respond(FakeOllamaHandler.TextResponse("  "));
+        var provider = Provider(handler);
+
+        var act = () => provider.CompleteAsync(Request(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task CompleteJson_AnswerCutOffAtTheTokenLimit_ThrowsEvenIfItParses()
+    {
+        // A transaction array closed early still parses; done_reason "length" says the rest is missing.
+        var handler = new FakeOllamaHandler().Respond(FakeOllamaHandler.TextResponse("[0, 1]", doneReason: "length"));
+        var provider = Provider(handler);
+
+        var act = () => provider.CompleteJsonAsync<int[]>(Request(), CancellationToken.None);
+
+        (await act.Should().ThrowAsync<InvalidOperationException>()).Which.Message.Should().Contain("token limit");
+    }
+
+    [Fact]
+    public async Task CompleteWithTools_SendsTruncateFalse()
+    {
+        var handler = new FakeOllamaHandler().Respond(FakeOllamaHandler.TextResponse("ok"));
+        var provider = Provider(handler);
+
+        await provider.CompleteWithToolsAsync(ToolRequest(AiChatMessage.User("q")), CancellationToken.None);
+
+        handler.SingleBody()["truncate"]!.GetValue<bool>().Should().BeFalse();
+    }
+
+    [Fact]
     public async Task CompleteWithTools_NeitherTextNorToolCalls_Throws()
     {
         var handler = new FakeOllamaHandler().Respond(FakeOllamaHandler.TextResponse("", thinking: "still thinking"));
@@ -344,6 +394,36 @@ public class OllamaProviderTests
 
         (await act.Should().ThrowAsync<AiProviderUnavailableException>())
             .Which.Reason.Should().Be(AiProviderUnavailableReason.ModelNotFound);
+    }
+
+    [Theory]
+    [InlineData("404 page not found")]
+    [InlineData("""{"error":"not found"}""")]
+    public async Task Bare404_FromAWrongPathOrAnotherService_IsRejectedNotModelNotFound(string body)
+    {
+        var handler = new FakeOllamaHandler().Respond(body, HttpStatusCode.NotFound);
+        var provider = Provider(handler);
+
+        var act = () => provider.CompleteAsync(Request(), CancellationToken.None);
+
+        (await act.Should().ThrowAsync<AiProviderUnavailableException>())
+            .Which.Reason.Should().Be(AiProviderUnavailableReason.Rejected);
+    }
+
+    [Fact]
+    public async Task PromptLongerThanTheContextWindow_ThrowsContextTooLongWithoutCopyingTheServerText()
+    {
+        // Ollama's answer to truncate:false when the prompt does not fit num_ctx (verified on 0.40.15).
+        var handler = new FakeOllamaHandler().Respond(
+            """{"error":"request (21480 tokens) exceeds the available context size (16384 tokens), try increasing it"}""",
+            HttpStatusCode.BadRequest);
+        var provider = Provider(handler);
+
+        var act = () => provider.CompleteJsonAsync<int[]>(Request(), CancellationToken.None);
+
+        var ex = (await act.Should().ThrowAsync<AiProviderUnavailableException>()).Which;
+        ex.Reason.Should().Be(AiProviderUnavailableReason.ContextTooLong);
+        ex.Message.Should().Contain("context window").And.NotContain("21480").And.NotContain(SecretPrompt);
     }
 
     [Fact]

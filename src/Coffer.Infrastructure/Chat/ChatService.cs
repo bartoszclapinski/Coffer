@@ -36,8 +36,8 @@ public sealed class ChatService : IChatService
         "AI nie jest skonfigurowane. Wybierz dostawcę i model w ustawieniach, aby korzystać z asystenta.";
 
     private const string UnavailableMessage =
-        "Model AI jest teraz niedostępny (np. Ollama nie działa albo nie ma wybranego modelu). "
-        + "Sprawdź ustawienia AI i spróbuj ponownie.";
+        "Model AI nie mógł teraz odpowiedzieć (np. Ollama nie działa, nie ma wybranego modelu "
+        + "albo rozmowa jest za długa dla jego okna kontekstu). Sprawdź ustawienia AI i spróbuj ponownie.";
 
     private const string ErrorMessage =
         "Przepraszam, wystąpił błąd podczas przetwarzania zapytania. Spróbuj ponownie za chwilę.";
@@ -169,7 +169,7 @@ public sealed class ChatService : IChatService
                 // The provider could not answer (e.g. Ollama not running or the model not pulled). Not
                 // retried: a second try would fail the same way or wait out the long timeout again.
                 _logger.LogWarning("Chat provider unavailable ({Reason}); no answer.", ex.Reason);
-                return new ChatTurn(UnavailableMessage, traces);
+                return new ChatTurn(UnavailableMessage, traces, AiUnavailable: true);
             }
             catch (UnknownAiProviderException)
             {

@@ -13,18 +13,23 @@ namespace Coffer.Infrastructure.AI.Ollama;
 /// <see cref="IAiProviderBackend"/> over a local (or self-hosted) Ollama's native <c>/api/chat</c>
 /// (Sprint 31-C). The endpoint is read from <see cref="IAiSettings"/> on every call, so a change in Settings
 /// applies to the next request; no API key is needed. Every request is non-streaming and sets the context
-/// window explicitly (<see cref="ContextWindowTokens"/>) — Ollama's default context is small and silently
-/// truncates long prompts — together with <c>num_predict</c> (the request's max tokens) and
-/// <c>temperature</c>.
+/// window explicitly (<see cref="ContextWindowTokens"/>) together with <c>num_predict</c> (the request's max
+/// tokens) and <c>temperature</c>, and sends <c>truncate: false</c>. Without that flag Ollama silently cuts a
+/// prompt longer than the window — dropping the system prompt and the start of a statement or chat — and
+/// still answers 200; with it the request is refused (HTTP 400), which surfaces as
+/// <see cref="AiProviderUnavailableReason.ContextTooLong"/> (verified against Ollama 0.40.15).
 /// <para>
-/// JSON completions send a JSON schema generated from the result type as <c>format</c> and
-/// <c>think: false</c>. A schema, not <c>format: "json"</c>: verified against Ollama 0.40 with
+/// JSON and text completions send <c>think: false</c>; JSON completions also send a JSON schema generated
+/// from the result type as <c>format</c>. A schema, not <c>format: "json"</c>: verified against Ollama 0.40 with
 /// <c>qwen2.5:3b</c> and <c>qwen3.5</c>, <c>"json"</c> forces a JSON <em>object</em>, so a prompt that asks
 /// for an array (categorisation's index array) came back as <c>{"0":0,"1":1}</c>; the schema keeps the
 /// answer in the shape the caller deserialises. <c>think: false</c> keeps a thinking model fast and its
-/// answer in <c>content</c>; a model without thinking accepts it unchanged (only <c>think: true</c> is
-/// rejected there). Text and tool turns leave thinking at the model's default. The answer is always read
-/// from <c>message.content</c>, never from <c>message.thinking</c>.
+/// answer in <c>content</c>: with thinking on, <c>qwen3.5</c> spent a short <c>num_predict</c> (the cash-flow
+/// explanation's 448) entirely on reasoning and returned an empty answer. A model without thinking accepts
+/// the flag unchanged (only <c>think: true</c> is rejected there). Tool turns leave thinking at the model's
+/// default. The answer is always read from <c>message.content</c>, never from <c>message.thinking</c>; an
+/// empty text or JSON answer, or a JSON answer cut off at <c>num_predict</c> (<c>done_reason: "length"</c>),
+/// is an error rather than a silently empty or partial result.
 /// </para>
 /// <para>
 /// Prompts reach this provider already redacted by the caller's session (hard rule #7) — the same code
@@ -65,8 +70,20 @@ public sealed class OllamaProvider : IAiProviderBackend
         ArgumentNullException.ThrowIfNull(request);
 
         var body = BuildBody(request.Model, BuildMessages(request), request.MaxTokens, request.Temperature);
-        var (message, usage) = await SendAsync(request.Model, body, ct).ConfigureAwait(false);
-        return new AiResult<string>(ContentOf(message) ?? string.Empty, usage);
+        body["think"] = false;
+
+        var (message, doneReason, usage) = await SendAsync(request.Model, body, ct).ConfigureAwait(false);
+        var content = ContentOf(message);
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            // E.g. a thinking model that spent num_predict on reasoning: an error the caller logs and
+            // degrades on, not an empty answer it would silently treat as "nothing to say".
+            throw new InvalidOperationException(IsCutOff(doneReason)
+                ? "Ollama reached the token limit before answering."
+                : "Ollama returned an empty answer.");
+        }
+
+        return new AiResult<string>(content, usage);
     }
 
     public async Task<AiResult<TResult>> CompleteJsonAsync<TResult>(AiRequest request, CancellationToken ct)
@@ -77,11 +94,18 @@ public sealed class OllamaProvider : IAiProviderBackend
         body["format"] = FormatFor<TResult>();
         body["think"] = false;
 
-        var (message, usage) = await SendAsync(request.Model, body, ct).ConfigureAwait(false);
+        var (message, doneReason, usage) = await SendAsync(request.Model, body, ct).ConfigureAwait(false);
         var content = ContentOf(message);
         if (string.IsNullOrWhiteSpace(content))
         {
             throw new InvalidOperationException("Ollama returned an empty answer where JSON was expected.");
+        }
+
+        if (IsCutOff(doneReason))
+        {
+            // A schema-constrained answer cut at num_predict is incomplete even if it happens to parse
+            // (e.g. a transaction array closed early would drop the rest of the statement).
+            throw new InvalidOperationException("Ollama reached the token limit before the JSON answer was complete.");
         }
 
         var value = JsonSerializer.Deserialize<TResult>(AiJson.ExtractJson(content), _jsonOptions)
@@ -110,7 +134,7 @@ public sealed class OllamaProvider : IAiProviderBackend
             body["tools"] = new JsonArray(request.Tools.Select(ToolDefinition).ToArray<JsonNode?>());
         }
 
-        var (reply, usage) = await SendAsync(request.Model, body, ct).ConfigureAwait(false);
+        var (reply, _, usage) = await SendAsync(request.Model, body, ct).ConfigureAwait(false);
 
         var toolCalls = ReadToolCalls(reply);
         var text = ContentOf(reply);
@@ -137,7 +161,8 @@ public sealed class OllamaProvider : IAiProviderBackend
 #pragma warning restore CS0162
     }
 
-    private async Task<(JsonObject Message, AiUsage Usage)> SendAsync(string model, JsonObject body, CancellationToken ct)
+    private async Task<(JsonObject Message, string? DoneReason, AiUsage Usage)> SendAsync(
+        string model, JsonObject body, CancellationToken ct)
     {
         var endpoint = await _settings.GetOllamaEndpointAsync(ct).ConfigureAwait(false);
         var response = await _client.PostChatAsync(endpoint, model, body, ct).ConfigureAwait(false);
@@ -149,14 +174,22 @@ public sealed class OllamaProvider : IAiProviderBackend
             model,
             ReadCount(response, "prompt_eval_count"),
             ReadCount(response, "eval_count"));
-        return (message, usage);
+        var doneReason = response["done_reason"]?.GetValueKind() == JsonValueKind.String
+            ? response["done_reason"]!.GetValue<string>()
+            : null;
+        return (message, doneReason, usage);
     }
+
+    private static bool IsCutOff(string? doneReason) =>
+        string.Equals(doneReason, "length", StringComparison.OrdinalIgnoreCase);
 
     private static JsonObject BuildBody(string model, JsonArray messages, int maxTokens, double temperature) =>
         new()
         {
             ["model"] = model,
             ["stream"] = false,
+            // Refuse an over-long prompt (HTTP 400 -> ContextTooLong) instead of silently cutting its start.
+            ["truncate"] = false,
             ["messages"] = messages,
             ["options"] = new JsonObject
             {

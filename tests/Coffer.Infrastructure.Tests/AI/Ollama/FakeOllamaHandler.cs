@@ -53,19 +53,20 @@ internal sealed class FakeOllamaHandler : HttpMessageHandler
     }
 
     /// <summary>An <c>/api/chat</c> response with the given assistant message.</summary>
-    public static string ChatResponse(JsonObject message, int promptTokens = 120, int evalTokens = 30) =>
+    public static string ChatResponse(
+        JsonObject message, int promptTokens = 120, int evalTokens = 30, string doneReason = "stop") =>
         new JsonObject
         {
             ["model"] = "qwen2.5:3b",
             ["created_at"] = "2026-11-08T12:00:00Z",
             ["message"] = message,
             ["done"] = true,
-            ["done_reason"] = "stop",
+            ["done_reason"] = doneReason,
             ["prompt_eval_count"] = promptTokens,
             ["eval_count"] = evalTokens,
         }.ToJsonString();
 
-    public static string TextResponse(string content, string? thinking = null)
+    public static string TextResponse(string content, string? thinking = null, string doneReason = "stop")
     {
         var message = new JsonObject { ["role"] = "assistant", ["content"] = content };
         if (thinking is not null)
@@ -73,6 +74,6 @@ internal sealed class FakeOllamaHandler : HttpMessageHandler
             message["thinking"] = thinking;
         }
 
-        return ChatResponse(message);
+        return ChatResponse(message, doneReason: doneReason);
     }
 }

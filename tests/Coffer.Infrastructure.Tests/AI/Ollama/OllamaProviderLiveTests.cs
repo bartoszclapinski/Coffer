@@ -7,8 +7,9 @@ using Xunit.Abstractions;
 namespace Coffer.Infrastructure.Tests.AI.Ollama;
 
 /// <summary>
-/// Live check against a real local Ollama: one categorisation-style JSON completion and one tool-calling
-/// round trip through <see cref="OllamaProvider"/>. Skips unless <c>COFFER_LIVE_OLLAMA=1</c>, so CI and
+/// Live check against a real local Ollama through <see cref="OllamaProvider"/>: a categorisation-style JSON
+/// completion, a tool-calling round trip, a short text answer at the cash-flow explanation's token cap, and
+/// an over-long prompt refused (not silently truncated). Skips unless <c>COFFER_LIVE_OLLAMA=1</c>, so CI and
 /// ordinary runs never touch the network. Uses <c>qwen2.5:3b</c> (fast) unless
 /// <c>COFFER_LIVE_OLLAMA_MODEL</c> names another pulled model, and <c>http://localhost:11434</c> unless
 /// <c>COFFER_LIVE_OLLAMA_ENDPOINT</c> is set. Prompts and data are synthetic.
@@ -97,6 +98,55 @@ public class OllamaProviderLiveTests
         _output.WriteLine($"{model} turn 2: {second.Usage.InputTokens} in / {second.Usage.OutputTokens} out");
         second.Value.IsFinal.Should().BeTrue();
         second.Value.Text.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [SkippableFact]
+    public async Task CashFlowStyleText_AnswersWithinItsSmallTokenCap()
+    {
+        var (provider, model) = CreateProviderOrSkip();
+
+        // Same cap as CashFlowExplainer (OutputTokens 320 + 128): a thinking model must not spend it all.
+        var request = new AiRequest
+        {
+            Provider = AiDefaults.OllamaProvider,
+            Model = model,
+            SystemPrompt = "You explain a short cash-flow projection to the account owner in two or three plain "
+                + "sentences. Use only the numbers given.",
+            Prompt = "Balance today: 4 200.00 PLN. Upcoming: rent -2 300.00 PLN on 2026-12-01, salary "
+                + "+6 100.00 PLN on 2026-12-10, electricity -180.00 PLN on 2026-12-12. Lowest balance: "
+                + "1 900.00 PLN on 2026-12-01.",
+            MaxTokens = 448,
+            Temperature = 0.4,
+        };
+
+        var result = await provider.CompleteAsync(request, CancellationToken.None);
+
+        _output.WriteLine($"{model}: {result.Value.Length} chars, {result.Usage.InputTokens} in / {result.Usage.OutputTokens} out");
+        result.Value.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [SkippableFact]
+    public async Task PromptLongerThanTheContextWindow_IsRefusedNotTruncated()
+    {
+        var (provider, model) = CreateProviderOrSkip();
+
+        // ~25k tokens of synthetic statement lines: well past num_ctx (16384).
+        var lines = string.Concat(Enumerable.Range(1, 1500)
+            .Select(i => $"2026-10-{i % 28 + 1:00} SKLEP NUMER {i} ZAKUP KARTA -{i % 90 + 10},{i % 100:00} PLN\n"));
+        var request = new AiRequest
+        {
+            Provider = AiDefaults.OllamaProvider,
+            Model = model,
+            SystemPrompt = "Reply only with the word OK.",
+            Prompt = lines,
+            MaxTokens = 64,
+            Temperature = 0.0,
+        };
+
+        var act = () => provider.CompleteAsync(request, CancellationToken.None);
+
+        (await act.Should().ThrowAsync<AiProviderUnavailableException>())
+            .Which.Reason.Should().Be(AiProviderUnavailableReason.ContextTooLong);
     }
 
     private static (OllamaProvider Provider, string Model) CreateProviderOrSkip()

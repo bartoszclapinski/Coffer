@@ -12,9 +12,10 @@ namespace Coffer.Application.ViewModels.Chat;
 /// drives <see cref="IChatService"/>: each question is sent with the prior turns as history, and
 /// the resulting answer (plus its read-only tool trace) is appended. The model never invents
 /// numbers and never mutates data — answers come from read-only tools (doc 04). Conversation lives
-/// in memory only; durable history is a later nicety. Three blocked states surface friendly guidance
+/// in memory only; durable history is a later nicety. Four blocked states surface friendly guidance
 /// instead of errors: no API key configured (<see cref="MissingApiKey"/>), AI not configured (an
-/// unavailable provider or no model chosen, <see cref="AiNotConfigured"/>) and the monthly budget
+/// unknown provider or no model chosen, <see cref="AiNotConfigured"/>), AI unavailable (the provider
+/// could not answer, e.g. Ollama not running, <see cref="AiUnavailable"/>) and the monthly budget
 /// cap reached (<see cref="BudgetExceeded"/>).
 /// </summary>
 public sealed partial class ChatViewModel : ObservableObject
@@ -39,6 +40,9 @@ public sealed partial class ChatViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _aiNotConfigured;
+
+    [ObservableProperty]
+    private bool _aiUnavailable;
 
     [ObservableProperty]
     private bool _budgetExceeded;
@@ -98,6 +102,7 @@ public sealed partial class ChatViewModel : ObservableObject
         ErrorMessage = "";
         MissingApiKey = false;
         AiNotConfigured = false;
+        AiUnavailable = false;
         BudgetExceeded = false;
         IsBusy = true;
         OnPropertyChanged(nameof(IsEmpty));
@@ -108,6 +113,7 @@ public sealed partial class ChatViewModel : ObservableObject
 
             MissingApiKey = turn.MissingApiKey;
             AiNotConfigured = turn.AiNotConfigured;
+            AiUnavailable = turn.AiUnavailable;
             BudgetExceeded = turn.BudgetExceeded;
             Messages.Add(new ChatMessageViewModel(ChatAuthor.Assistant, turn.Answer, turn.ToolTraces));
         }

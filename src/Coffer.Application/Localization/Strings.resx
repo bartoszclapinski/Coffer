@@ -304,6 +304,9 @@
   <data name="Import.Error.Generic" xml:space="preserve">
     <value>Import failed. Please try again.</value>
   </data>
+  <data name="Import.Error.AiContextTooLong" xml:space="preserve">
+    <value>This statement is too long for the chosen AI model's context window, so nothing was imported. Choose a model with a larger context (or a cloud provider) for statement parsing in Settings, or import a shorter statement period.</value>
+  </data>
   <data name="Import.Error.AiUnavailable" xml:space="preserve">
     <value>The AI model needed to read this statement is not available (for example, Ollama is not running or the chosen model is not installed). Check the AI settings and try again.</value>
   </data>
@@ -387,6 +390,9 @@
   </data>
   <data name="Chat.AiNotConfigured" xml:space="preserve">
     <value>AI is not configured. Choose a provider and model in Settings to use the assistant.</value>
+  </data>
+  <data name="Chat.AiUnavailable" xml:space="preserve">
+    <value>The AI model could not answer (for example, Ollama is not running, the chosen model is not installed, or the conversation is too long for its context window). Check the AI settings and try again.</value>
   </data>
   <data name="Chat.BudgetExceeded" xml:space="preserve">
     <value>The monthly AI budget has been used up. Increase the limit in Settings to continue.</value>

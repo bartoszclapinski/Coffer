@@ -192,6 +192,21 @@ public class ImportViewModelTests
     }
 
     [Fact]
+    public async Task Import_AiContextTooLong_ShowsItsOwnLocalizedMessage()
+    {
+        var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);
+        await vm.LoadAccountsCommand.ExecuteAsync(null);
+        await vm.BrowseCommand.ExecuteAsync(null);
+        useCase.Throw = new AiProviderUnavailableException(
+            AiDefaults.OllamaProvider, AiDefaults.OllamaEndpoint, "qwen2.5:3b", AiProviderUnavailableReason.ContextTooLong);
+
+        await vm.ImportCommand.ExecuteAsync(null);
+
+        vm.HasSummary.Should().BeFalse();
+        vm.ErrorMessage.Should().Be("Import.Error.AiContextTooLong");
+    }
+
+    [Fact]
     public async Task Import_UnsupportedBank_ShowsLocalizedMessage()
     {
         var vm = Create(out _, out var useCase, out _, picked: NewCsv(), seedAccounts: _account);

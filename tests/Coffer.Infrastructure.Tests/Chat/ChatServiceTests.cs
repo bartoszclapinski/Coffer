@@ -199,7 +199,9 @@ public class ChatServiceTests
 
         var turn = await service.AskAsync("pytanie", [], CancellationToken.None);
 
-        turn.Answer.Should().Contain("niedostępny");
+        turn.Answer.Should().Contain("nie mógł teraz odpowiedzieć");
+        turn.AiUnavailable.Should().BeTrue("the view shows a localized banner for it");
+        turn.AiNotConfigured.Should().BeFalse();
         turn.MissingApiKey.Should().BeFalse();
         turn.BudgetExceeded.Should().BeFalse();
         provider.Attempts.Should().Be(1, "an unreachable provider is not retried");

@@ -304,6 +304,9 @@
   <data name="Import.Error.Generic" xml:space="preserve">
     <value>Import nie powiódł się. Spróbuj ponownie.</value>
   </data>
+  <data name="Import.Error.AiContextTooLong" xml:space="preserve">
+    <value>Ten wyciąg jest za długi dla okna kontekstu wybranego modelu AI, więc nic nie zostało zaimportowane. Wybierz w Ustawieniach model z większym kontekstem (lub dostawcę w chmurze) do odczytu wyciągów albo zaimportuj wyciąg za krótszy okres.</value>
+  </data>
   <data name="Import.Error.AiUnavailable" xml:space="preserve">
     <value>Model AI potrzebny do odczytania tego wyciągu jest niedostępny (np. Ollama nie działa albo wybrany model nie jest zainstalowany). Sprawdź ustawienia AI i spróbuj ponownie.</value>
   </data>
@@ -387,6 +390,9 @@
   </data>
   <data name="Chat.AiNotConfigured" xml:space="preserve">
     <value>AI nie jest skonfigurowane. Wybierz dostawcę i model w Ustawieniach, aby korzystać z asystenta.</value>
+  </data>
+  <data name="Chat.AiUnavailable" xml:space="preserve">
+    <value>Model AI nie mógł odpowiedzieć (np. Ollama nie działa, wybrany model nie jest zainstalowany albo rozmowa jest za długa dla jego okna kontekstu). Sprawdź ustawienia AI i spróbuj ponownie.</value>
   </data>
   <data name="Chat.BudgetExceeded" xml:space="preserve">
     <value>Miesięczny budżet AI został wyczerpany. Zwiększ limit w Ustawieniach, aby kontynuować.</value>

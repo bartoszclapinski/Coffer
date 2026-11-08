@@ -15,6 +15,12 @@ public enum AiProviderUnavailableReason
     /// <summary>The model cannot do what the request needs (e.g. it does not support tool calling).</summary>
     ModelUnsupported,
 
+    /// <summary>
+    /// The request does not fit the model's context window (e.g. a long statement or chat history sent to a
+    /// local model). Refused up front rather than silently cut, so nothing from the start of the prompt is lost.
+    /// </summary>
+    ContextTooLong,
+
     /// <summary>The endpoint answered with another non-success status.</summary>
     Rejected,
 }

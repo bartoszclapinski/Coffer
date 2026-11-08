@@ -39,7 +39,14 @@ public sealed record AiRequest
 }
 ```
 
-Implemented today: `ClaudeProvider` (Anthropic.SDK over `IChatClient`). **OpenAI is deferred** — it was offered in Settings without an implementation and was removed in Sprint 31; the OpenAI mentions below describe a possible future provider, not current behaviour. A local Ollama provider arrives in Sprint 31-C.
+Implemented today: `ClaudeProvider` (Anthropic.SDK over `IChatClient`) and `OllamaProvider` (Sprint 31-C: a local or self-hosted Ollama over its native `/api/chat`, endpoint from Settings, no key). **OpenAI is deferred** — it was offered in Settings without an implementation and was removed in Sprint 31; the OpenAI mentions below describe a possible future provider, not current behaviour.
+
+Ollama request rules (verified against Ollama 0.40.15 with `qwen2.5:3b` and `qwen3.5`):
+
+- **Non-streaming, explicit window, no silent truncation.** Every request sets `options.num_ctx` (16384), `num_predict` (= `MaxTokens`) and `temperature`, and sends `truncate: false`. Without it Ollama cuts an over-long prompt from the start — the system prompt and the first statement lines or chat turns — and still answers 200; with it the request fails with HTTP 400, surfaced as `AiProviderUnavailableException` (`ContextTooLong`). The import screen says the statement is too long for the chosen model; chat shows its "AI unavailable" banner.
+- **Thinking off for text and JSON** (`think: false`), so a thinking model cannot spend a small `num_predict` on reasoning and answer nothing; models without thinking accept the flag. Tool turns keep the model default. The answer is read from `message.content` only. An empty text or JSON answer, or a JSON answer cut off at `num_predict` (`done_reason: "length"`), is an error, not an empty or partial result.
+- **JSON as a schema.** `CompleteJsonAsync<T>` sends a JSON schema of `T` as `format` (not `"json"`, which forces an object and broke array answers).
+- **Failures** become `AiProviderUnavailableException` (`Unreachable`, `Timeout`, `ModelNotFound` — only Ollama's own "model … not found" 404 —, `ModelUnsupported`, `ContextTooLong`, `Rejected`), never retried; consumers degrade as for a missing key. The exception names provider, endpoint and model only, never server text. Redirects are not followed, so a prompt never leaves for a host other than the configured endpoint. Prompts reach Ollama through the same redaction session as Claude.
 
 Per-role routing (Sprint 31-B):
 
@@ -336,7 +343,7 @@ public class AiUsageEntry
 {
     public Guid Id { get; set; }
     public DateTime At { get; set; }
-    public string Provider { get; set; } = "";          // Claude (Ollama from Sprint 31)
+    public string Provider { get; set; } = "";          // Claude | Ollama
     public string Model { get; set; } = "";
     public string Purpose { get; set; } = "";           // categorization | chat | vision | parser-fallback | anomaly-comment | advisor-report
     public int InputTokens { get; set; }
