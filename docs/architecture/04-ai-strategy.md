@@ -4,12 +4,14 @@
 
 | Use case | Model | Why |
 |---|---|---|
-| Categorization (in batch) | Claude Haiku 4.5 / GPT-4o mini | Cheap, fast, "good enough" for label-from-description |
-| Chat with data | Claude Sonnet 4.6 / GPT-4o | Reasoning over user history, tool calling |
-| Receipt OCR (vision) | Claude Sonnet 4.6 vision | Quality matters, Polish receipts are messy |
-| Anomaly commentary | Claude Sonnet 4.6 | Short, contextual explanations |
-| Statement parsing fallback | Claude Sonnet 4.6 | Structured JSON output, multilingual |
-| Risks/sugestions for goals | Claude Sonnet 4.6 | Context-rich reasoning |
+| Categorization (in batch) | Claude Haiku 5.5 (`claude-haiku-5-5`) | Cheap, fast, "good enough" for label-from-description |
+| Chat with data | Claude Sonnet 5.5 (`claude-sonnet-5-5`) | Reasoning over user history, tool calling |
+| Receipt OCR (vision) | Claude Sonnet 5.5 vision | Quality matters, Polish receipts are messy |
+| Anomaly commentary | Claude Sonnet 5.5 | Short, contextual explanations |
+| Statement parsing fallback | Claude Sonnet 5.5 | Structured JSON output, multilingual |
+| Risks/sugestions for goals | Claude Sonnet 5.5 | Context-rich reasoning |
+
+Defaults moved to the 5.5 generation in Sprint 31 (Haiku 5.5: $0.10 / $0.50 per MTok; Sonnet 5.5: $2 / $10). `claude-haiku-4-5` and `claude-sonnet-4-6` stay selectable and priced as a fallback.
 
 ## Provider abstraction
 
@@ -35,7 +37,14 @@ public record AiRequest
 }
 ```
 
-Two concrete implementations: `ClaudeProvider`, `OpenAiProvider`. Settings choose which is active per use case.
+Implemented today: `ClaudeProvider` (Anthropic.SDK over `IChatClient`). **OpenAI is deferred** — it was offered in Settings without an implementation and was removed in Sprint 31; the OpenAI mentions below describe a possible future provider, not current behaviour. A local Ollama provider and per-role provider routing arrive in Sprint 31 (31-B / 31-C).
+
+Claude request rules (`ClaudeModelRules`, Sprint 31):
+
+- **No `temperature` on Claude 4.7+** (Opus 4.7/4.8, the 5.x family): those models return HTTP 400 for a non-default value. It is still sent to Haiku 4.5 / Sonnet 4.6.
+- **Thinking headroom.** The 5.x models think by default (adaptive) and thinking counts against `max_tokens`, so they get +8192 tokens on top of the answer cap; otherwise a categorization batch capped at 512 tokens could lose its JSON answer to thinking. Thinking is not switched off: Anthropic.SDK 5.10.0 cannot send `{"type":"disabled"}`, and Sonnet 5.5 rejects it. Only generated tokens are billed, and the ledger records real usage.
+- **No forced `tool_choice`, no assistant prefill** — both return 400 on current models.
+- **Thinking blocks are not replayed in the chat tool loop** (the loop carries text + tool calls only); a live check (`ClaudeProviderLiveTests`, skipped unless `COFFER_LIVE_CLAUDE_KEY` is set) runs a full tool round trip against each default model.
 
 ## Categorization — hybrid pipeline
 
@@ -279,11 +288,11 @@ Cost: minimal (10 anomalies/month × ~$0.001 each).
 
 See `05-receipt-pipeline.md` for the full pipeline. AI strategy details:
 
-- **Model:** Claude Sonnet 4.6 with vision
+- **Model:** Claude Sonnet 5.5 with vision
 - **Input:** preprocessed receipt photo (deskewed, cropped to receipt area)
 - **Prompt:** structured extraction of merchant, date, time, line items, total, VAT
 - **Cost:** ~5 grosze per receipt
-- **Fallback:** if Claude rate-limited, switch to OpenAI gpt-4o vision
+- **Fallback:** if Claude is rate-limited, retry later (a second remote provider is deferred)
 
 ## Cost discipline
 
@@ -318,7 +327,7 @@ public class AiUsageEntry
 {
     public Guid Id { get; set; }
     public DateTime At { get; set; }
-    public string Provider { get; set; } = "";          // Claude | OpenAI
+    public string Provider { get; set; } = "";          // Claude (Ollama from Sprint 31)
     public string Model { get; set; } = "";
     public string Purpose { get; set; } = "";           // categorization | chat | vision | parser-fallback | anomaly-comment | advisor-report
     public int InputTokens { get; set; }
