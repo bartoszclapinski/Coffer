@@ -24,7 +24,8 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
         + "raw numbers. For each one, write a short, calm, plain-Polish title (max 8 words) and a "
         + "one- or two-sentence description that explains what stands out and why it may be worth a "
         + "look. Do not invent numbers beyond those given, do not give tax or investment advice, and "
-        + "do not address the user by name. Return ONLY a JSON array of objects "
+        + "do not address the user by name. Personal data is replaced by bracketed placeholders such as "
+        + "[PARTY_1] or [OWNER]: copy them verbatim, never guess what they stand for. Return ONLY a JSON array of objects "
         + "{\"index\": int, \"title\": string, \"description\": string}, one per input anomaly, using "
         + "the same index values.";
 
@@ -68,7 +69,19 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
             return candidates;
         }
 
-        var prompt = BuildPrompt(candidates);
+        IPromptRedactionSession redaction;
+        try
+        {
+            redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Without a redaction session nothing may be sent; the templated text survives.
+            _logger.LogWarning(ex, "Could not prepare prompt redaction; keeping templated anomaly text.");
+            return candidates;
+        }
+
+        var prompt = BuildPrompt(candidates, redaction);
         var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
@@ -96,7 +109,7 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
             var response = await _provider.CompleteJsonAsync<CommentDto[]>(request, ct).ConfigureAwait(false);
             await _ledger.RecordAsync(response.Usage, AiPurpose.AnomalyComment, ct).ConfigureAwait(false);
 
-            return Merge(candidates, response.Value);
+            return Merge(candidates, response.Value, redaction);
         }
         catch (OperationCanceledException)
         {
@@ -111,7 +124,7 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
         }
     }
 
-    private string BuildPrompt(IReadOnlyList<AnomalyCandidate> candidates)
+    private static string BuildPrompt(IReadOnlyList<AnomalyCandidate> candidates, IPromptRedactionSession redaction)
     {
         var sb = new StringBuilder();
         sb.Append("Anomalies:\n");
@@ -133,12 +146,13 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
             sb.Append(CultureInfo.InvariantCulture, $"\n  current title: {c.Title}\n  current description: {c.Description}\n");
         }
 
-        return _anonymizer.Anonymize(sb.ToString());
+        return redaction.Redact(sb.ToString());
     }
 
     private static IReadOnlyList<AnomalyCandidate> Merge(
         IReadOnlyList<AnomalyCandidate> candidates,
-        CommentDto[]? comments)
+        CommentDto[]? comments,
+        IPromptRedactionSession redaction)
     {
         if (comments is null || comments.Length == 0)
         {
@@ -161,8 +175,9 @@ public sealed class AnomalyCommentator : IAnomalyCommentator
             {
                 merged[i] = original with
                 {
-                    Title = comment.Title.Trim(),
-                    Description = comment.Description.Trim(),
+                    // The alert text stays on the device: payee pseudonyms become names again.
+                    Title = redaction.Restore(comment.Title.Trim()),
+                    Description = redaction.Restore(comment.Description.Trim()),
                 };
             }
             else

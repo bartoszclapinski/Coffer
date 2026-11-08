@@ -5,6 +5,7 @@ using Coffer.Core.Parsing;
 using Coffer.Core.Security;
 using Coffer.Infrastructure.AI;
 using Coffer.Infrastructure.Parsing.Ai;
+using Coffer.Infrastructure.Tests.AI;
 using Coffer.Shared.Parsing;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -92,7 +93,7 @@ public class AiAssistedParserTests
 
         var result = await parser.ParseAsync(CsvInput("Posiadacz: Jan Kowalski"), CancellationToken.None);
 
-        provider.LastPrompt.Should().Contain("[NAME]");
+        provider.LastPrompt.Should().Contain(PromptRedactor.OwnerPlaceholder);
         provider.LastPrompt.Should().NotContain("Jan Kowalski");
         result.Warnings.Should().NotContain(AiAssistedParser.OwnerNameUnsetWarning);
     }
@@ -159,7 +160,7 @@ public class AiAssistedParserTests
             new FakeBudgetGate(budgetAllows),
             ledger ?? new RecordingLedger(),
             new FakePricing(),
-            new PromptAnonymizer(),
+            new PromptAnonymizer(settings, new StaticCounterpartyNameSource()),
             settings,
             secrets,
             NullLogger<AiAssistedParser>.Instance);

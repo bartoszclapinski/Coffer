@@ -3,6 +3,7 @@ using Coffer.Core.Ai;
 using Coffer.Core.Domain;
 using Coffer.Core.Goals;
 using Coffer.Infrastructure.AI;
+using Coffer.Infrastructure.Tests.AI;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -58,7 +59,7 @@ public class AdvisorReportGeneratorTests
     public async Task Generate_AnonymisesPromptBeforeSending()
     {
         var provider = new ScriptedProvider("""{"perGoalRisks":{},"suggestions":[]}""");
-        var generator = Generator(provider, anonymizer: new MarkingAnonymizer());
+        var generator = Generator(provider, anonymizer: new MarkingPromptAnonymizer());
 
         await generator.GenerateAsync([Result()], Ctx(), [Spend()], _day, CancellationToken.None);
 
@@ -163,7 +164,7 @@ public class AdvisorReportGeneratorTests
             gate ?? new StubBudgetGate(canProceed: true),
             ledger ?? new RecordingLedger(),
             new StubPricing(),
-            anonymizer ?? new PassthroughAnonymizer(),
+            anonymizer ?? new PassthroughPromptAnonymizer(),
             NullLogger<AdvisorReportGenerator>.Instance);
 
     private static GoalFeasibilityResult Result() => new()
@@ -260,15 +261,5 @@ public class AdvisorReportGeneratorTests
     private sealed class StubPricing : IAiPricing
     {
         public AiCost Estimate(string model, int inputTokens, int outputTokens) => new(0.01m, 0.04m);
-    }
-
-    private sealed class PassthroughAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => text;
-    }
-
-    private sealed class MarkingAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => "ANON:" + text;
     }
 }

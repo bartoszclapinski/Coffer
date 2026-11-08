@@ -1,6 +1,7 @@
 using Coffer.Core.Ai;
 using Coffer.Core.Anomalies;
 using Coffer.Infrastructure.AI;
+using Coffer.Infrastructure.Tests.AI;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -37,7 +38,7 @@ public class AnomalyCommentatorTests
     public async Task Comment_AnonymisesPromptBeforeSending()
     {
         var provider = new ScriptedProvider("[]");
-        var commentator = Commentator(provider, anonymizer: new MarkingAnonymizer());
+        var commentator = Commentator(provider, anonymizer: new MarkingPromptAnonymizer());
 
         await commentator.CommentAsync([Candidate("high-amount:1")], CancellationToken.None);
 
@@ -107,7 +108,7 @@ public class AnomalyCommentatorTests
             gate ?? new StubBudgetGate(canProceed: true),
             ledger ?? new RecordingLedger(),
             new StubPricing(),
-            anonymizer ?? new PassthroughAnonymizer(),
+            anonymizer ?? new PassthroughPromptAnonymizer(),
             NullLogger<AnomalyCommentator>.Instance);
 
     private static AnomalyCandidate Candidate(string signature) =>
@@ -188,15 +189,5 @@ public class AnomalyCommentatorTests
     private sealed class StubPricing : IAiPricing
     {
         public AiCost Estimate(string model, int inputTokens, int outputTokens) => new(0.01m, 0.04m);
-    }
-
-    private sealed class PassthroughAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => text;
-    }
-
-    private sealed class MarkingAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => "ANON:" + text;
     }
 }

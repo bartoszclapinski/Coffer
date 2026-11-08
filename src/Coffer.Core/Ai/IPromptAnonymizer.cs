@@ -1,21 +1,17 @@
 namespace Coffer.Core.Ai;
 
 /// <summary>
-/// Redacts personally identifying account data from text before it leaves the process
-/// for an AI provider (hard rule #7). Merchant names are kept — they carry the
-/// categorisation signal and are not sensitive; account numbers, IBANs and NIPs are not.
+/// The single choke point every AI-bound text passes through (hard rule #7). There is deliberately
+/// no synchronous "anonymize this string" member: the only way to redact is to open a
+/// <see cref="IPromptRedactionSession"/>, and opening one always loads the owner's identity names and
+/// the known counterparty names. A caller therefore cannot forget to apply them.
 /// </summary>
 public interface IPromptAnonymizer
 {
-    string Anonymize(string text);
-
     /// <summary>
-    /// Same as <see cref="Anonymize(string)"/> but first redacts the supplied owner-identity
-    /// names (the account holder's name as printed on a statement header), which the standard
-    /// account/IBAN/NIP rules do not cover. Used by the AI fallback parser, whose prompt is the
-    /// whole statement. An empty <paramref name="ownerNames"/> list leaves the standard pipeline
-    /// unchanged — the caller is responsible for warning that the header may be un-redacted. The
-    /// default implementation skips name redaction; the production anonymiser overrides it.
+    /// Opens a redaction session for one AI request (or one chat question with its tool calls). Open
+    /// it once per request and redact every piece of text that request sends through it, so the same
+    /// counterparty maps to the same pseudonym throughout the request.
     /// </summary>
-    string Anonymize(string text, IReadOnlyList<string> ownerNames) => Anonymize(text);
+    Task<IPromptRedactionSession> BeginSessionAsync(CancellationToken ct);
 }

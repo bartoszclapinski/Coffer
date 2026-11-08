@@ -88,7 +88,19 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
             .Take(TopCategoryCount)
             .ToList();
 
-        var prompt = BuildPrompt(results, context, topCategories);
+        IPromptRedactionSession redaction;
+        try
+        {
+            redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Without a redaction session nothing may be sent; fall back to the engine-only report.
+            _logger.LogWarning(ex, "Could not prepare prompt redaction; using engine-only advisor risks.");
+            return EngineOnlyReport(results, date);
+        }
+
+        var prompt = BuildPrompt(results, context, topCategories, redaction);
         var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
@@ -131,10 +143,11 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
         }
     }
 
-    private string BuildPrompt(
+    private static string BuildPrompt(
         IReadOnlyList<GoalFeasibilityResult> results,
         FinancialContext context,
-        IReadOnlyList<CategorySpending> topCategories)
+        IReadOnlyList<CategorySpending> topCategories,
+        IPromptRedactionSession redaction)
     {
         var sb = new StringBuilder();
         sb.Append("Engine outputs:\n");
@@ -171,7 +184,7 @@ public sealed class AdvisorReportGenerator : IAdvisorReportGenerator
             sb.Append("- No categories are currently above their 6m average.\n");
         }
 
-        return _anonymizer.Anonymize(sb.ToString());
+        return redaction.Redact(sb.ToString());
     }
 
     private static AdvisorReport BuildReport(

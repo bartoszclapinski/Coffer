@@ -205,7 +205,9 @@ public static class ServiceRegistration
         });
 
         services.AddTransient<IAiProvider, ClaudeProvider>();
-        services.AddSingleton<IPromptAnonymizer, PromptAnonymizer>();
+        // Transient: each session reads the current owner names / counterparties from the DB.
+        services.AddTransient<IPromptAnonymizer, PromptAnonymizer>();
+        services.AddTransient<ICounterpartyNameSource, StoredCounterpartyNameSource>();
         services.AddSingleton<IAiPricing, AiPricing>();
         services.AddTransient<IAiUsageLedger, AiUsageLedger>();
         services.AddTransient<IAiBudgetGate, AiBudgetGate>();

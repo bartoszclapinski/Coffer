@@ -31,6 +31,7 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
         + "balance is tightest. Constraints: every number must come from the projection given — do NOT "
         + "invent or recompute any figure; if a tight point is flagged, name its date and amount; "
         + "politely decline any tax or investment recommendation; do not address the user by name. "
+        + "Personal data is replaced by bracketed placeholders such as [PARTY_1]: copy them verbatim. "
         + "Reply with plain prose only, no markdown, no lists.";
 
     private readonly IAiProvider _provider;
@@ -71,7 +72,19 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
             return EngineOnly(projection);
         }
 
-        var prompt = BuildPrompt(projection);
+        IPromptRedactionSession redaction;
+        try
+        {
+            redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Without a redaction session nothing may be sent; fall back to the engine summary.
+            _logger.LogWarning(ex, "Could not prepare prompt redaction; using engine-only cash-flow summary.");
+            return EngineOnly(projection);
+        }
+
+        var prompt = BuildPrompt(projection, redaction);
         var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
@@ -101,7 +114,7 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
             var narrative = response.Value?.Trim();
             return string.IsNullOrEmpty(narrative)
                 ? EngineOnly(projection)
-                : new CashFlowExplanation(narrative, GeneratedByAi: true);
+                : new CashFlowExplanation(redaction.Restore(narrative), GeneratedByAi: true);
         }
         catch (OperationCanceledException)
         {
@@ -116,7 +129,7 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
         }
     }
 
-    private string BuildPrompt(CashFlowProjection projection)
+    private static string BuildPrompt(CashFlowProjection projection, IPromptRedactionSession redaction)
     {
         var sb = new StringBuilder();
         sb.Append(CultureInfo.InvariantCulture,
@@ -144,7 +157,7 @@ public sealed class CashFlowExplainer : ICashFlowExplainer
                 + $"accrual {e.AccrualPeriod:yyyy-MM}, tight={(e.IsTight ? "yes" : "no")}\n");
         }
 
-        return _anonymizer.Anonymize(sb.ToString());
+        return redaction.Redact(sb.ToString());
     }
 
     private static CashFlowExplanation EngineOnly(CashFlowProjection projection)

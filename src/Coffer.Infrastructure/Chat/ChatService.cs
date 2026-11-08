@@ -1,5 +1,6 @@
 using Coffer.Core.Ai;
 using Coffer.Core.Chat;
+using Coffer.Infrastructure.AI;
 using Microsoft.Extensions.Logging;
 
 namespace Coffer.Infrastructure.Chat;
@@ -77,16 +78,31 @@ public sealed class ChatService : IChatService
         ArgumentException.ThrowIfNullOrWhiteSpace(question);
         ArgumentNullException.ThrowIfNull(history);
 
+        // One redaction session per question: the history, the question and every tool result share
+        // it, so a counterparty keeps the same pseudonym across the whole request (hard rule #7).
+        // Earlier answers were restored for display, so they are redacted again here.
+        IPromptRedactionSession redaction;
+        try
+        {
+            redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "Could not prepare prompt redaction; no chat request was sent.");
+            return new ChatTurn(ErrorMessage, []);
+        }
+
         var systemPrompt = BuildSystemPrompt();
         var messages = new List<AiChatMessage>(history.Count + 1);
         foreach (var turn in history)
         {
+            var text = redaction.Redact(turn.Text);
             messages.Add(turn.Author == ChatAuthor.User
-                ? AiChatMessage.User(turn.Text)
-                : AiChatMessage.Assistant(turn.Text, []));
+                ? AiChatMessage.User(text)
+                : AiChatMessage.Assistant(text, []));
         }
 
-        messages.Add(AiChatMessage.User(question));
+        messages.Add(AiChatMessage.User(redaction.Redact(question)));
 
         var traces = new List<ChatToolTrace>();
 
@@ -130,10 +146,11 @@ public sealed class ChatService : IChatService
             var turn = result.Value;
             if (turn.IsFinal)
             {
-                return new ChatTurn(turn.Text ?? string.Empty, traces);
+                // The answer stays on the device, so the payee pseudonyms become names again.
+                return new ChatTurn(redaction.Restore(turn.Text ?? string.Empty), traces);
             }
 
-            var toolResults = await ExecuteToolsAsync(turn.ToolCalls, traces, ct).ConfigureAwait(false);
+            var toolResults = await ExecuteToolsAsync(turn.ToolCalls, traces, redaction, ct).ConfigureAwait(false);
             messages.Add(AiChatMessage.Assistant(turn.Text, turn.ToolCalls));
             messages.Add(AiChatMessage.ToolOutputs(toolResults));
         }
@@ -143,19 +160,25 @@ public sealed class ChatService : IChatService
     }
 
     private async Task<IReadOnlyList<AiToolResult>> ExecuteToolsAsync(
-        IReadOnlyList<AiToolCall> calls, List<ChatToolTrace> traces, CancellationToken ct)
+        IReadOnlyList<AiToolCall> calls,
+        List<ChatToolTrace> traces,
+        IPromptRedactionSession redaction,
+        CancellationToken ct)
     {
         var results = new List<AiToolResult>(calls.Count);
         foreach (var call in calls)
         {
-            traces.Add(new ChatToolTrace(call.ToolName, call.ArgumentsJson));
+            // The model only knows payees by pseudonym; a filter such as merchantPattern="[PARTY_1]"
+            // must query the real name. Restoring happens locally and never reaches the provider.
+            var arguments = PromptJson.Restore(call.ArgumentsJson, redaction);
+            traces.Add(new ChatToolTrace(call.ToolName, arguments));
 
             string rawResult;
             if (_tools.TryGetValue(call.ToolName, out var tool))
             {
                 try
                 {
-                    rawResult = await tool.ExecuteAsync(call.ArgumentsJson, ct).ConfigureAwait(false);
+                    rawResult = await tool.ExecuteAsync(arguments, ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -174,8 +197,8 @@ public sealed class ChatService : IChatService
                 rawResult = $"{{\"error\":\"Unknown tool '{call.ToolName}'.\"}}";
             }
 
-            // Anonymise before the result returns to the model (hard rule #7).
-            var safeResult = _anonymizer.Anonymize(rawResult);
+            // Anonymise before the result returns to the model (hard rule #7), value by value.
+            var safeResult = PromptJson.Redact(rawResult, redaction);
             results.Add(new AiToolResult(call.CallId, call.ToolName, safeResult));
         }
 
@@ -237,6 +260,8 @@ public sealed class ChatService : IChatService
             + "Odpowiadaj wyłącznie na podstawie danych zwróconych przez narzędzia. NIGDY nie zmyślaj liczb "
             + "ani kwot — jeśli narzędzie nie zwróciło danych, powiedz, że ich nie masz. Wszystkie kwoty są "
             + "w PLN. Nie udzielaj porad podatkowych, prawnych ani inwestycyjnych i nie rekomenduj konkretnych "
-            + "instrumentów finansowych. Gdy pytanie dotyczy wydatków lub transakcji, użyj odpowiedniego narzędzia.";
+            + "instrumentów finansowych. Gdy pytanie dotyczy wydatków lub transakcji, użyj odpowiedniego narzędzia. "
+            + "Dane osobowe są zastąpione znacznikami w nawiasach kwadratowych (np. [PARTY_1], [OWNER], [ADDRESS]) — "
+            + "przepisuj je dokładnie w tej postaci i nie zgaduj, co oznaczają.";
     }
 }

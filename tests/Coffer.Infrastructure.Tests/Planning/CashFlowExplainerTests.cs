@@ -2,6 +2,7 @@ using Coffer.Core.Ai;
 using Coffer.Core.Domain;
 using Coffer.Core.Planning;
 using Coffer.Infrastructure.Planning;
+using Coffer.Infrastructure.Tests.AI;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -36,7 +37,7 @@ public class CashFlowExplainerTests
     public async Task Explain_AnonymisesPromptBeforeSending()
     {
         var provider = new ScriptedProvider("ok");
-        var explainer = Explainer(provider, anonymizer: new MarkingAnonymizer());
+        var explainer = Explainer(provider, anonymizer: new MarkingPromptAnonymizer());
 
         await explainer.ExplainAsync(Projection(), CancellationToken.None);
 
@@ -105,7 +106,7 @@ public class CashFlowExplainerTests
             gate ?? new StubBudgetGate(canProceed: true),
             ledger ?? new RecordingLedger(),
             new StubPricing(),
-            anonymizer ?? new PassthroughAnonymizer(),
+            anonymizer ?? new PassthroughPromptAnonymizer(),
             NullLogger<CashFlowExplainer>.Instance);
 
     private static CashFlowProjection Projection() =>
@@ -189,15 +190,5 @@ public class CashFlowExplainerTests
     private sealed class StubPricing : IAiPricing
     {
         public AiCost Estimate(string model, int inputTokens, int outputTokens) => new(0.01m, 0.04m);
-    }
-
-    private sealed class PassthroughAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => text;
-    }
-
-    private sealed class MarkingAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => "ANON:" + text;
     }
 }

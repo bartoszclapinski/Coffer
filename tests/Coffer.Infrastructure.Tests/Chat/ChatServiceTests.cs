@@ -1,6 +1,7 @@
 using Coffer.Core.Ai;
 using Coffer.Core.Chat;
 using Coffer.Infrastructure.Chat;
+using Coffer.Infrastructure.Tests.AI;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -46,7 +47,7 @@ public class ChatServiceTests
         provider.Enqueue(AiToolTurn(("GetTransactions", "{}")));
         provider.Enqueue(FinalTurn("Gotowe."));
 
-        var service = Service(provider, [tool], anonymizer: new MarkingAnonymizer());
+        var service = Service(provider, [tool], anonymizer: new MarkingPromptAnonymizer());
 
         await service.AskAsync("Pokaż transakcje", [], CancellationToken.None);
 
@@ -54,8 +55,9 @@ public class ChatServiceTests
         provider.Requests.Should().HaveCount(2);
         var toolMessage = provider.Requests[1].Messages.Single(m => m.Role == AiChatRole.Tool);
         var result = toolMessage.ToolResults.Should().ContainSingle().Subject;
-        result.ResultJson.Should().StartWith("ANON:", "tool output is anonymised before returning to the model (hard rule #7)");
-        result.ResultJson.Should().Contain("""{"transactions":[{"merchant":"ORLEN"}]}""");
+        result.ResultJson.Should().Be(
+            """{"transactions":[{"merchant":"ANON:ORLEN"}]}""",
+            "every string value of the tool output is anonymised before returning to the model (hard rule #7)");
     }
 
     [Fact]
@@ -189,7 +191,7 @@ public class ChatServiceTests
             gate ?? new StubBudgetGate(canProceed: true),
             ledger ?? new RecordingLedger(),
             new StubPricing(),
-            anonymizer ?? new PassthroughAnonymizer(),
+            anonymizer ?? new PassthroughPromptAnonymizer(),
             NullLogger<ChatService>.Instance);
 
     private static AiToolTurn AiToolTurn(params (string Tool, string Args)[] calls)
@@ -286,15 +288,5 @@ public class ChatServiceTests
     private sealed class StubPricing : IAiPricing
     {
         public AiCost Estimate(string model, int inputTokens, int outputTokens) => new(0.01m, 0.04m);
-    }
-
-    private sealed class PassthroughAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => text;
-    }
-
-    private sealed class MarkingAnonymizer : IPromptAnonymizer
-    {
-        public string Anonymize(string text) => "ANON:" + text;
     }
 }

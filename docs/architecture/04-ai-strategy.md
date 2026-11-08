@@ -132,24 +132,31 @@ Cost per batch of 50: roughly 800 input + 100 output tokens on Haiku ≈ ~$0.000
 
 ### Anonymization before AI
 
-Even for categorization, sensitive fields are redacted:
+Every AI path (categorization, chat tool results, anomaly commentary, advisor report, cash-flow explainer, AI fallback parser) redacts through one choke point (Sprint 30):
 
 ```csharp
-public class PromptAnonymizer
+// Coffer.Core — the only redaction API. There is no synchronous "Anonymize(string)":
+// opening a session always loads the owner identity names and the known counterparties.
+public interface IPromptAnonymizer
 {
-    public string Anonymize(string description)
-    {
-        var s = description;
-        s = Regex.Replace(s, @"\b\d{20,26}\b", "[ACCOUNT]");        // account numbers
-        s = Regex.Replace(s, @"\b\d{3}-\d{2}-\d{2}-\d{3}\b", "[NIP]");
-        s = Regex.Replace(s, @"\bPL\d{26}\b", "[IBAN]");
-        // Keep merchant names as-is — they're useful and not sensitive
-        return s;
-    }
+    Task<IPromptRedactionSession> BeginSessionAsync(CancellationToken ct);
+}
+
+public interface IPromptRedactionSession
+{
+    bool HasOwnerNames { get; }
+    string Redact(string text);   // one session per AI request
+    string Restore(string text);  // [PARTY_n] → name, only for output that stays on the device
 }
 ```
 
-Account numbers are useless to the model anyway (no signal in 26 random digits) and removing them protects user privacy.
+`PromptRedactor` (Infrastructure) applies, in order:
+
+1. **PKO labelled sub-fields.** The value after `Nazwa nadawcy/odbiorcy:` becomes a stable per-request pseudonym (`[PARTY_1]`); `Adres …`, `Numer telefonu`, `Nazwa i nr identyfikatora`, `Rachunek …` and `Numer karty` become `[ADDRESS]`, `[PHONE]`, `[ID]`, `[ACCOUNT]`, `[CARD]`. A value runs to the next known label (or a quote / semicolon / line break in raw CSV). `Tytuł:` and `Lokalizacja:` stay readable.
+2. **Patterns.** IBAN, NIP, 20–26-digit account runs, Polish phone numbers (`+48` / `0048` / `48` + 9 digits, 3-3-3 groups), PESEL (isolated 11 digits, not part of a decimal).
+3. **Names.** Owner identity names → `[OWNER]`, then counterparty names known from stored descriptions (`StoredCounterpartyNameSource`) or learnt from the text's own labels → `[PARTY_n]`. Diacritic- and case-insensitive (`LUKASZ ZDZBLO` = `Łukasz Źdźbło`); owner names also in reversed word order.
+
+Merchant-like content (`BIEDRONKA 1234`, the transfer title, city), amounts and dates are kept: they are the signal and not personal. The categorizer additionally sends only the lead, title and location (`CategorizationPromptInput`); its cache key stays the full normalized description. Chat redacts JSON tool results value by value (`PromptJson`), so serializer escapes (`Ł`, `+48`) cannot hide a name or phone, and restores pseudonyms in tool arguments and in the displayed answer; the restored answer is redacted again when it is sent back as history.
 
 ## Chat with data — tool calling
 

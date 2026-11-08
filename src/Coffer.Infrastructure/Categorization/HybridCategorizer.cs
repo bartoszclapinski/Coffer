@@ -12,8 +12,9 @@ namespace Coffer.Infrastructure.Categorization;
 /// <summary>
 /// Hybrid categoriser (Phase 10-C): <b>cache → rules → AI batch</b>. Cache and rule hits are
 /// resolved exactly as the deterministic <see cref="RuleCacheCategorizer"/> does (and written
-/// back so the next encounter is free). Whatever is left unknown is anonymised (hard rule #7),
-/// sent to the AI provider in batches behind the <see cref="IAiBudgetGate"/> at
+/// back so the next encounter is free). Whatever is left unknown is narrowed to its merchant-like
+/// fields (<see cref="CategorizationPromptInput"/>), anonymised (hard rule #7), sent to the AI
+/// provider in batches behind the <see cref="IAiBudgetGate"/> at
 /// <see cref="AiPriority.Critical"/>, validated, ledgered, and cached with
 /// <see cref="CacheSource.Ai"/>.
 /// <para>
@@ -22,6 +23,11 @@ namespace Coffer.Infrastructure.Categorization;
 /// (<c>null</c>) and logs — the owner can recategorise later. The DB connection is not held
 /// open across the network calls: cache/rule resolution and the AI write-back are two separate
 /// short-lived contexts.
+/// </para>
+/// <para>
+/// Only the prompt text is narrowed. The cache key (and the rule-matching input) stays the full
+/// normalised description, exactly as before Sprint 30, so every description categorised earlier
+/// still hits the cache and user rules can still match any part of the description locally.
 /// </para>
 /// </summary>
 public sealed class HybridCategorizer : ICategorizer
@@ -176,11 +182,23 @@ public sealed class HybridCategorizer : ICategorizer
         var resolved = new Dictionary<string, Guid?>(StringComparer.Ordinal);
         var model = await _settings.GetCategorizationModelAsync(ct).ConfigureAwait(false);
         var categoryList = string.Join(", ", categories.Select(c => c.Name));
+        IPromptRedactionSession redaction;
+        try
+        {
+            redaction = await _anonymizer.BeginSessionAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Never send unredacted text and never break the import: leave the unknowns uncategorised.
+            _logger.LogWarning(
+                ex, "Could not prepare prompt redaction; leaving {Count} description(s) uncategorised.", unknowns.Count);
+            return resolved;
+        }
 
         for (var offset = 0; offset < unknowns.Count; offset += BatchSize)
         {
             var batch = unknowns.Skip(offset).Take(BatchSize).ToList();
-            var indexes = await CategorizeBatchAsync(batch, categories, categoryList, model, ct)
+            var indexes = await CategorizeBatchAsync(batch, categories, categoryList, model, redaction, ct)
                 .ConfigureAwait(false);
             if (indexes is null)
             {
@@ -208,9 +226,10 @@ public sealed class HybridCategorizer : ICategorizer
         IReadOnlyList<(Guid Id, string Name)> categories,
         string categoryList,
         string model,
+        IPromptRedactionSession redaction,
         CancellationToken ct)
     {
-        var prompt = BuildPrompt(batch, categoryList);
+        var prompt = BuildPrompt(batch, categoryList, redaction);
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;
         var estOutputTokens = batch.Count * OutputTokensPerItem;
@@ -292,14 +311,17 @@ public sealed class HybridCategorizer : ICategorizer
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 
-    private string BuildPrompt(IReadOnlyList<string> batch, string categoryList)
+    private static string BuildPrompt(IReadOnlyList<string> batch, string categoryList, IPromptRedactionSession redaction)
     {
         var sb = new StringBuilder();
         sb.Append("Categories: [").Append(categoryList).Append("]\n\n");
         sb.Append("Transactions:\n");
         for (var i = 0; i < batch.Count; i++)
         {
-            sb.Append(CultureInfo.InvariantCulture, $"{i + 1}. \"{_anonymizer.Anonymize(batch[i])}\"\n");
+            // Redact the full description first (it learns the counterparty name from its label and
+            // removes it wherever else it appears), then keep only the merchant-like fields.
+            var input = CategorizationPromptInput.Build(redaction.Redact(batch[i]));
+            sb.Append(CultureInfo.InvariantCulture, $"{i + 1}. \"{input}\"\n");
         }
 
         sb.Append("\nReturn ONLY a JSON array of ").Append(batch.Count)
