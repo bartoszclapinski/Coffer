@@ -154,11 +154,8 @@ public sealed class AiAssistedParser : IStatementParser
 
     private async Task<bool> HasApiKeyAsync(CancellationToken ct)
     {
-        var provider = await _settings.GetActiveProviderAsync(ct).ConfigureAwait(false);
-        var secretKey = string.Equals(provider, AiDefaults.OpenAiProvider, StringComparison.OrdinalIgnoreCase)
-            ? AiDefaults.OpenAiApiKeySecret
-            : AiDefaults.ClaudeApiKeySecret;
-        var key = await _secretStore.GetSecretAsync(secretKey, ct).ConfigureAwait(false);
+        // Claude is the only wired provider; 31-B makes this check provider-aware (Ollama needs no key).
+        var key = await _secretStore.GetSecretAsync(AiDefaults.ClaudeApiKeySecret, ct).ConfigureAwait(false);
         return !string.IsNullOrWhiteSpace(key);
     }
 

@@ -204,7 +204,8 @@ public static class ServiceRegistration
             return new InMemorySecretStore();
         });
 
-        services.AddTransient<IAiProvider, ClaudeProvider>();
+        // Factory registration: the optional HttpMessageHandler parameter is a test seam, never resolved from DI.
+        services.AddTransient<IAiProvider>(sp => new ClaudeProvider(sp.GetRequiredService<ISecretStore>()));
         // Transient: each session reads the current owner names / counterparties from the DB.
         services.AddTransient<IPromptAnonymizer, PromptAnonymizer>();
         services.AddTransient<ICounterpartyNameSource, StoredCounterpartyNameSource>();

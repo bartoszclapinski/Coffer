@@ -3,18 +3,18 @@ namespace Coffer.Core.Ai;
 /// <summary>Shared AI constants: provider labels, default model/cap, secret and purpose keys.</summary>
 public static class AiDefaults
 {
+    /// <summary>The only wired remote provider (doc 04 lists the deferred ones).</summary>
     public const string ClaudeProvider = "Claude";
-    public const string OpenAiProvider = "OpenAI";
 
     /// <summary>Cheap batch categorisation model (doc 04 / CLAUDE.md cost discipline).</summary>
-    public const string CategorizationModel = "claude-haiku-4-5";
+    public const string CategorizationModel = "claude-haiku-5-5";
 
     /// <summary>
     /// Reasoning-tier model for chat (doc 04 / CLAUDE.md cost discipline): chat needs reasoning,
     /// not the cheap categorisation model. User-selectable chat-model settings arrive with the
     /// Settings UI in 12-B; until then chat uses this default.
     /// </summary>
-    public const string ChatModel = "claude-sonnet-4-6";
+    public const string ChatModel = "claude-sonnet-5-5";
 
     /// <summary>Default monthly budget cap in PLN (doc 04).</summary>
     public const decimal MonthlyCapPln = 20m;
@@ -27,9 +27,6 @@ public static class AiDefaults
 
     /// <summary><c>ISecretStore</c> key for the Claude API key.</summary>
     public const string ClaudeApiKeySecret = "ai.claude.apiKey";
-
-    /// <summary><c>ISecretStore</c> key for the OpenAI API key.</summary>
-    public const string OpenAiApiKeySecret = "ai.openai.apiKey";
 }
 
 /// <summary>Ledger <c>Purpose</c> values (doc 04).</summary>

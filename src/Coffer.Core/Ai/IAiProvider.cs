@@ -2,7 +2,7 @@ namespace Coffer.Core.Ai;
 
 /// <summary>
 /// Provider-neutral AI completion surface (doc 04), implemented per vendor
-/// (<c>ClaudeProvider</c> now, <c>OpenAiProvider</c> in 10-C) over
+/// (<c>ClaudeProvider</c> now; a local Ollama provider in Sprint 31) over
 /// <c>Microsoft.Extensions.AI</c>. Categorisation uses only
 /// <see cref="CompleteJsonAsync{TResult}"/>; chat (Phase 7) uses
 /// <see cref="CompleteWithToolsAsync"/>; <see cref="StreamAsync"/> is a stub.

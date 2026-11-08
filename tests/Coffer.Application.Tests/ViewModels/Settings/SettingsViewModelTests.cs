@@ -14,7 +14,12 @@ public class SettingsViewModelTests
     [Fact]
     public async Task Load_PopulatesFromSettingsLedgerAndSecretPresence()
     {
-        var settings = new FakeAiSettings { MonthlyCapPln = 30m, ActiveProvider = AiDefaults.OpenAiProvider };
+        var settings = new FakeAiSettings
+        {
+            MonthlyCapPln = 30m,
+            ActiveProvider = AiDefaults.ClaudeProvider,
+            CategorizationModel = "claude-sonnet-4-6",
+        };
         var secrets = new FakeSecretStore();
         await secrets.SetSecretAsync(AiDefaults.ClaudeApiKeySecret, "sk-ant-x", CancellationToken.None);
         var ledger = new FakeAiUsageLedger { CurrentMonthSpendPln = 7.5m };
@@ -23,9 +28,32 @@ public class SettingsViewModelTests
         await vm.LoadCommand.ExecuteAsync(null);
 
         vm.MonthlyCapPln.Should().Be(30m);
-        vm.SelectedProvider.Should().Be(AiDefaults.OpenAiProvider);
+        vm.SelectedProvider.Should().Be(AiDefaults.ClaudeProvider);
+        vm.CategorizationModel.Should().Be("claude-sonnet-4-6");
         vm.CurrentMonthSpendPln.Should().Be(7.5m);
         vm.HasApiKey.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ProviderAndModelLists_OfferOnlyClaude_CurrentGenerationFirst()
+    {
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger());
+
+        vm.Providers.Should().Equal(AiDefaults.ClaudeProvider);
+        vm.Models.Should().Equal("claude-haiku-5-5", "claude-sonnet-5-5", "claude-haiku-4-5", "claude-sonnet-4-6");
+        vm.Models.Should().Contain(AiDefaults.CategorizationModel);
+    }
+
+    [Fact]
+    public async Task Load_StoredChoiceNoLongerOffered_ShowsTheDefaults()
+    {
+        var settings = new FakeAiSettings { ActiveProvider = "Retired", CategorizationModel = "retired-model" };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.SelectedProvider.Should().Be(AiDefaults.ClaudeProvider);
+        vm.CategorizationModel.Should().Be(AiDefaults.CategorizationModel);
     }
 
     [Fact]
@@ -35,14 +63,14 @@ public class SettingsViewModelTests
         var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
 
         vm.MonthlyCapPln = 42m;
-        vm.SelectedProvider = AiDefaults.OpenAiProvider;
-        vm.CategorizationModel = "gpt-4o-mini";
+        vm.SelectedProvider = AiDefaults.ClaudeProvider;
+        vm.CategorizationModel = "claude-haiku-4-5";
 
         await vm.SaveCommand.ExecuteAsync(null);
 
         settings.MonthlyCapPln.Should().Be(42m);
-        settings.ActiveProvider.Should().Be(AiDefaults.OpenAiProvider);
-        settings.CategorizationModel.Should().Be("gpt-4o-mini");
+        settings.ActiveProvider.Should().Be(AiDefaults.ClaudeProvider);
+        settings.CategorizationModel.Should().Be("claude-haiku-4-5");
     }
 
     [Fact]

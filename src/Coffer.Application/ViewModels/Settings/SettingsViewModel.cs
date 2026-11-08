@@ -183,11 +183,12 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public bool HasAccounts => Accounts.Count > 0;
 
-    public ObservableCollection<string> Providers { get; } =
-        [AiDefaults.ClaudeProvider, AiDefaults.OpenAiProvider];
+    // Only providers that are actually wired (doc 04).
+    public ObservableCollection<string> Providers { get; } = [AiDefaults.ClaudeProvider];
 
+    // Current generation first; the 4.x models stay selectable as a fallback.
     public ObservableCollection<string> Models { get; } =
-        ["claude-haiku-4-5", "claude-sonnet-4-6", "gpt-4o-mini", "gpt-4o"];
+        ["claude-haiku-5-5", "claude-sonnet-5-5", "claude-haiku-4-5", "claude-sonnet-4-6"];
 
     public IReadOnlyList<LanguageOption> Languages { get; } =
     [
@@ -218,8 +219,12 @@ public sealed partial class SettingsViewModel : ObservableObject
         try
         {
             var ct = CancellationToken.None;
-            SelectedProvider = await _settings.GetActiveProviderAsync(ct).ConfigureAwait(true);
-            CategorizationModel = await _settings.GetCategorizationModelAsync(ct).ConfigureAwait(true);
+            // A stored value no longer offered (e.g. a retired provider) shows the default, so the
+            // next Save replaces it instead of keeping a choice that fails at call time.
+            SelectedProvider = OfferedOrDefault(
+                Providers, await _settings.GetActiveProviderAsync(ct).ConfigureAwait(true), AiDefaults.ClaudeProvider);
+            CategorizationModel = OfferedOrDefault(
+                Models, await _settings.GetCategorizationModelAsync(ct).ConfigureAwait(true), AiDefaults.CategorizationModel);
             MonthlyCapPln = await _settings.GetMonthlyCapPlnAsync(ct).ConfigureAwait(true);
             SafetyFloorPln = await _planningSettings.GetSafetyFloorPlnAsync(ct).ConfigureAwait(true);
             AiFallbackParsingEnabled = await _settings.GetAiFallbackParsingEnabledAsync(ct).ConfigureAwait(true);
@@ -517,6 +522,9 @@ public sealed partial class SettingsViewModel : ObservableObject
             _logger.LogWarning(ex, "Failed to refresh the backup status after a failed snapshot");
         }
     }
+
+    private static string OfferedOrDefault(IEnumerable<string> offered, string stored, string fallback) =>
+        offered.Contains(stored, StringComparer.OrdinalIgnoreCase) ? stored : fallback;
 
     private static string FormatLocalTimestamp(DateTime utc) =>
         DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);

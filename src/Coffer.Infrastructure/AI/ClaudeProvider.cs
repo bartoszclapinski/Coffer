@@ -14,17 +14,39 @@ namespace Coffer.Infrastructure.AI;
 /// effect without a restart, and so it never lives in a long-held field (hard rule #6).
 /// Categorisation uses <see cref="CompleteJsonAsync{TResult}"/>; <see cref="StreamAsync"/>
 /// is a stub until chat lands in Phase 7.
+/// <para>
+/// Per-model request shape (temperature, thinking headroom) comes from <see cref="ClaudeModelRules"/>.
+/// No forced <c>tool_choice</c> and no assistant prefill are ever sent: both return HTTP 400 on the
+/// current models. Thinking blocks a model returns are not replayed in the chat tool loop — the
+/// orchestrator carries only text and tool calls; with adaptive thinking a turn without thinking is
+/// a valid turn, and Anthropic.SDK 5.10.0 would re-send an empty (display-omitted) thinking block as
+/// a malformed <c>redacted_thinking</c> block. The live check (<c>ClaudeProviderLiveTests</c>) runs
+/// a full tool round trip to prove the API accepts this.
+/// </para>
 /// </summary>
 public sealed class ClaudeProvider : IAiProvider
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
-    private readonly ISecretStore _secrets;
+    // Thinking-by-default models can take well over the SDK's 100 s default on an analysis call.
+    private static readonly TimeSpan _requestTimeout = TimeSpan.FromMinutes(5);
 
-    public ClaudeProvider(ISecretStore secrets)
+    // One pooled handler for the process; each call wraps it in a short-lived HttpClient.
+    private static readonly SocketsHttpHandler _sharedHandler = new()
+    {
+        PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+    };
+
+    private readonly ISecretStore _secrets;
+    private readonly HttpMessageHandler _httpHandler;
+
+    /// <param name="secrets">Source of the API key, read per call.</param>
+    /// <param name="httpHandler">Test seam: replaces the network handler. Production leaves it null.</param>
+    public ClaudeProvider(ISecretStore secrets, HttpMessageHandler? httpHandler = null)
     {
         ArgumentNullException.ThrowIfNull(secrets);
         _secrets = secrets;
+        _httpHandler = httpHandler ?? _sharedHandler;
     }
 
     public string ProviderName => AiDefaults.ClaudeProvider;
@@ -59,19 +81,15 @@ public sealed class ClaudeProvider : IAiProvider
                 "No Claude API key configured. Set it in Settings before using AI features.");
         }
 
-        using var client = new AnthropicClient(new APIAuthentication(apiKey));
+        using var http = CreateHttpClient();
+        using var client = new AnthropicClient(new APIAuthentication(apiKey), http);
         IChatClient chat = client.Messages;
 
         var messages = BuildMessages(request);
-        var options = new ChatOptions
-        {
-            ModelId = request.Model,
-            MaxOutputTokens = request.MaxTokens,
-            Temperature = (float)request.Temperature,
-            Tools = request.Tools.Count == 0
-                ? null
-                : request.Tools.Select(t => (AITool)new SchemaToolFunction(t)).ToList(),
-        };
+        var options = BuildOptions(request.Model, request.MaxTokens, request.Temperature);
+        options.Tools = request.Tools.Count == 0
+            ? null
+            : request.Tools.Select(t => (AITool)new SchemaToolFunction(t)).ToList();
 
         var response = await chat.GetResponseAsync(messages, options, ct).ConfigureAwait(false);
 
@@ -116,7 +134,8 @@ public sealed class ClaudeProvider : IAiProvider
                 "No Claude API key configured. Set it in Settings before using AI features.");
         }
 
-        using var client = new AnthropicClient(new APIAuthentication(apiKey));
+        using var http = CreateHttpClient();
+        using var client = new AnthropicClient(new APIAuthentication(apiKey), http);
         IChatClient chat = client.Messages;
 
         var messages = new List<ChatMessage>();
@@ -127,12 +146,7 @@ public sealed class ClaudeProvider : IAiProvider
 
         messages.Add(new ChatMessage(ChatRole.User, request.Prompt));
 
-        var options = new ChatOptions
-        {
-            ModelId = request.Model,
-            MaxOutputTokens = request.MaxTokens,
-            Temperature = (float)request.Temperature,
-        };
+        var options = BuildOptions(request.Model, request.MaxTokens, request.Temperature);
 
         var response = await chat.GetResponseAsync(messages, options, ct).ConfigureAwait(false);
 
@@ -141,6 +155,19 @@ public sealed class ClaudeProvider : IAiProvider
         var usage = new AiUsage(ProviderName, request.Model, inputTokens, outputTokens);
         return (response.Text ?? string.Empty, usage);
     }
+
+    // The request shape every call shares: model, max_tokens with thinking headroom where the model
+    // thinks by default, and temperature only where the model accepts one (ClaudeModelRules).
+    private static ChatOptions BuildOptions(string model, int answerTokens, double temperature) =>
+        new()
+        {
+            ModelId = model,
+            MaxOutputTokens = ClaudeModelRules.MaxTokensFor(model, answerTokens),
+            Temperature = ClaudeModelRules.AcceptsTemperature(model) ? (float)temperature : null,
+        };
+
+    private HttpClient CreateHttpClient() =>
+        new(_httpHandler, disposeHandler: false) { Timeout = _requestTimeout };
 
     private static List<ChatMessage> BuildMessages(AiToolRequest request)
     {

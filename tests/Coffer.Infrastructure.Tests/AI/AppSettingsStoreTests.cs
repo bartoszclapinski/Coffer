@@ -33,12 +33,12 @@ public class AppSettingsStoreTests : CategorizationDbTest
         var store = new AppSettingsStore(Factory);
 
         await store.SetMonthlyCapPlnAsync(35.50m, CancellationToken.None);
-        await store.SetActiveProviderAsync(AiDefaults.OpenAiProvider, CancellationToken.None);
-        await store.SetCategorizationModelAsync("gpt-4o-mini", CancellationToken.None);
+        await store.SetActiveProviderAsync(AiDefaults.ClaudeProvider, CancellationToken.None);
+        await store.SetCategorizationModelAsync("claude-sonnet-4-6", CancellationToken.None);
 
         (await store.GetMonthlyCapPlnAsync(CancellationToken.None)).Should().Be(35.50m);
-        (await store.GetActiveProviderAsync(CancellationToken.None)).Should().Be(AiDefaults.OpenAiProvider);
-        (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be("gpt-4o-mini");
+        (await store.GetActiveProviderAsync(CancellationToken.None)).Should().Be(AiDefaults.ClaudeProvider);
+        (await store.GetCategorizationModelAsync(CancellationToken.None)).Should().Be("claude-sonnet-4-6");
     }
 
     [Fact]
