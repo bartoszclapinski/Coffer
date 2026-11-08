@@ -49,6 +49,15 @@ public class CofferDataRootTests
     }
 
     [Fact]
+    public void Resolve_WithRelativeOverride_IsAnchoredAtTheBaseDirectory_NotTheCurrentDirectory()
+    {
+        var baseDirectory = Path.Combine(_localAppData, "app");
+
+        CofferDataRoot.Resolve("relative-root", isDebugBuild: true, _localAppData, baseDirectory)
+            .Should().Be(Path.Combine(baseDirectory, "relative-root"));
+    }
+
+    [Fact]
     public void IsDebugBuild_MatchesTheTestBuildConfiguration()
     {
 #if DEBUG

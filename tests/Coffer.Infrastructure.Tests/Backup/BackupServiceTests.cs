@@ -232,6 +232,26 @@ public class BackupServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateDailySnapshot_NeverPrunesTheSnapshotStagedForRestore()
+    {
+        await SeedDatabaseAsync(1);
+        Directory.CreateDirectory(BackupsDir);
+        for (var day = 1; day <= 7; day++)
+        {
+            await File.WriteAllBytesAsync(DailyPath(new DateOnly(2026, 6, 25).AddDays(day)), [1]);
+        }
+
+        var staged = DailyPath(new DateOnly(2026, 5, 1)); // aged out and outside the newest seven
+        await File.WriteAllBytesAsync(staged, [0xAB]);
+        await new RestoreService(_vaultPaths, NullLogger<RestoreService>.Instance)
+            .StageRestoreAsync(Path.GetFileName(staged), CancellationToken.None);
+
+        await NewService().CreateDailySnapshotAsync(_today, CancellationToken.None);
+
+        File.Exists(staged).Should().BeTrue("the restore staged for the next start must still find its snapshot");
+    }
+
+    [Fact]
     public async Task CreateDailySnapshot_WhenEverySnapshotIsOld_KeepsTheNewestSeven()
     {
         // The app was not opened for months and its database is gone: only old snapshots exist.

@@ -25,6 +25,7 @@ public sealed class BackupService : IBackupService
     private const string PreMigrationFolderName = "pre-migration";
     private const string SnapshotPattern = "coffer-*.db";
     private const string FailureFileName = "last-failure.json";
+    private const string RestoreMarkerFileName = "restore-pending.json";
     private const int DailyRetentionDays = 30;
     private const int PreMigrationRetentionDays = 90;
 
@@ -68,9 +69,11 @@ public sealed class BackupService : IBackupService
 
     public Task<BackupResult> CreateSnapshotNowAsync(DateOnly today, CancellationToken ct)
     {
-        var time = TimeOnly.FromDateTime(_timeProvider.GetLocalNow().DateTime);
-        var target = Path.Combine(BackupsDir, BackupRetention.ManualFileName(today, time));
-        return WriteAndPruneAsync(today, target, ct);
+        // Date and time come from one clock read, so a snapshot taken across midnight is not named a day early.
+        var now = _timeProvider.GetLocalNow().DateTime;
+        var day = DateOnly.FromDateTime(now);
+        var target = Path.Combine(BackupsDir, BackupRetention.ManualFileName(day, TimeOnly.FromDateTime(now)));
+        return WriteAndPruneAsync(day, target, ct);
     }
 
     public Task<BackupStatus> GetStatusAsync(CancellationToken ct)
@@ -160,9 +163,11 @@ public sealed class BackupService : IBackupService
         if (Directory.Exists(BackupsDir))
         {
             var names = Directory.EnumerateFiles(BackupsDir, SnapshotPattern).Select(Path.GetFileName).OfType<string>();
+            var staged = ReadStagedRestoreFileName();
             DeleteSets(
                 BackupsDir,
-                BackupRetention.SelectExpiredSnapshots(names, today, DailyRetentionDays, KeepNewestSnapshots));
+                BackupRetention.SelectExpiredSnapshots(names, today, DailyRetentionDays, KeepNewestSnapshots)
+                    .Where(name => !string.Equals(name, staged, StringComparison.OrdinalIgnoreCase)));
         }
 
         if (Directory.Exists(PreMigrationDir))
@@ -172,6 +177,33 @@ public sealed class BackupService : IBackupService
                 PreMigrationDir,
                 BackupRetention.SelectExpired(
                     names, today, PreMigrationRetentionDays, BackupRetention.ParsePreMigrationDate));
+        }
+    }
+
+    /// <summary>
+    /// The snapshot a staged restore will swap in on the next start (from <c>restore-pending.json</c>), or null.
+    /// Retention must never delete it, or the restore the owner asked for would fail at startup.
+    /// </summary>
+    private string? ReadStagedRestoreFileName()
+    {
+        var marker = Path.Combine(_vaultPaths.LocalAppDataFolder, RestoreMarkerFileName);
+        if (!File.Exists(marker))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(marker));
+            return doc.RootElement.TryGetProperty("SnapshotFileName", out var name)
+                && name.ValueKind == JsonValueKind.String
+                ? name.GetString()
+                : null;
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Restore marker is unreadable; pruning without excluding a staged snapshot");
+            return null;
         }
     }
 
