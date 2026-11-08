@@ -111,7 +111,7 @@ public class AiAssistedParserTests
 
         await parser.ParseAsync(input, CancellationToken.None);
 
-        provider.LastPrompt.Should().Contain("[NAME]");
+        provider.LastPrompt.Should().Contain(PromptRedactor.OwnerPlaceholder);
         provider.LastPrompt.Should().NotContain("Żółtowska");
         provider.LastPrompt.Should().NotContain("\uFFFD", "the CSV must be decoded with the right code page");
     }
