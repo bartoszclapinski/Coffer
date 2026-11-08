@@ -51,10 +51,10 @@ The owner can run every AI feature on a **local Ollama model** — nothing leave
 
 ### 31-A — Claude refresh
 
-- [ ] 31.1 `AiDefaults`: categorization `claude-haiku-5-5`, analysis `claude-sonnet-5-5`; OpenAI constants removed; `AiPricing` gains the 5.5 rates, keeps the 4.x rates, drops GPT.
-- [ ] 31.2 `ClaudeProvider`: omit `temperature` for models that reject it; JSON calls cannot lose their answer to thinking (max-tokens headroom or thinking off where allowed). Unit tests on the request shape where the SDK allows it.
-- [ ] 31.3 Settings model/provider lists: Claude models only (5.5 first, 4.x kept); `AiAssistedParser` key check no longer mentions OpenAI.
-- [ ] 31.4 Live Claude check, skipped unless an API key env var is set.
+- [x] 31.1 `AiDefaults`: categorization `claude-haiku-5-5`, analysis `claude-sonnet-5-5`; OpenAI constants removed; `AiPricing` gains the 5.5 rates, keeps the 4.x rates, drops GPT.
+- [x] 31.2 `ClaudeProvider`: omit `temperature` for models that reject it; JSON calls cannot lose their answer to thinking (max-tokens headroom or thinking off where allowed). Unit tests on the request shape where the SDK allows it.
+- [x] 31.3 Settings model/provider lists: Claude models only (5.5 first, 4.x kept); `AiAssistedParser` key check no longer mentions OpenAI.
+- [x] 31.4 Live Claude check, skipped unless an API key env var is set.
 
 ### 31-B — per-role routing
 
