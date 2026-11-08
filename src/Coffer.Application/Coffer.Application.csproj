@@ -2,9 +2,9 @@
 
   <ItemGroup>
     <PackageReference Include="LiveChartsCore.SkiaSharpView" Version="2.0.4" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.*" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.*" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.17" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.17" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
 
   <ItemGroup>

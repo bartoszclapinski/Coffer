@@ -154,8 +154,11 @@ secrets.encrypted          — managed by IKeyVault, in .gitignore
 
 ```
 <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.*" />
-<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.*" />
-<PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.*" />
+<!-- ".Sqlite.Core" (NOT ".Sqlite"): the non-Core package drags in bundle_e_sqlite3, whose
+     batteries can displace SQLCipher and leave the vault in plaintext. Pin exact versions —
+     see 02-database-and-encryption.md "Only one native SQLite provider". -->
+<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="9.0.17" />
+<PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.11" />
 <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
 <PackageReference Include="UglyToad.PdfPig" Version="0.1.*" />
 <PackageReference Include="Anthropic.SDK" Version="*" />

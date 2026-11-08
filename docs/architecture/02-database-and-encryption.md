@@ -61,6 +61,12 @@ services.AddDbContext<CofferDbContext>((sp, opts) =>
 });
 ```
 
+### Only one native SQLite provider — and fail closed
+
+Reference `Microsoft.EntityFrameworkCore.Sqlite.Core`, **never** `Microsoft.EntityFrameworkCore.Sqlite`. The non-Core package pulls `SQLitePCLRaw.bundle_e_sqlite3`, which ships its own `SQLitePCLRaw.batteries_v2.dll` bound to the plain, unencrypted `e_sqlite3`. Both bundles produce a file with the same name, and the higher package version wins the copy. If the plain one wins, plain SQLite silently ignores `PRAGMA key` and the vault is written in **plaintext** with no error. A fresh restore of the floating `9.*` reference did exactly that: EF Sqlite 9.0.22 brought `bundle_e_sqlite3` 2.1.13, which beat `bundle_e_sqlcipher` 2.1.11. For this reason every `PackageReference` is pinned to an exact version.
+
+As defence in depth, `SqlCipherKeyInterceptor` runs `PRAGMA cipher_version;` right after `PRAGMA key` on every opened connection. If the result is empty (plain SQLite returns no row), it closes the connection and throws `SqlCipherUnavailableException` before EF can create or read any table.
+
 ### Connection pool
 
 Default EF Core pools connections. With SQLCipher, every connection in the pool needs `PRAGMA key` set. The interceptor above handles this. **Do not disable the pool** unless profiling shows it's a problem.
