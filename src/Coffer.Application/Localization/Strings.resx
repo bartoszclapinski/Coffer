@@ -467,6 +467,14 @@ Do you want to continue?</value>
   <data name="App.Migration.Failed" xml:space="preserve">
     <value>The database update failed. The backup remains intact. Close the application and try again.</value>
   </data>
+  <data name="App.EncryptionUnavailable.Title" xml:space="preserve">
+    <value>Coffer — encryption engine unavailable</value>
+  </data>
+  <data name="App.EncryptionUnavailable.Message" xml:space="preserve">
+    <value>Coffer cannot open your vault because its encryption engine (SQLCipher) failed to load.
+
+To protect your data, the vault was not opened and nothing was read or written. Please reinstall Coffer. If the problem persists, check the application log for details.</value>
+  </data>
   <data name="App.PartialVault.Title" xml:space="preserve">
     <value>Coffer — mismatched vault state</value>
   </data>

@@ -467,6 +467,14 @@ Czy chcesz kontynuować?</value>
   <data name="App.Migration.Failed" xml:space="preserve">
     <value>Aktualizacja bazy danych nie powiodła się. Kopia zapasowa pozostała nienaruszona. Zamknij aplikację i spróbuj ponownie.</value>
   </data>
+  <data name="App.EncryptionUnavailable.Title" xml:space="preserve">
+    <value>Coffer — mechanizm szyfrowania niedostępny</value>
+  </data>
+  <data name="App.EncryptionUnavailable.Message" xml:space="preserve">
+    <value>Coffer nie może otworzyć sejfu, ponieważ nie udało się załadować mechanizmu szyfrowania (SQLCipher).
+
+Aby chronić Twoje dane, sejf nie został otwarty i nic nie zostało odczytane ani zapisane. Zainstaluj Coffer ponownie. Jeśli problem się powtarza, sprawdź szczegóły w dzienniku aplikacji.</value>
+  </data>
   <data name="App.PartialVault.Title" xml:space="preserve">
     <value>Coffer — niedopasowany stan sejfu</value>
   </data>
