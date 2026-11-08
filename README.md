@@ -21,7 +21,7 @@ Personal finance application with AI integration. Cross-platform .NET app — Av
   </tr>
 </table>
 
-> Above: UI mockups from [`docs/mockups/`](docs/mockups/). Implementation is pre-MVP — see status at the bottom.
+> Above: UI mockups from [`docs/mockups/`](docs/mockups/) — the intended design. See the status at the bottom for what is implemented.
 
 ## What it does
 
@@ -97,7 +97,9 @@ This keeps context windows manageable and answers focused.
 
 ## Status
 
-Pre-MVP. Phase 0 (foundation) in progress. Roadmap: `docs/architecture/10-roadmap.md`. CI runs on every push and pull request to `main` — status badge at top.
+The Windows desktop app is complete for personal use: an encrypted vault (master password + BIP39 recovery seed), PKO BP CSV import (AI-assisted fallback for other banks), rule + AI categorization, spending explorer, budgets, forecast, goals and advisor, cash-flow planning, alerts, chat with your data, and encrypted local backups — in light and dark themes, Polish and English. The mobile companion, sync and receipt capture are deferred. Progress: `.ai/sprints/index.md`; roadmap: `docs/architecture/10-roadmap.md`. CI runs on every push and pull request to `main` — status badge at top.
+
+**Using it with real data:** read [`docs/running-on-real-data.md`](docs/running-on-real-data.md) first — publish a Release build, create a fresh vault, back it up, then import.
 
 ## License
 
