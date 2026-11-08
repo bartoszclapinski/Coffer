@@ -40,8 +40,12 @@ Detector and parser operate on a format-neutral `StatementInput` (a `Stream` +
 `Coffer.Core` free of any third-party runtime dependency (hard rule #3) and lets
 a single registry route both PDF and CSV statements. PDF parsers open PdfPig from
 the stream themselves; CSV text is decoded by the shared `CsvTextDecoder`
-(UTF-8 BOM → UTF-8; strict UTF-8 decode succeeds → UTF-8; else Windows-1250),
-used by the detector, the PKO CSV parser and the AI fallback alike.
+(UTF-8 BOM → UTF-8; strict UTF-8 decode succeeds **and** every non-ASCII character
+is plausible — Latin-1 Supplement, Latin Extended-A, General Punctuation, currency or
+letterlike symbols — → UTF-8; else Windows-1250), used by the detector, the PKO CSV
+parser and the AI fallback alike. The plausibility check matters because some
+Windows-1250 capitals form valid UTF-8 pairs (`SPÓŁKA` = `53 50 D3 A3 …` decodes to
+Cyrillic `SPӣKA`), and such pairs never land in the plausible ranges.
 
 ```csharp
 public enum StatementFormat { Pdf, Csv }

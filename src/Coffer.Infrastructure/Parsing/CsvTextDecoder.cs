@@ -11,13 +11,30 @@ namespace Coffer.Infrastructure.Parsing;
 /// Rules, in order:
 /// <list type="number">
 /// <item>A UTF-8 byte-order mark → UTF-8 (the BOM is not part of the text).</item>
-/// <item>The whole file decodes as strict UTF-8 (no invalid sequences) → UTF-8.</item>
+/// <item>The whole file decodes as strict UTF-8 (no invalid sequences) <b>and</b> every
+/// non-ASCII character it yields is plausible for a Polish/European statement → UTF-8.</item>
 /// <item>Otherwise → Windows-1250, the encoding PKO BP exports by default.</item>
 /// </list>
 /// Pure ASCII satisfies rule 2, and ASCII is identical in UTF-8 and Windows-1250, so
-/// those files decode the same as before. A Windows-1250 file with Polish diacritics
-/// is practically never valid UTF-8: its letters (e.g. <c>0xB9</c> "ą", <c>0xB3</c> "ł",
-/// <c>0x9C</c> "ś") are lone continuation bytes, which strict UTF-8 rejects.
+/// those files decode the same as before.
+/// <para>
+/// Strict validity alone is not enough. Most Windows-1250 diacritics (e.g. <c>0xB9</c> "ą",
+/// <c>0xB3</c> "ł", <c>0x9C</c> "ś") are lone UTF-8 continuation bytes and are rejected,
+/// but some upper-case letters are UTF-8 lead bytes (<c>0xD3</c> "Ó", <c>0xC6</c> "Ć",
+/// <c>0xCA</c> "Ę", <c>0xD1</c> "Ń") and others are continuation bytes (<c>0xA3</c> "Ł",
+/// <c>0xAF</c> "Ż", <c>0x8C</c> "Ś", <c>0xA5</c> "Ą"). So the Windows-1250 bytes of
+/// "SPÓŁKA" or "SPÓŁDZIELNIA" are valid UTF-8 and decode to Cyrillic ("SPӣ…"). Such
+/// pairs land in Cyrillic, Latin Extended-B/IPA or supplementary planes, so the
+/// plausibility check (Latin-1 Supplement, Latin Extended-A, General Punctuation,
+/// currency and letterlike symbols) sends them to Windows-1250.
+/// </para>
+/// <para>
+/// Residual ambiguity: a Windows-1250 "Â", "Ă", "Ä" or "Ĺ" directly followed by a
+/// continuation-byte letter still forms a plausible Latin character; these letters are
+/// rare in Polish text. The trade-off in the other direction: a genuine UTF-8 file whose
+/// only non-ASCII text is outside the plausible ranges (e.g. Cyrillic) is decoded as
+/// Windows-1250.
+/// </para>
 /// </remarks>
 public static class CsvTextDecoder
 {
@@ -50,16 +67,39 @@ public static class CsvTextDecoder
             return Encoding.UTF8;
         }
 
+        string text;
         try
         {
-            _strictUtf8.GetCharCount(content);
-            return Encoding.UTF8;
+            text = _strictUtf8.GetString(content);
         }
         catch (DecoderFallbackException)
         {
             return _windows1250;
         }
+
+        foreach (var c in text)
+        {
+            if (c > '' && !IsPlausibleNonAscii(c))
+            {
+                return _windows1250;
+            }
+        }
+
+        return Encoding.UTF8;
     }
+
+    /// <summary>
+    /// True for a non-ASCII character a statement in Polish (or another European
+    /// language) plausibly contains. Surrogates (supplementary planes) are never plausible.
+    /// </summary>
+    private static bool IsPlausibleNonAscii(char c) => c switch
+    {
+        >= ' ' and <= 'ſ' => true, // Latin-1 Supplement (incl. NBSP) + Latin Extended-A
+        >= ' ' and <= '⁯' => true, // General Punctuation: dashes, „” quotes, …, thin spaces
+        >= '₠' and <= '⃏' => true, // Currency Symbols: €
+        >= '℀' and <= '⅏' => true, // Letterlike Symbols: №, ™
+        _ => false,
+    };
 
     /// <summary>Decodes <paramref name="content"/> to text, dropping a leading UTF-8 BOM.</summary>
     public static string Decode(ReadOnlySpan<byte> content)
