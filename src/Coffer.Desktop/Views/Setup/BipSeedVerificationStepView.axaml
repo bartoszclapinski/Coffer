@@ -12,7 +12,7 @@
                        FontSize="22"
                        FontWeight="Light" />
             <TextBlock TextWrapping="Wrap"
-                       Foreground="#999"
+                       Classes="muted"
                        Text="{l:Localize Setup.Verification.Hint}" />
         </StackPanel>
 
@@ -31,9 +31,11 @@
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
             <Button Content="{l:Localize Setup.Back}"
+                    Classes="chip"
                     MinWidth="120"
                     Command="{Binding $parent[Window].DataContext.BackCommand}" />
             <Button Content="{l:Localize Setup.Next}"
+                    Classes="accent"
                     MinWidth="120"
                     IsEnabled="{Binding IsValid}"
                     Command="{Binding $parent[Window].DataContext.NextCommand}" />

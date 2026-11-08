@@ -10,7 +10,8 @@
         <StackPanel Grid.Row="0" Spacing="8">
             <TextBlock Text="{l:Localize Setup.Welcome.Title}"
                        FontSize="28"
-                       FontWeight="Light" />
+                       FontWeight="Light"
+                       Foreground="{DynamicResource Coffer.Tx}" />
             <TextBlock TextWrapping="Wrap"
                        Text="{l:Localize Setup.Welcome.Intro}" />
         </StackPanel>
@@ -31,6 +32,7 @@
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
             <Button Content="{l:Localize Setup.Next}"
+                    Classes="accent"
                     MinWidth="120"
                     Command="{Binding $parent[Window].DataContext.NextCommand}" />
         </StackPanel>

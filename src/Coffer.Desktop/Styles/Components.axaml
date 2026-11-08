@@ -133,8 +133,19 @@
     <Style Selector="Button.accent /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource Coffer.Accent}" />
     </Style>
+    <!-- Fluent's :pointerover/:pressed/:disabled presenter setters would otherwise win the
+         foreground (white-on-light-green in dark) and leave a disabled button fully green. -->
     <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource Coffer.Pos}" />
+        <Setter Property="Background" Value="{DynamicResource Coffer.AccentHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.OnAccent}" />
+    </Style>
+    <Style Selector="Button.accent:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Coffer.Accent}" />
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.OnAccent}" />
+    </Style>
+    <Style Selector="Button.accent:disabled /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Coffer.Track}" />
+        <Setter Property="Foreground" Value="{DynamicResource Coffer.Mut}" />
     </Style>
 
     <!-- ===================== Filter / segment chip ===================== -->

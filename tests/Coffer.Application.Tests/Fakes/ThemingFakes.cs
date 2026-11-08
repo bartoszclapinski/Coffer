@@ -10,6 +10,11 @@ internal sealed class FakeThemeSwitcher : IThemeSwitcher
 
     public int ToggleCalls { get; private set; }
 
+    /// <summary>Number of effective (state-changing) Set calls, i.e. theme applies + saves.</summary>
+    public int AppliedCount { get; private set; }
+
+    public FakeThemeSwitcher(AppTheme initial = AppTheme.Light) => Current = initial;
+
     public event EventHandler? Changed;
 
     public void Toggle()
@@ -20,6 +25,13 @@ internal sealed class FakeThemeSwitcher : IThemeSwitcher
 
     public void Set(AppTheme theme)
     {
+        // Mirrors the real ThemeSwitcher: unchanged theme is a no-op.
+        if (theme == Current)
+        {
+            return;
+        }
+
+        AppliedCount++;
         Current = theme;
         Changed?.Invoke(this, EventArgs.Empty);
     }

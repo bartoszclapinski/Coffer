@@ -100,6 +100,15 @@
   <data name="Settings.Language.Label" xml:space="preserve">
     <value>Interface language</value>
   </data>
+  <data name="Settings.Theme.Section" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Settings.Theme.Label" xml:space="preserve">
+    <value>Dark theme</value>
+  </data>
+  <data name="Settings.Theme.Hint" xml:space="preserve">
+    <value>Switch between the light (warm paper) and dark presentations.</value>
+  </data>
   <data name="Settings.Ai.Section" xml:space="preserve">
     <value>AI provider</value>
   </data>

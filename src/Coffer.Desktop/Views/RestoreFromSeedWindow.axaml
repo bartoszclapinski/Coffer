@@ -11,11 +11,12 @@
         Title="{l:Localize Restore.Seed.Title}"
         Width="480" Height="520"
         CanResize="False"
+        Background="{DynamicResource Coffer.Bg}"
         WindowStartupLocation="CenterOwner">
     <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="32">
         <StackPanel Grid.Row="0" Spacing="6">
             <TextBlock Text="{l:Localize Restore.Seed.Title}" FontSize="22" FontWeight="Light" />
-            <TextBlock Text="{l:Localize Restore.Seed.Intro}" TextWrapping="Wrap" Foreground="#999" />
+            <TextBlock Text="{l:Localize Restore.Seed.Intro}" TextWrapping="Wrap" Classes="muted" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Spacing="12" Margin="0,20,0,0" VerticalAlignment="Top">
@@ -43,23 +44,25 @@
             </StackPanel>
 
             <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="#D14"
+                       Foreground="{DynamicResource Coffer.Neg}"
                        TextWrapping="Wrap"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-            <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding IsBusy}" />
+            <ProgressBar Classes="bar" IsIndeterminate="True" Height="4" IsVisible="{Binding IsBusy}" />
         </StackPanel>
 
         <TextBlock Grid.Row="2"
                    Text="{l:Localize Restore.Seed.Note}"
-                   FontSize="12" Foreground="#999" TextWrapping="Wrap" Margin="0,8,0,0" />
+                   Classes="muted" TextWrapping="Wrap" Margin="0,8,0,0" />
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,16,0,0">
-            <Button Content="{l:Localize Restore.Seed.Cancel}"
+            <Button Classes="chip"
+                    Content="{l:Localize Restore.Seed.Cancel}"
                     MinWidth="100"
                     IsCancel="True"
                     Click="OnCancel" />
-            <Button Content="{l:Localize Restore.Seed.Recover}"
+            <Button Classes="accent"
+                    Content="{l:Localize Restore.Seed.Recover}"
                     MinWidth="140"
                     IsDefault="True"
                     IsEnabled="{Binding !IsBusy}"

@@ -11,6 +11,7 @@
         Title="{l:Localize Setup.WindowTitle}"
         Width="640" Height="520"
         CanResize="False"
+        Background="{DynamicResource Coffer.Bg}"
         WindowStartupLocation="CenterScreen">
     <Window.DataTemplates>
         <DataTemplate DataType="vm:WelcomeStepViewModel">
@@ -35,6 +36,7 @@
                    Text="{l:Localize Setup.WindowTitle}"
                    FontSize="22"
                    FontWeight="Light"
+                   Foreground="{DynamicResource Coffer.Tx}"
                    Margin="0,0,0,16" />
         <ContentControl Grid.Row="1"
                         Content="{Binding CurrentStepViewModel}" />

@@ -26,6 +26,13 @@ public sealed class ThemeSwitcher : IThemeSwitcher
 
     public void Set(AppTheme theme)
     {
+        // No-op when unchanged: listeners that mirror the theme (e.g. the Settings toggle)
+        // echo it back here, and that echo must not re-apply, re-save or re-raise Changed.
+        if (theme == Current)
+        {
+            return;
+        }
+
         ThemeManager.Apply(theme);
         _store.Save(theme);
         Changed?.Invoke(this, EventArgs.Empty);

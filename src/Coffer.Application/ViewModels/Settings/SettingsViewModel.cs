@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Coffer.Application.Dialogs;
 using Coffer.Application.Localization;
+using Coffer.Application.Theming;
 using Coffer.Core.Accounts;
 using Coffer.Core.Ai;
 using Coffer.Core.Backup;
@@ -9,6 +10,7 @@ using Coffer.Core.Import;
 using Coffer.Core.Localization;
 using Coffer.Core.Planning;
 using Coffer.Core.Security;
+using Coffer.Core.Theming;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -37,6 +39,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IChangeMasterPasswordDialog _changeMasterPasswordDialog;
     private readonly ILocalizer _localizer;
     private readonly ILanguageStore _languageStore;
+    private readonly IThemeSwitcher _themeSwitcher;
     private readonly ILogger<SettingsViewModel> _logger;
 
     [ObservableProperty]
@@ -86,6 +89,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _seedRecoveryEnabled;
 
+    [ObservableProperty]
+    private bool _isDarkTheme;
+
     public SettingsViewModel(
         IAiSettings settings,
         IPlanningSettings planningSettings,
@@ -101,6 +107,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         IChangeMasterPasswordDialog changeMasterPasswordDialog,
         ILocalizer localizer,
         ILanguageStore languageStore,
+        IThemeSwitcher themeSwitcher,
         ILogger<SettingsViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -117,6 +124,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(changeMasterPasswordDialog);
         ArgumentNullException.ThrowIfNull(localizer);
         ArgumentNullException.ThrowIfNull(languageStore);
+        ArgumentNullException.ThrowIfNull(themeSwitcher);
         ArgumentNullException.ThrowIfNull(logger);
 
         _settings = settings;
@@ -133,9 +141,26 @@ public sealed partial class SettingsViewModel : ObservableObject
         _changeMasterPasswordDialog = changeMasterPasswordDialog;
         _localizer = localizer;
         _languageStore = languageStore;
+        _themeSwitcher = themeSwitcher;
         _logger = logger;
 
         _selectedLanguage = Languages.First(l => l.Language == localizer.Current);
+        _isDarkTheme = themeSwitcher.Current == AppTheme.Dark;
+
+        // Keep the toggle in sync if the theme is flipped elsewhere (top-bar button, command palette)
+        // while the Settings page is open.
+        _themeSwitcher.Changed += (_, _) => IsDarkTheme = _themeSwitcher.Current == AppTheme.Dark;
+    }
+
+    // Applying the switcher persists the choice. When the change came from the switcher itself
+    // (the Changed handler above) the theme already matches, so this does nothing.
+    partial void OnIsDarkThemeChanged(bool value)
+    {
+        var target = value ? AppTheme.Dark : AppTheme.Light;
+        if (_themeSwitcher.Current != target)
+        {
+            _themeSwitcher.Set(target);
+        }
     }
 
     public ObservableCollection<AccountAnchorRowViewModel> Accounts { get; } = [];

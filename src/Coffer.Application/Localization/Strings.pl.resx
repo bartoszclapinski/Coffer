@@ -100,6 +100,15 @@
   <data name="Settings.Language.Label" xml:space="preserve">
     <value>Język interfejsu</value>
   </data>
+  <data name="Settings.Theme.Section" xml:space="preserve">
+    <value>Wygląd</value>
+  </data>
+  <data name="Settings.Theme.Label" xml:space="preserve">
+    <value>Ciemny motyw</value>
+  </data>
+  <data name="Settings.Theme.Hint" xml:space="preserve">
+    <value>Przełącz między jasnym (ciepły papier) a ciemnym wyglądem.</value>
+  </data>
   <data name="Settings.Ai.Section" xml:space="preserve">
     <value>Dostawca AI</value>
   </data>

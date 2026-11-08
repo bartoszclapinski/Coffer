@@ -12,7 +12,7 @@
                        FontSize="22"
                        FontWeight="Light" />
             <TextBlock TextWrapping="Wrap"
-                       Foreground="#E07B00"
+                       Foreground="{DynamicResource Coffer.Neg}"
                        Text="{l:Localize Setup.SeedDisplay.Warning}" />
         </StackPanel>
 
@@ -26,14 +26,16 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Border BorderBrush="#555"
+                    <Border BorderBrush="{DynamicResource Coffer.Bd}"
+                            Background="{DynamicResource Coffer.Panel2}"
                             BorderThickness="1"
                             CornerRadius="4"
                             Margin="4"
                             Padding="12,8">
                         <TextBlock Text="{Binding}"
                                    FontFamily="Consolas, Menlo, monospace"
-                                   FontSize="16" />
+                                   FontSize="16"
+                                   Foreground="{DynamicResource Coffer.Tx}" />
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
@@ -41,9 +43,11 @@
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
             <Button Content="{l:Localize Setup.Back}"
+                    Classes="chip"
                     MinWidth="120"
                     Command="{Binding $parent[Window].DataContext.BackCommand}" />
             <Button Content="{l:Localize Setup.SeedDisplay.Saved}"
+                    Classes="accent"
                     MinWidth="160"
                     Command="{Binding $parent[Window].DataContext.NextCommand}" />
         </StackPanel>

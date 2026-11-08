@@ -11,6 +11,7 @@
         Title="{l:Localize Restore.Title}"
         Width="480" Height="440"
         CanResize="False"
+        Background="{DynamicResource Coffer.Bg}"
         WindowStartupLocation="CenterOwner">
     <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="24">
         <StackPanel Grid.Row="0" Spacing="6">
@@ -19,11 +20,11 @@
                        FontWeight="Light" />
             <TextBlock Text="{l:Localize Restore.Intro}"
                        TextWrapping="Wrap"
-                       Foreground="#8E8E93" />
+                       Classes="muted" />
         </StackPanel>
 
         <Border Grid.Row="1" Margin="0,16,0,0"
-                BorderBrush="#E5E5EA" BorderThickness="1" CornerRadius="6">
+                BorderBrush="{DynamicResource Coffer.Bd}" BorderThickness="1" CornerRadius="6">
             <Grid>
                 <ListBox ItemsSource="{Binding Snapshots}"
                          SelectedItem="{Binding SelectedSnapshot, Mode=TwoWay}"
@@ -37,7 +38,7 @@
                                            VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding DisplaySize}"
-                                           Foreground="#8E8E93"
+                                           Classes="muted"
                                            VerticalAlignment="Center" />
                             </Grid>
                         </DataTemplate>
@@ -45,7 +46,7 @@
                 </ListBox>
 
                 <TextBlock Text="{l:Localize Restore.Empty}"
-                           Foreground="#8E8E93"
+                           Classes="muted"
                            TextWrapping="Wrap"
                            Margin="16"
                            HorizontalAlignment="Center"
@@ -57,16 +58,18 @@
         <TextBlock Grid.Row="2"
                    Margin="0,12,0,0"
                    Text="{Binding StatusMessage}"
-                   Foreground="#D14"
+                   Foreground="{DynamicResource Coffer.Neg}"
                    TextWrapping="Wrap"
                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,16,0,0">
-            <Button Content="{l:Localize Restore.Cancel}"
+            <Button Classes="chip"
+                    Content="{l:Localize Restore.Cancel}"
                     MinWidth="100"
                     IsCancel="True"
                     Command="{Binding CancelCommand}" />
-            <Button Content="{l:Localize Restore.Restore}"
+            <Button Classes="accent"
+                    Content="{l:Localize Restore.Restore}"
                     MinWidth="120"
                     IsDefault="True"
                     IsEnabled="{Binding !IsBusy}"

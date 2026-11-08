@@ -3,8 +3,8 @@
              x:Class="Coffer.Desktop.App">
              <!-- Theme variant is no longer pinned: it is applied at startup from IThemeStore
                   (plaintext theme.json, readable pre-login) and toggled live from the top bar.
-                  Default stays Light until every screen consumes the design tokens (see
-                  .ai/sprints/sprint-28). -->
+                  Default is Dark now that every screen consumes the design tokens (see
+                  .ai/sprints/sprint-29). -->
 
     <Application.Resources>
         <ResourceDictionary>
