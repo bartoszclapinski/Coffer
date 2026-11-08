@@ -1237,7 +1237,7 @@ To create a new vault, delete the existing files and restart the application.</v
     <value>Backup &amp; Recovery</value>
   </data>
   <data name="Settings.Backup.Hint" xml:space="preserve">
-    <value>Automatic daily local snapshots of your encrypted database, kept for 30 days.</value>
+    <value>Automatic daily local snapshots of your encrypted database, kept for 30 days (the newest 7 are always kept).</value>
   </data>
   <data name="Settings.Backup.LastSnapshot" xml:space="preserve">
     <value>Last snapshot</value>
@@ -1247,6 +1247,24 @@ To create a new vault, delete the existing files and restart the application.</v
   </data>
   <data name="Settings.Backup.Never" xml:space="preserve">
     <value>None yet</value>
+  </data>
+  <data name="Settings.Backup.Age.JustNow" xml:space="preserve">
+    <value>just now</value>
+  </data>
+  <data name="Settings.Backup.Age.Minutes" xml:space="preserve">
+    <value>{0} min ago</value>
+  </data>
+  <data name="Settings.Backup.Age.Hours" xml:space="preserve">
+    <value>{0} h ago</value>
+  </data>
+  <data name="Settings.Backup.Age.OneDay" xml:space="preserve">
+    <value>1 day ago</value>
+  </data>
+  <data name="Settings.Backup.Age.Days" xml:space="preserve">
+    <value>{0} days ago</value>
+  </data>
+  <data name="Settings.Backup.LastFailure" xml:space="preserve">
+    <value>The last backup attempt failed ({0}). Details are in the log.</value>
   </data>
   <data name="Settings.Backup.Now" xml:space="preserve">
     <value>Backup now</value>
@@ -1289,6 +1307,9 @@ To create a new vault, delete the existing files and restart the application.</v
   </data>
   <data name="Restore.Empty" xml:space="preserve">
     <value>No snapshots available yet.</value>
+  </data>
+  <data name="Restore.Row.Manual" xml:space="preserve">
+    <value>{0} {1} (manual)</value>
   </data>
   <data name="Restore.Restore" xml:space="preserve">
     <value>Restore</value>

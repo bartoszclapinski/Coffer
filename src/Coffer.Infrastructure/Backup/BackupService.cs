@@ -1,4 +1,4 @@
-using System.Globalization;
+using System.Text.Json;
 using Coffer.Core.Backup;
 using Coffer.Core.Security;
 using Microsoft.Extensions.Logging;
@@ -6,38 +6,58 @@ using Microsoft.Extensions.Logging;
 namespace Coffer.Infrastructure.Backup;
 
 /// <summary>
-/// Local daily backup of the encrypted database (doc 08, Layer 1). Writes a dated snapshot
-/// <c>backups/coffer-YYYY-MM-DD.db</c> atomically (a <c>.tmp</c> copy renamed on success), prunes daily
-/// files older than 30 days and pre-migration files older than 90 days, and reports status from the files
-/// on disk. Deliberately does not force a WAL checkpoint (it can run while the app is live) — the
-/// <c>-wal</c>/<c>-shm</c> side-files are copied alongside so the snapshot is still consistent.
+/// Local backup of the encrypted database (doc 08, Layer 1). Writes a daily snapshot
+/// <c>backups/coffer-YYYY-MM-DD.db</c> and, on "Back up now", a distinct manual snapshot
+/// <c>backups/coffer-YYYY-MM-DD-manual-HHMMSS.db</c> — both through <see cref="BackupSnapshotWriter"/>
+/// (SQLite online backup on keyed connections, so a snapshot never fights the app's pooled connections and is
+/// a single consistent file under the same DEK; temp file then move). Retention always keeps the newest
+/// <see cref="KeepNewestSnapshots"/> snapshots, then drops daily/manual files older than 30 days and
+/// pre-migration files older than 90 days. A failed attempt is recorded in <c>backups/last-failure.json</c>
+/// (timestamp + exception type only — no paths, no data) so <see cref="GetStatusAsync"/> can surface it in
+/// Settings; the next successful snapshot clears it.
 /// </summary>
 public sealed class BackupService : IBackupService
 {
+    /// <summary>How many of the newest snapshots retention keeps regardless of their age.</summary>
+    public const int KeepNewestSnapshots = 7;
+
     private const string BackupFolderName = "backups";
     private const string PreMigrationFolderName = "pre-migration";
-    private const string DailyPattern = "coffer-*.db";
+    private const string SnapshotPattern = "coffer-*.db";
+    private const string FailureFileName = "last-failure.json";
+    private const string RestoreMarkerFileName = "restore-pending.json";
     private const int DailyRetentionDays = 30;
     private const int PreMigrationRetentionDays = 90;
 
     private readonly IVaultPaths _vaultPaths;
+    private readonly IDekHolder _dekHolder;
     private readonly ILogger<BackupService> _logger;
+    private readonly TimeProvider _timeProvider;
 
-    public BackupService(IVaultPaths vaultPaths, ILogger<BackupService> logger)
+    public BackupService(
+        IVaultPaths vaultPaths,
+        IDekHolder dekHolder,
+        ILogger<BackupService> logger,
+        TimeProvider? timeProvider = null)
     {
         ArgumentNullException.ThrowIfNull(vaultPaths);
+        ArgumentNullException.ThrowIfNull(dekHolder);
         ArgumentNullException.ThrowIfNull(logger);
         _vaultPaths = vaultPaths;
+        _dekHolder = dekHolder;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     private string BackupsDir => Path.Combine(_vaultPaths.LocalAppDataFolder, BackupFolderName);
 
     private string PreMigrationDir => Path.Combine(BackupsDir, PreMigrationFolderName);
 
+    private string FailurePath => Path.Combine(BackupsDir, FailureFileName);
+
     public async Task<BackupResult> CreateDailySnapshotAsync(DateOnly today, CancellationToken ct)
     {
-        var target = DailyPath(today);
+        var target = Path.Combine(BackupsDir, BackupRetention.DailyFileName(today));
         if (File.Exists(target))
         {
             Prune(today);
@@ -47,17 +67,47 @@ public sealed class BackupService : IBackupService
         return await WriteAndPruneAsync(today, target, ct).ConfigureAwait(false);
     }
 
-    public Task<BackupResult> CreateSnapshotNowAsync(DateOnly today, CancellationToken ct) =>
-        WriteAndPruneAsync(today, DailyPath(today), ct);
+    public Task<BackupResult> CreateSnapshotNowAsync(DateOnly today, CancellationToken ct)
+    {
+        // Date and time come from one clock read, so a snapshot taken across midnight is not named a day early.
+        var now = _timeProvider.GetLocalNow().DateTime;
+        var day = DateOnly.FromDateTime(now);
+        var target = Path.Combine(BackupsDir, BackupRetention.ManualFileName(day, TimeOnly.FromDateTime(now)));
+        return WriteAndPruneAsync(day, target, ct);
+    }
 
     public Task<BackupStatus> GetStatusAsync(CancellationToken ct)
     {
-        var dailyDates = EnumerateDailyDates().ToList();
+        DateOnly? lastDaily = null;
+        DateTime? newestAtUtc = null;
+        var count = 0;
+        if (Directory.Exists(BackupsDir))
+        {
+            foreach (var path in Directory.EnumerateFiles(BackupsDir, SnapshotPattern))
+            {
+                if (BackupRetention.ParseSnapshot(Path.GetFileName(path)) is not { } parsed)
+                {
+                    continue;
+                }
+
+                count++;
+                if (parsed.Kind == SnapshotKind.Daily && (lastDaily is null || parsed.Date > lastDaily))
+                {
+                    lastDaily = parsed.Date;
+                }
+
+                var writtenAtUtc = File.GetLastWriteTimeUtc(path);
+                if (newestAtUtc is null || writtenAtUtc > newestAtUtc)
+                {
+                    newestAtUtc = writtenAtUtc;
+                }
+            }
+        }
 
         DateTime? lastPreMigration = null;
         if (Directory.Exists(PreMigrationDir))
         {
-            var stamps = Directory.EnumerateFiles(PreMigrationDir, DailyPattern)
+            var stamps = Directory.EnumerateFiles(PreMigrationDir, SnapshotPattern)
                 .Select(File.GetLastWriteTimeUtc)
                 .ToList();
             if (stamps.Count > 0)
@@ -66,10 +116,7 @@ public sealed class BackupService : IBackupService
             }
         }
 
-        var status = new BackupStatus(
-            dailyDates.Count == 0 ? null : dailyDates.Max(),
-            dailyDates.Count,
-            lastPreMigration);
+        var status = new BackupStatus(lastDaily, count, lastPreMigration, newestAtUtc, ReadLastFailureAtUtc());
         return Task.FromResult(status);
     }
 
@@ -84,40 +131,85 @@ public sealed class BackupService : IBackupService
 
         Directory.CreateDirectory(BackupsDir);
 
-        // Write to a temp set first, then move into place so an interrupted copy never leaves a
-        // half-written file mistaken for a good snapshot. Move the main .db last, so its presence
-        // implies the whole set landed.
-        var tmp = target + ".tmp";
-        DeleteQuietly(tmp);
-        DeleteQuietly(tmp + "-wal");
-        DeleteQuietly(tmp + "-shm");
+        var dek = BackupSnapshotWriter.TryGetDek(_dekHolder);
+        SnapshotMethod method;
+        try
+        {
+            method = await BackupSnapshotWriter.WriteSnapshotAsync(source, target, dek, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Recorded so Settings can show the failure, then rethrown so the caller logs/reports it as before.
+            RecordFailure(ex);
+            throw;
+        }
+        finally
+        {
+            BackupSnapshotWriter.Zero(dek);
+        }
 
-        await BackupSnapshotWriter.CopyDatabaseAsync(source, tmp, ct).ConfigureAwait(false);
-
-        MoveIntoPlace(tmp + "-wal", target + "-wal");
-        MoveIntoPlace(tmp + "-shm", target + "-shm");
-        File.Move(tmp, target, overwrite: true);
-
-        _logger.LogInformation("Daily snapshot written to {Path}", target);
+        ClearFailure();
+        _logger.LogInformation("Snapshot written to {Path} ({Method})", target, method);
         Prune(today);
         return new BackupResult(true, target);
     }
 
     private void Prune(DateOnly today)
     {
-        PruneFolder(BackupsDir, today, DailyRetentionDays, BackupRetention.ParseDailyDate);
-        PruneFolder(PreMigrationDir, today, PreMigrationRetentionDays, BackupRetention.ParsePreMigrationDate);
-    }
-
-    private void PruneFolder(string dir, DateOnly today, int keepDays, Func<string, DateOnly?> parseDate)
-    {
-        if (!Directory.Exists(dir))
+        if (Directory.Exists(BackupsDir))
         {
-            return;
+            var names = Directory.EnumerateFiles(BackupsDir, SnapshotPattern).Select(Path.GetFileName).OfType<string>();
+            var staged = ReadStagedRestoreFileName();
+            DeleteSets(
+                BackupsDir,
+                BackupRetention.SelectExpiredSnapshots(names, today, DailyRetentionDays, KeepNewestSnapshots)
+                    .Where(name => !string.Equals(name, staged, StringComparison.OrdinalIgnoreCase)));
         }
 
-        var names = Directory.EnumerateFiles(dir, DailyPattern).Select(Path.GetFileName).OfType<string>();
-        foreach (var name in BackupRetention.SelectExpired(names, today, keepDays, parseDate))
+        if (Directory.Exists(PreMigrationDir))
+        {
+            var names = Directory.EnumerateFiles(PreMigrationDir, SnapshotPattern).Select(Path.GetFileName).OfType<string>();
+            DeleteSets(
+                PreMigrationDir,
+                BackupRetention.SelectExpired(
+                    names, today, PreMigrationRetentionDays, BackupRetention.ParsePreMigrationDate));
+        }
+    }
+
+    /// <summary>
+    /// The snapshot a staged restore will swap in on the next start (from <c>restore-pending.json</c>), or null.
+    /// Retention must never delete it, or the restore the owner asked for would fail at startup.
+    /// </summary>
+    private string? ReadStagedRestoreFileName()
+    {
+        var marker = Path.Combine(_vaultPaths.LocalAppDataFolder, RestoreMarkerFileName);
+        if (!File.Exists(marker))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(marker));
+            return doc.RootElement.TryGetProperty("SnapshotFileName", out var name)
+                && name.ValueKind == JsonValueKind.String
+                ? name.GetString()
+                : null;
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Restore marker is unreadable; pruning without excluding a staged snapshot");
+            return null;
+        }
+    }
+
+    private void DeleteSets(string dir, IEnumerable<string> names)
+    {
+        foreach (var name in names)
         {
             var path = Path.Combine(dir, name);
             DeleteQuietly(path);
@@ -126,35 +218,38 @@ public sealed class BackupService : IBackupService
         }
     }
 
-    private IEnumerable<DateOnly> EnumerateDailyDates()
+    private void RecordFailure(Exception ex)
     {
-        if (!Directory.Exists(BackupsDir))
+        try
         {
-            yield break;
+            Directory.CreateDirectory(BackupsDir);
+            var record = new FailureRecord(_timeProvider.GetUtcNow().UtcDateTime, ex.GetType().Name);
+            File.WriteAllText(FailurePath, JsonSerializer.Serialize(record));
         }
-
-        foreach (var path in Directory.EnumerateFiles(BackupsDir, DailyPattern))
+        catch (Exception writeEx) when (writeEx is IOException or UnauthorizedAccessException)
         {
-            if (BackupRetention.ParseDailyDate(Path.GetFileName(path)) is { } date)
-            {
-                yield return date;
-            }
+            _logger.LogWarning(writeEx, "Could not record the backup failure");
         }
     }
 
-    private string DailyPath(DateOnly today) =>
-        Path.Combine(BackupsDir, $"coffer-{today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}.db");
+    private void ClearFailure() => DeleteQuietly(FailurePath);
 
-    private void MoveIntoPlace(string source, string destination)
+    private DateTime? ReadLastFailureAtUtc()
     {
-        if (File.Exists(source))
+        if (!File.Exists(FailurePath))
         {
-            File.Move(source, destination, overwrite: true);
+            return null;
         }
-        else
+
+        try
         {
-            // No side-file in this snapshot — drop any stale one so the set stays consistent.
-            DeleteQuietly(destination);
+            var record = JsonSerializer.Deserialize<FailureRecord>(File.ReadAllText(FailurePath));
+            return record is null ? null : DateTime.SpecifyKind(record.FailedAtUtc, DateTimeKind.Utc);
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Backup failure record at {Path} is unreadable; ignoring it", FailurePath);
+            return null;
         }
     }
 
@@ -176,4 +271,6 @@ public sealed class BackupService : IBackupService
             _logger.LogWarning(ex, "Could not delete backup file {Path}", path);
         }
     }
+
+    private sealed record FailureRecord(DateTime FailedAtUtc, string Reason);
 }

@@ -1,7 +1,7 @@
 namespace Coffer.Core.Backup;
 
 /// <summary>
-/// Guided restore from a local daily snapshot (doc 08, "Restore flow"). A snapshot is the <em>same vault</em>
+/// Guided restore from a local snapshot (doc 08, "Restore flow"). A snapshot is the <em>same vault</em>
 /// (same DEK, same master password), so restore is a file swap of already-encrypted bytes — no key handling,
 /// no re-encryption, no password re-entry. Restore is two-phase: <see cref="StageRestoreAsync"/> records a
 /// marker from the running app; <see cref="ApplyPendingRestoreAsync"/> performs the swap at the next startup,
@@ -10,15 +10,16 @@ namespace Coffer.Core.Backup;
 /// </summary>
 public interface IRestoreService
 {
-    /// <summary>The available daily snapshots, newest first.</summary>
+    /// <summary>The available snapshots (daily and manual), newest first.</summary>
     Task<IReadOnlyList<SnapshotInfo>> ListSnapshotsAsync(CancellationToken ct);
 
     /// <summary>
-    /// Stages a restore of the snapshot dated <paramref name="snapshotDate"/> by writing the pending-restore
-    /// marker. Does not touch the database. Throws <see cref="System.IO.FileNotFoundException"/> if no snapshot
-    /// exists for that date.
+    /// Stages a restore of the snapshot named <paramref name="snapshotFileName"/> (a name from
+    /// <see cref="ListSnapshotsAsync"/>) by writing the pending-restore marker. Does not touch the database.
+    /// Throws <see cref="ArgumentException"/> for a name that is not a snapshot name, and
+    /// <see cref="System.IO.FileNotFoundException"/> if that snapshot does not exist.
     /// </summary>
-    Task<PendingRestore> StageRestoreAsync(DateOnly snapshotDate, CancellationToken ct);
+    Task<PendingRestore> StageRestoreAsync(string snapshotFileName, CancellationToken ct);
 
     /// <summary>The staged restore, or <c>null</c> if none is staged (or the marker is unreadable).</summary>
     Task<PendingRestore?> GetPendingRestoreAsync(CancellationToken ct);

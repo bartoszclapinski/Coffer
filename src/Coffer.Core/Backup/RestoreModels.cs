@@ -1,10 +1,16 @@
 namespace Coffer.Core.Backup;
 
 /// <summary>
-/// One available daily snapshot the owner can restore from — its date, the backup file name, and its size
-/// on disk (for a human-readable listing). Derived from the files in the backups folder.
+/// One available snapshot the owner can restore from — its local date, the backup file name, its size on
+/// disk (for a human-readable listing), whether it is a daily or a manual ("Back up now") snapshot, and the
+/// local time of day for a manual one. Derived from the files in the backups folder.
 /// </summary>
-public sealed record SnapshotInfo(DateOnly Date, string FileName, long SizeBytes);
+public sealed record SnapshotInfo(
+    DateOnly Date,
+    string FileName,
+    long SizeBytes,
+    SnapshotKind Kind = SnapshotKind.Daily,
+    TimeOnly? Time = null);
 
 /// <summary>
 /// A staged restore request. Persisted as a marker (<c>restore-pending.json</c>) from a running app and

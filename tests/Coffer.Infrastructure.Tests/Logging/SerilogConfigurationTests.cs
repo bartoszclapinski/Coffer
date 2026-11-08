@@ -19,6 +19,30 @@ public class SerilogConfigurationTests
     }
 
     [Fact]
+    public void AddCofferLogging_WithDataRoot_CreatesTheLogFolderUnderThatRoot()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "Coffer.Tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var services = new ServiceCollection().AddCofferLogging(root);
+            using var provider = services.BuildServiceProvider();
+
+            Directory.Exists(Path.Combine(root, "logs")).Should().BeTrue();
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(root, recursive: true);
+            }
+            catch (IOException)
+            {
+                // Best effort — a log file may still be open by the global Serilog logger.
+            }
+        }
+    }
+
+    [Fact]
     public void AddCofferLogging_AllowsGenericLoggerResolution()
     {
         var services = new ServiceCollection().AddCofferLogging();

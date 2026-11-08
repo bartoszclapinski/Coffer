@@ -290,12 +290,13 @@ public static class ServiceRegistration
 
     /// <summary>
     /// Registers <see cref="IVaultPaths"/> as a Singleton wrapping the production
-    /// <see cref="CofferVaultPaths"/>. Tests inject their own <see cref="IVaultPaths"/>
-    /// pointing at a temp directory before resolving services from the container.
+    /// <see cref="CofferVaultPaths"/> rooted at <see cref="CofferDataRoot.Current"/> (the
+    /// <c>COFFER_DATA_DIR</c> override, else the per-build-configuration folder). Tests inject their own
+    /// <see cref="IVaultPaths"/> pointing at a temp directory before resolving services from the container.
     /// </summary>
     public static IServiceCollection AddCofferVaultPaths(this IServiceCollection services)
     {
-        services.AddSingleton<IVaultPaths, CofferVaultPaths>();
+        services.AddSingleton<IVaultPaths>(_ => new CofferVaultPaths(CofferDataRoot.Current));
         // Plaintext preferences, readable pre-login (before the DEK exists).
         services.AddSingleton<ILanguageStore, FileLanguageStore>();
         services.AddSingleton<IThemeStore, FileThemeStore>();

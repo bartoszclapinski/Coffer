@@ -1,3 +1,4 @@
+using Coffer.Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -18,12 +19,18 @@ public static class SerilogConfiguration
         "RefreshToken"
     };
 
-    public static IServiceCollection AddCofferLogging(this IServiceCollection services)
+    /// <summary>
+    /// Configures Serilog with its rolling log files under <see cref="CofferDataRoot.Current"/>'s <c>logs</c>
+    /// folder — the same root as the vault, so a Debug run (or a <c>COFFER_DATA_DIR</c> override) never writes
+    /// into the real vault's logs.
+    /// </summary>
+    public static IServiceCollection AddCofferLogging(this IServiceCollection services) =>
+        services.AddCofferLogging(CofferDataRoot.Current);
+
+    /// <summary>Configures Serilog with its rolling log files under <paramref name="dataRoot"/>'s <c>logs</c> folder.</summary>
+    public static IServiceCollection AddCofferLogging(this IServiceCollection services, string dataRoot)
     {
-        var logsDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Coffer",
-            "logs");
+        var logsDirectory = GetLogsDirectory(dataRoot);
         Directory.CreateDirectory(logsDirectory);
 
         Log.Logger = new LoggerConfiguration()
@@ -43,6 +50,13 @@ public static class SerilogConfiguration
 
         services.AddLogging(builder => builder.AddSerilog(dispose: true));
         return services;
+    }
+
+    /// <summary>The folder the rolling log files go to for a given data root.</summary>
+    public static string GetLogsDirectory(string dataRoot)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dataRoot);
+        return Path.Combine(dataRoot, "logs");
     }
 
     private static bool IsSensitiveLogEvent(Serilog.Events.LogEvent logEvent) =>

@@ -25,6 +25,10 @@ namespace Coffer.Application.ViewModels.Settings;
 /// </summary>
 public sealed partial class SettingsViewModel : ObservableObject
 {
+    // The daily snapshot runs on every launch, so a newest snapshot older than this means backups are not
+    // happening (app not opened, or snapshots failing) and the age is highlighted.
+    private static readonly TimeSpan _backupStaleAfter = TimeSpan.FromDays(2);
+
     private readonly IAiSettings _settings;
     private readonly IPlanningSettings _planningSettings;
     private readonly IAccountService _accountService;
@@ -85,6 +89,18 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _dailyBackupCountText = "";
+
+    [ObservableProperty]
+    private string _newestSnapshotAgeText = "";
+
+    [ObservableProperty]
+    private bool _isBackupStale;
+
+    [ObservableProperty]
+    private string _lastBackupFailureText = "";
+
+    [ObservableProperty]
+    private bool _hasBackupFailure;
 
     [ObservableProperty]
     private bool _seedRecoveryEnabled;
@@ -368,6 +384,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to create a backup snapshot");
             StatusMessage = _localizer["Settings.Backup.Status.Failed"];
+            await TryRefreshBackupStatusAsync().ConfigureAwait(true);
         }
         finally
         {
@@ -461,10 +478,70 @@ public sealed partial class SettingsViewModel : ObservableObject
     private async Task LoadBackupStatusAsync(CancellationToken ct)
     {
         var status = await _backupService.GetStatusAsync(ct).ConfigureAwait(true);
-        LastDailySnapshotText = status.LastDailySnapshot is { } date
-            ? date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-            : _localizer["Settings.Backup.Never"];
+        var nowUtc = DateTime.UtcNow;
+
+        if (status.NewestSnapshotAtUtc is { } newestUtc)
+        {
+            var age = nowUtc - newestUtc;
+            LastDailySnapshotText = FormatLocalTimestamp(newestUtc);
+            NewestSnapshotAgeText = FormatAge(age);
+            IsBackupStale = age > _backupStaleAfter;
+        }
+        else
+        {
+            LastDailySnapshotText = status.LastDailySnapshot is { } date
+                ? date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                : _localizer["Settings.Backup.Never"];
+            NewestSnapshotAgeText = "";
+            IsBackupStale = false;
+        }
+
         DailyBackupCountText = status.DailyCount.ToString(CultureInfo.InvariantCulture);
+
+        HasBackupFailure = status.LastFailureAtUtc is not null;
+        LastBackupFailureText = status.LastFailureAtUtc is { } failedUtc
+            ? _localizer.Format("Settings.Backup.LastFailure", FormatLocalTimestamp(failedUtc))
+            : "";
+    }
+
+    // After a failed "Back up now" the service has recorded the failure; show it, but never let a second
+    // failure (reading the status) mask the first one's message.
+    private async Task TryRefreshBackupStatusAsync()
+    {
+        try
+        {
+            await LoadBackupStatusAsync(CancellationToken.None).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to refresh the backup status after a failed snapshot");
+        }
+    }
+
+    private static string FormatLocalTimestamp(DateTime utc) =>
+        DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+
+    private string FormatAge(TimeSpan age)
+    {
+        if (age < TimeSpan.FromMinutes(1))
+        {
+            // Includes a small negative age from clock skew between the file stamp and now.
+            return _localizer["Settings.Backup.Age.JustNow"];
+        }
+
+        if (age < TimeSpan.FromHours(1))
+        {
+            return _localizer.Format("Settings.Backup.Age.Minutes", (int)age.TotalMinutes);
+        }
+
+        if (age < TimeSpan.FromDays(1))
+        {
+            return _localizer.Format("Settings.Backup.Age.Hours", (int)age.TotalHours);
+        }
+
+        return age < TimeSpan.FromDays(2)
+            ? _localizer["Settings.Backup.Age.OneDay"]
+            : _localizer.Format("Settings.Backup.Age.Days", (int)age.TotalDays);
     }
 
     private bool CanSaveApiKey() => !string.IsNullOrWhiteSpace(ApiKeyInput);

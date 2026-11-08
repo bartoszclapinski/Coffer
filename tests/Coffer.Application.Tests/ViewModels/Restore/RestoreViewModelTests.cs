@@ -29,6 +29,25 @@ public class RestoreViewModelTests
     }
 
     [Fact]
+    public async Task Load_WithAManualSnapshot_LabelsIt_AndStagingUsesItsFileName()
+    {
+        var service = new FakeRestoreService();
+        service.Snapshots.Add(new SnapshotInfo(
+            new DateOnly(2026, 7, 3), "coffer-2026-07-03-manual-101500.db", 10, SnapshotKind.Manual, new TimeOnly(10, 15, 0)));
+        service.Snapshots.Add(new SnapshotInfo(new DateOnly(2026, 7, 3), "coffer-2026-07-03.db", 10));
+        var vm = Create(service);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedSnapshot = vm.Snapshots[0];
+        await vm.RestoreCommand.ExecuteAsync(null);
+
+        vm.Snapshots[0].DisplayDate.Should().Be("Restore.Row.Manual", "a manual row gets its localized label");
+        vm.Snapshots[1].DisplayDate.Should().Be("2026-07-03");
+        service.LastStagedFileName.Should().Be("coffer-2026-07-03-manual-101500.db",
+            "a day can hold a daily and manual snapshots, so staging is by file name");
+    }
+
+    [Fact]
     public async Task Load_WithNoSnapshots_LeavesEmptyState()
     {
         var vm = Create(new FakeRestoreService());
@@ -54,7 +73,7 @@ public class RestoreViewModelTests
         await vm.RestoreCommand.ExecuteAsync(null);
 
         service.StageCalls.Should().Be(1);
-        service.LastStagedDate.Should().Be(new DateOnly(2026, 7, 3));
+        service.LastStagedFileName.Should().Be("coffer-2026-07-03.db");
         vm.Staged.Should().BeTrue();
         closed.Should().Be(1);
     }

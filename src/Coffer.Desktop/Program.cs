@@ -3,6 +3,7 @@ using Coffer.Application.DependencyInjection;
 using Coffer.Core.DependencyInjection;
 using Coffer.Desktop.DependencyInjection;
 using Coffer.Infrastructure.DependencyInjection;
+using Coffer.Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -24,7 +25,10 @@ internal static class Program
 
         try
         {
-            Log.Information("Coffer starting, runtime {Runtime}", Environment.Version);
+            Log.Information(
+                "Coffer starting, runtime {Runtime}, data root {DataRoot}",
+                Environment.Version,
+                CofferDataRoot.Current);
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
             return 0;
         }
