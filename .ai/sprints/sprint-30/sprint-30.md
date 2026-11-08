@@ -1,7 +1,7 @@
 # Sprint 30 — Real-data readiness (vault integrity, AI privacy, import robustness)
 
 **Phase:** — (hardening before the owner's first real-data import; touches doc 02 encryption/backup, doc 03 parsers, doc 04 AI privacy, doc 08 backup)
-**Status:** In progress
+**Status:** Closed (2026-11-08)
 **Depends on:** sprint-23/24 (`BackupSnapshotWriter`, `BackupService`, `ArchiveExporter`, `RestoreService`, `BackupRetention`), sprint-8/9 (`PkoHistoriaCsvParser`, `FingerprintBankDetector`, `ImportStatementUseCase`, `TransactionHash`), sprint-10 (`PromptAnonymizer`, `HybridCategorizer`), sprint-12/13/14/16 (chat tools, `AnomalyCommentator`, `AdvisorReportGenerator`, `CashFlowExplainer`), sprint-17 (`AiAssistedParser`), and the pre-sprint security fix that pins SQLCipher as the only SQLite provider and fails closed without it. No EF schema change.
 
 ## Goal
@@ -61,8 +61,8 @@ A readiness audit (2026-11-08, adversarially verified) run at the end of Sprint 
 - [x] 30.13 `.gitignore`: real statement exports (`*.real.*`, PKO export file-name patterns), keeping the golden fixtures.
 
 ### 30-D — running on real data + close
-- [ ] 30.14 `docs/running-on-real-data.md`: self-contained publish command, data root, first-run checklist (seed written down + one restore-from-seed drill, owner identity names, AI cap/key, first backup + archive to external media), import verification checklist.
-- [ ] 30.15 README pointer; sprint closed (plan, log, index).
+- [x] 30.14 `docs/running-on-real-data.md`: self-contained publish command, data root, first-run checklist (seed written down + one restore-from-seed drill, owner identity names, AI cap/key, first backup + archive to external media), import verification checklist.
+- [x] 30.15 README pointer; sprint closed (plan, log, index).
 
 ## Definition of Done
 
