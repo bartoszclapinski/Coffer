@@ -73,7 +73,7 @@ Coffer.sln
 - EF Core 9 + SQLite + SQLCipher (encrypted at rest)
 - CommunityToolkit.Mvvm
 - PdfPig for PDF parsing
-- Anthropic.SDK + Microsoft.Extensions.AI abstraction (an OpenAI provider is deferred, see doc 04)
+- Anthropic.SDK + Microsoft.Extensions.AI abstraction for Claude, and a local [Ollama](https://ollama.com) provider over its HTTP API — chosen per role (categorization / analysis) in Settings (an OpenAI provider is deferred, see doc 04)
 - LiveChartsCore.SkiaSharpView for charts
 - Serilog, FluentValidation, xUnit + FluentAssertions + Bogus + FsCheck
 

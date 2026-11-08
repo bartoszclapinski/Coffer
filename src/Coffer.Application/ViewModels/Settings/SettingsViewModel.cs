@@ -18,9 +18,10 @@ using Microsoft.Extensions.Logging;
 namespace Coffer.Application.ViewModels.Settings;
 
 /// <summary>
-/// View-model behind the Settings page (Phase 10-B): AI provider selection, the masked
-/// API-key entry (stored in <see cref="ISecretStore"/>, never read back — hard rule #6),
-/// the categorisation model, the monthly PLN cap that feeds the budget gate, and the
+/// View-model behind the Settings page (Phase 10-B): the provider + model of each AI role
+/// (<see cref="Categorization"/>, <see cref="Analysis"/> — Sprint 31-D), the Ollama endpoint with its
+/// connection test and model list, the masked API-key entry (stored in <see cref="ISecretStore"/>,
+/// never read back — hard rule #6), the monthly PLN cap that feeds the budget gate, and the
 /// month-to-date spend read from the cost ledger.
 /// </summary>
 public sealed partial class SettingsViewModel : ObservableObject
@@ -30,6 +31,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private static readonly TimeSpan _backupStaleAfter = TimeSpan.FromDays(2);
 
     private readonly IAiSettings _settings;
+    private readonly IOllamaCatalog _ollamaCatalog;
     private readonly IPlanningSettings _planningSettings;
     private readonly IAccountService _accountService;
     private readonly ISecretStore _secrets;
@@ -55,19 +57,34 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private LanguageOption _selectedLanguage;
 
-    [ObservableProperty]
-    private string _selectedProvider = AiDefaults.ClaudeProvider;
+    // The models the Ollama endpoint listed last; null until a listing succeeded.
+    private IReadOnlyList<OllamaModelInfo>? _ollamaModels;
 
     [ObservableProperty]
-    private string _categorizationModel = AiDefaults.CategorizationModel;
+    [NotifyPropertyChangedFor(nameof(IsEndpointRemote))]
+    [NotifyPropertyChangedFor(nameof(IsEndpointInvalid))]
+    private string _ollamaEndpointText = AiDefaults.OllamaEndpoint;
 
-    // True once the owner picks a provider or model on this screen. Save writes the route only then:
-    // the pickers offer Claude only (until 31-D), so a stored route they cannot show (e.g. a local
-    // Ollama route) is displayed as Claude and must not be overwritten when another setting is saved.
-    private bool _routeEdited;
+    [ObservableProperty]
+    private bool _isTestingConnection;
 
-    // Set while Load fills the pickers, so loading does not count as an edit.
-    private bool _loadingRoute;
+    [ObservableProperty]
+    private string _connectionStatusText = "";
+
+    [ObservableProperty]
+    private bool _connectionSucceeded;
+
+    [ObservableProperty]
+    private bool _connectionFailed;
+
+    [ObservableProperty]
+    private bool _isRefreshingModels;
+
+    [ObservableProperty]
+    private string _ollamaModelsStatusText = "";
+
+    [ObservableProperty]
+    private bool _ollamaModelsFailed;
 
     [ObservableProperty]
     private decimal _monthlyCapPln = AiDefaults.MonthlyCapPln;
@@ -118,6 +135,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public SettingsViewModel(
         IAiSettings settings,
+        IOllamaCatalog ollamaCatalog,
         IPlanningSettings planningSettings,
         IAccountService accountService,
         ISecretStore secrets,
@@ -135,6 +153,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ILogger<SettingsViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(ollamaCatalog);
         ArgumentNullException.ThrowIfNull(planningSettings);
         ArgumentNullException.ThrowIfNull(accountService);
         ArgumentNullException.ThrowIfNull(secrets);
@@ -152,6 +171,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(logger);
 
         _settings = settings;
+        _ollamaCatalog = ollamaCatalog;
         _planningSettings = planningSettings;
         _accountService = accountService;
         _secrets = secrets;
@@ -169,6 +189,23 @@ public sealed partial class SettingsViewModel : ObservableObject
         _logger = logger;
 
         _selectedLanguage = Languages.First(l => l.Language == localizer.Current);
+
+        Providers =
+        [
+            new AiProviderOption(AiDefaults.ClaudeProvider, "Settings.Ai.Provider.Claude", localizer["Settings.Ai.Provider.Claude"]),
+            new AiProviderOption(AiDefaults.OllamaProvider, "Settings.Ai.Provider.Ollama", localizer["Settings.Ai.Provider.Ollama"]),
+        ];
+        Categorization = new AiRoleRouteViewModel(AiRole.Categorization, Providers, OnRoleProviderChanged);
+        Analysis = new AiRoleRouteViewModel(AiRole.Analysis, Providers, OnRoleProviderChanged);
+
+        // The provider labels are view-model data, so they follow a language switch here.
+        _localizer.LanguageChanged += (_, _) =>
+        {
+            foreach (var provider in Providers)
+            {
+                provider.DisplayName = _localizer[provider.LabelKey];
+            }
+        };
         _isDarkTheme = themeSwitcher.Current == AppTheme.Dark;
 
         // Keep the toggle in sync if the theme is flipped elsewhere (top-bar button, command palette)
@@ -191,11 +228,29 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public bool HasAccounts => Accounts.Count > 0;
 
-    // Only providers that are actually wired (doc 04).
-    public ObservableCollection<string> Providers { get; } = [AiDefaults.ClaudeProvider];
+    /// <summary>The providers a role can run on — only the wired ones (doc 04), shared by both role pickers.</summary>
+    public IReadOnlyList<AiProviderOption> Providers { get; }
 
-    // Current generation first; the 4.x models stay selectable as a fallback.
-    public ObservableCollection<string> Models { get; } = new(AiDefaults.ClaudeModels);
+    /// <summary>Provider + model for batch categorisation.</summary>
+    public AiRoleRouteViewModel Categorization { get; }
+
+    /// <summary>Provider + model for chat, the advisor report, anomaly comments, cash-flow explanation and fallback parsing.</summary>
+    public AiRoleRouteViewModel Analysis { get; }
+
+    /// <summary>Whether any role runs on Claude — the API key is needed only then.</summary>
+    public bool UsesClaude => Categorization.IsClaude || Analysis.IsClaude;
+
+    /// <summary>The "no key saved" warning matters only while a role needs the key.</summary>
+    public bool ShowMissingApiKey => !HasApiKey && UsesClaude;
+
+    /// <summary>
+    /// The endpoint text is a valid endpoint that is not this machine: prompts (redacted) leave the computer.
+    /// </summary>
+    public bool IsEndpointRemote =>
+        OllamaEndpoint.TryParse(OllamaEndpointText, out var endpoint) && !OllamaEndpoint.IsLoopback(endpoint);
+
+    /// <summary>The endpoint text is not a valid endpoint (Save, the connection test and the refresh refuse it).</summary>
+    public bool IsEndpointInvalid => !OllamaEndpoint.TryParse(OllamaEndpointText, out _);
 
     public IReadOnlyList<LanguageOption> Languages { get; } =
     [
@@ -203,15 +258,26 @@ public sealed partial class SettingsViewModel : ObservableObject
         new(AppLanguage.English, "English"),
     ];
 
-    partial void OnSelectedProviderChanged(string value) => MarkRouteEdited();
+    partial void OnHasApiKeyChanged(bool value) => OnPropertyChanged(nameof(ShowMissingApiKey));
 
-    partial void OnCategorizationModelChanged(string value) => MarkRouteEdited();
-
-    private void MarkRouteEdited()
+    // The endpoint is being edited: an earlier test result no longer describes it.
+    partial void OnOllamaEndpointTextChanged(string value)
     {
-        if (!_loadingRoute)
+        ConnectionStatusText = "";
+        ConnectionSucceeded = false;
+        ConnectionFailed = false;
+    }
+
+    private void OnRoleProviderChanged(AiRoleRouteViewModel role)
+    {
+        OnPropertyChanged(nameof(UsesClaude));
+        OnPropertyChanged(nameof(ShowMissingApiKey));
+
+        // First switch to Ollama on this screen: fetch the model list so the picker has something to offer.
+        // The refresh catches its own failures, so nothing escapes this fire-and-forget call.
+        if (role.IsOllama && _ollamaModels is null && !IsRefreshingModels)
         {
-            _routeEdited = true;
+            _ = RefreshOllamaModelsAsync();
         }
     }
 
@@ -235,24 +301,18 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
 
         IsBusy = true;
+        var loaded = false;
         try
         {
             var ct = CancellationToken.None;
-            // A stored route the pickers do not offer shows the default, but is only replaced if the
-            // owner then picks a provider or model (see _routeEdited). Only the categorisation route
-            // is editable here; the per-role pickers arrive in Sprint 31-D.
-            var route = await _settings.GetRouteAsync(AiRole.Categorization, ct).ConfigureAwait(true);
-            _loadingRoute = true;
-            try
-            {
-                SelectedProvider = OfferedOrDefault(Providers, route.Provider, AiDefaults.ClaudeProvider);
-                CategorizationModel = OfferedOrDefault(Models, route.Model, AiDefaults.CategorizationModel);
-                _routeEdited = false;
-            }
-            finally
-            {
-                _loadingRoute = false;
-            }
+            // A stored route the pickers cannot show (an unknown provider) shows the default, but is only
+            // replaced if the owner then picks a provider or model (AiRoleRouteViewModel.IsEdited).
+            Categorization.Load(await _settings.GetRouteAsync(AiRole.Categorization, ct).ConfigureAwait(true));
+            Analysis.Load(await _settings.GetRouteAsync(AiRole.Analysis, ct).ConfigureAwait(true));
+            OnPropertyChanged(nameof(UsesClaude));
+            OnPropertyChanged(nameof(ShowMissingApiKey));
+            OllamaEndpointText = OllamaEndpoint.Format(
+                await _settings.GetOllamaEndpointAsync(ct).ConfigureAwait(true));
 
             MonthlyCapPln = await _settings.GetMonthlyCapPlnAsync(ct).ConfigureAwait(true);
             SafetyFloorPln = await _planningSettings.GetSafetyFloorPlnAsync(ct).ConfigureAwait(true);
@@ -267,6 +327,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
             await LoadBackupStatusAsync(ct).ConfigureAwait(true);
             SeedRecoveryEnabled = await _seedRecovery.IsSeedRecoveryEnabledAsync(ct).ConfigureAwait(true);
+            loaded = true;
         }
         catch (Exception ex)
         {
@@ -276,6 +337,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+
+        // A role on Ollama needs the server's model list. It is fetched once the page is usable, so a slow or
+        // absent server never holds up Save; a failure shows next to the endpoint, never as an exception.
+        if (loaded && (Categorization.IsOllama || Analysis.IsOllama))
+        {
+            await RefreshOllamaModelsAsync().ConfigureAwait(true);
         }
     }
 
@@ -287,18 +355,36 @@ public sealed partial class SettingsViewModel : ObservableObject
             return;
         }
 
+        // Validate before writing anything, so a refused save leaves storage untouched.
+        if (!OllamaEndpoint.TryParse(OllamaEndpointText, out var endpoint))
+        {
+            StatusMessage = _localizer["Settings.Ai.Ollama.EndpointInvalid"];
+            return;
+        }
+
+        if ((Categorization.IsEdited && Categorization.IsMissingModel)
+            || (Analysis.IsEdited && Analysis.IsMissingModel))
+        {
+            StatusMessage = _localizer["Settings.Ai.Model.Required"];
+            return;
+        }
+
         IsBusy = true;
         StatusMessage = "";
         try
         {
             var ct = CancellationToken.None;
-            if (_routeEdited)
+            foreach (var role in new[] { Categorization, Analysis })
             {
-                await _settings.SetRouteAsync(
-                    AiRole.Categorization, new AiRoute(SelectedProvider, CategorizationModel), ct).ConfigureAwait(true);
-                _routeEdited = false;
+                if (role.IsEdited)
+                {
+                    await _settings.SetRouteAsync(role.Role, role.ToRoute(), ct).ConfigureAwait(true);
+                    role.MarkSaved();
+                }
             }
 
+            await _settings.SetOllamaEndpointAsync(endpoint, ct).ConfigureAwait(true);
+            OllamaEndpointText = OllamaEndpoint.Format(endpoint); // show the stored, canonical form
             await _settings.SetMonthlyCapPlnAsync(MonthlyCapPln, ct).ConfigureAwait(true);
             await _planningSettings.SetSafetyFloorPlnAsync(SafetyFloorPln, ct).ConfigureAwait(true);
             await _settings.SetAiFallbackParsingEnabledAsync(AiFallbackParsingEnabled, ct).ConfigureAwait(true);
@@ -557,8 +643,118 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    private static string OfferedOrDefault(IEnumerable<string> offered, string stored, string fallback) =>
-        offered.Contains(stored, StringComparer.OrdinalIgnoreCase) ? stored : fallback;
+    [RelayCommand]
+    private async Task TestOllamaConnectionAsync()
+    {
+        if (IsTestingConnection)
+        {
+            return;
+        }
+
+        ConnectionSucceeded = false;
+        ConnectionFailed = false;
+        // The typed address is tested, saved or not: the owner checks it before committing to it.
+        if (!OllamaEndpoint.TryParse(OllamaEndpointText, out var endpoint))
+        {
+            ConnectionStatusText = _localizer["Settings.Ai.Ollama.EndpointInvalid"];
+            ConnectionFailed = true;
+            return;
+        }
+
+        IsTestingConnection = true;
+        ConnectionStatusText = "";
+        var connected = false;
+        try
+        {
+            var result = await _ollamaCatalog.TestConnectionAsync(endpoint, CancellationToken.None).ConfigureAwait(true);
+            if (result.IsSuccess)
+            {
+                ConnectionStatusText = _localizer.Format("Settings.Ai.Ollama.Connected", result.Version ?? "");
+                ConnectionSucceeded = true;
+                connected = true;
+            }
+            else
+            {
+                ConnectionStatusText = UnavailableText(result.Failure);
+                ConnectionFailed = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Ollama connection test failed unexpectedly");
+            ConnectionStatusText = UnavailableText(null);
+            ConnectionFailed = true;
+        }
+        finally
+        {
+            IsTestingConnection = false;
+        }
+
+        // A server that answers is worth listing straight away.
+        if (connected)
+        {
+            await RefreshOllamaModelsAsync().ConfigureAwait(true);
+        }
+    }
+
+    [RelayCommand]
+    private async Task RefreshOllamaModelsAsync()
+    {
+        if (IsRefreshingModels)
+        {
+            return;
+        }
+
+        OllamaModelsFailed = false;
+        if (!OllamaEndpoint.TryParse(OllamaEndpointText, out var endpoint))
+        {
+            OllamaModelsStatusText = _localizer["Settings.Ai.Ollama.EndpointInvalid"];
+            OllamaModelsFailed = true;
+            return;
+        }
+
+        IsRefreshingModels = true;
+        OllamaModelsStatusText = "";
+        try
+        {
+            var models = await _ollamaCatalog.ListModelsAsync(endpoint, CancellationToken.None).ConfigureAwait(true);
+            _ollamaModels = models;
+            Categorization.SetOllamaModels(models);
+            Analysis.SetOllamaModels(models);
+            if (models.Count == 0)
+            {
+                OllamaModelsStatusText = _localizer["Settings.Ai.Ollama.NoModels"];
+                OllamaModelsFailed = true;
+            }
+            else
+            {
+                OllamaModelsStatusText = _localizer.Format("Settings.Ai.Ollama.ModelsFound", models.Count);
+            }
+        }
+        catch (AiProviderUnavailableException ex)
+        {
+            _logger.LogWarning("Listing Ollama models failed: {Reason}", ex.Reason);
+            OllamaModelsStatusText = UnavailableText(ex.Reason);
+            OllamaModelsFailed = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Listing Ollama models failed unexpectedly");
+            OllamaModelsStatusText = UnavailableText(null);
+            OllamaModelsFailed = true;
+        }
+        finally
+        {
+            IsRefreshingModels = false;
+        }
+    }
+
+    private string UnavailableText(AiProviderUnavailableReason? reason) => reason switch
+    {
+        AiProviderUnavailableReason.Unreachable => _localizer["Settings.Ai.Ollama.Error.Unreachable"],
+        AiProviderUnavailableReason.Timeout => _localizer["Settings.Ai.Ollama.Error.Timeout"],
+        _ => _localizer["Settings.Ai.Ollama.Error.Rejected"],
+    };
 
     private static string FormatLocalTimestamp(DateTime utc) =>
         DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);

@@ -1,7 +1,7 @@
 # Sprint 31 — Local AI (Ollama) and per-role provider routing
 
 **Phase:** — (doc 04 provider abstraction; follows the owner's first real-data setup)
-**Status:** Planned
+**Status:** Closed (2026-11-08)
 **Depends on:** sprint-10 (`IAiProvider`, `ClaudeProvider`, `AiPricing`, `AiBudgetGate`, `AiUsageLedger`, `AppSettingsStore`, `HybridCategorizer`), sprint-12 (`ChatService` tool loop), sprint-13/14/16 (`AnomalyCommentator`, `AdvisorReportGenerator`, `CashFlowExplainer`), sprint-17 (`AiAssistedParser`), sprint-30 (`IPromptAnonymizer` redaction sessions on every AI path)
 
 ## Goal
@@ -72,9 +72,9 @@ The owner can run every AI feature on a **local Ollama model** — nothing leave
 
 ### 31-D — Settings UI, docs, close
 
-- [ ] 31.13 Settings AI section: per-role provider + model pickers, Ollama endpoint + "Test connection" + refresh models, loopback warning, API key shown for Claude; PL + EN resources; light + dark.
-- [ ] 31.14 Doc 04 provider section (Claude + Ollama, roles, cost, redaction), `docs/running-on-real-data.md` Ollama section, README if needed.
-- [ ] 31.15 Sprint closure (plan, log, index).
+- [x] 31.13 Settings AI section: per-role provider + model pickers, Ollama endpoint + "Test connection" + refresh models, loopback warning, API key shown for Claude; PL + EN resources; light + dark.
+- [x] 31.14 Doc 04 provider section (Claude + Ollama, roles, cost, redaction), `docs/running-on-real-data.md` Ollama section, README if needed.
+- [x] 31.15 Sprint closure (plan, log, index).
 
 ## Definition of done
 

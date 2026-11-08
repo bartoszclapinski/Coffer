@@ -202,6 +202,7 @@ public class MainViewModelTests
             NullLogger<GoalsViewModel>.Instance);
         var settings = new SettingsViewModel(
             new FakeAiSettings(),
+            new FakeOllamaCatalog(),
             new FakePlanningSettings(),
             new FakeAccountService(),
             new FakeSecretStore(),

@@ -110,19 +110,94 @@
     <value>Switch between the light (warm paper) and dark presentations.</value>
   </data>
   <data name="Settings.Ai.Section" xml:space="preserve">
-    <value>AI provider</value>
+    <value>AI providers and models</value>
   </data>
   <data name="Settings.Ai.Provider" xml:space="preserve">
     <value>Provider</value>
   </data>
   <data name="Settings.Ai.Model" xml:space="preserve">
-    <value>Categorization model</value>
+    <value>Model</value>
+  </data>
+  <data name="Settings.Ai.Hint" xml:space="preserve">
+    <value>Each role runs on its own provider and model. Claude is a paid cloud service; Ollama runs models on your own computer for free, and nothing is sent to an outside service. Prompts are redacted either way.</value>
+  </data>
+  <data name="Settings.Ai.Role.Categorization" xml:space="preserve">
+    <value>Categorization</value>
+  </data>
+  <data name="Settings.Ai.Role.CategorizationHint" xml:space="preserve">
+    <value>Batch categorization of imported transactions — a small, cheap model is enough.</value>
+  </data>
+  <data name="Settings.Ai.Role.Analysis" xml:space="preserve">
+    <value>Analysis &amp; chat</value>
+  </data>
+  <data name="Settings.Ai.Role.AnalysisHint" xml:space="preserve">
+    <value>Chat, the advisor report, alert comments, the cash-flow explanation and AI fallback parsing — pick a stronger model.</value>
+  </data>
+  <data name="Settings.Ai.Provider.Claude" xml:space="preserve">
+    <value>Claude</value>
+  </data>
+  <data name="Settings.Ai.Provider.Ollama" xml:space="preserve">
+    <value>Ollama (local)</value>
+  </data>
+  <data name="Settings.Ai.Model.Placeholder" xml:space="preserve">
+    <value>No model chosen</value>
+  </data>
+  <data name="Settings.Ai.Model.Capabilities" xml:space="preserve">
+    <value>Capabilities:</value>
+  </data>
+  <data name="Settings.Ai.Model.NotListed" xml:space="preserve">
+    <value>This model is not on the Ollama server right now. Pull it with "ollama pull" or pick another one.</value>
+  </data>
+  <data name="Settings.Ai.Model.NoTools" xml:space="preserve">
+    <value>This model does not support tool calling, which chat needs. Pick a model with tools, e.g. qwen3.5.</value>
+  </data>
+  <data name="Settings.Ai.Model.Required" xml:space="preserve">
+    <value>Choose a model for every role that uses Ollama (refresh the model list first).</value>
+  </data>
+  <data name="Settings.Ai.Ollama.Section" xml:space="preserve">
+    <value>Ollama server</value>
+  </data>
+  <data name="Settings.Ai.Ollama.Hint" xml:space="preserve">
+    <value>Where Ollama listens. Local models cost nothing; prompts are still redacted before they are sent.</value>
+  </data>
+  <data name="Settings.Ai.Ollama.Endpoint" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="Settings.Ai.Ollama.Test" xml:space="preserve">
+    <value>Test connection</value>
+  </data>
+  <data name="Settings.Ai.Ollama.Refresh" xml:space="preserve">
+    <value>Refresh models</value>
+  </data>
+  <data name="Settings.Ai.Ollama.Connected" xml:space="preserve">
+    <value>Connected — Ollama {0}.</value>
+  </data>
+  <data name="Settings.Ai.Ollama.ModelsFound" xml:space="preserve">
+    <value>Models available: {0}.</value>
+  </data>
+  <data name="Settings.Ai.Ollama.NoModels" xml:space="preserve">
+    <value>The server has no models yet. Pull one with "ollama pull qwen3.5".</value>
+  </data>
+  <data name="Settings.Ai.Ollama.EndpointInvalid" xml:space="preserve">
+    <value>Enter a valid address, e.g. http://localhost:11434 (http or https, without a user name, query or fragment).</value>
+  </data>
+  <data name="Settings.Ai.Ollama.RemoteWarning" xml:space="preserve">
+    <value>Data leaves this computer: this address is not on this machine, so prompts (redacted) are sent to it over the network.</value>
+  </data>
+  <data name="Settings.Ai.Ollama.Error.Unreachable" xml:space="preserve">
+    <value>Cannot reach Ollama at this address. Is it running (ollama serve)?</value>
+  </data>
+  <data name="Settings.Ai.Ollama.Error.Timeout" xml:space="preserve">
+    <value>Ollama did not answer in time.</value>
+  </data>
+  <data name="Settings.Ai.Ollama.Error.Rejected" xml:space="preserve">
+    <value>The server answered with an error — is this an Ollama server?</value>
   </data>
   <data name="Settings.ApiKey.Section" xml:space="preserve">
     <value>API key (Claude)</value>
   </data>
   <data name="Settings.ApiKey.Hint" xml:space="preserve">
-    <value>The key is encrypted locally (DPAPI) and is never stored in plaintext or logged.</value>
+    <value>Needed only while a role above uses Claude. The key is encrypted locally (DPAPI) and is never stored in plaintext or logged.</value>
   </data>
   <data name="Settings.ApiKey.Present" xml:space="preserve">
     <value>An API key is saved.</value>

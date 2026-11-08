@@ -8,6 +8,43 @@
              x:Class="Coffer.Desktop.Views.SettingsView"
              x:DataType="vm:SettingsViewModel"
              x:CompileBindings="False">
+    <UserControl.Resources>
+        <!-- Provider + model pickers of one AI role (Categorization / Analysis share it). -->
+        <DataTemplate x:Key="AiRoleRouteTemplate" x:DataType="vm:AiRoleRouteViewModel">
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,*">
+                    <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,6,0">
+                        <TextBlock Text="{l:Localize Settings.Ai.Provider}" Classes="muted" />
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Providers}"
+                                  SelectedItem="{Binding SelectedProvider, Mode=TwoWay}"
+                                  DisplayMemberBinding="{Binding DisplayName}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="4" Margin="6,0,0,0">
+                        <TextBlock Text="{l:Localize Settings.Ai.Model}" Classes="muted" />
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Models}"
+                                  SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
+                                  PlaceholderText="{l:Localize Settings.Ai.Model.Placeholder}" />
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="6"
+                            IsVisible="{Binding CapabilitiesText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="{l:Localize Settings.Ai.Model.Capabilities}" Classes="muted" />
+                    <TextBlock Text="{Binding CapabilitiesText}" Classes="muted" />
+                </StackPanel>
+
+                <TextBlock Text="{l:Localize Settings.Ai.Model.NotListed}"
+                           Foreground="{DynamicResource Coffer.Neg}" FontSize="12" TextWrapping="Wrap"
+                           IsVisible="{Binding ModelNotListed}" />
+                <TextBlock Text="{l:Localize Settings.Ai.Model.NoTools}"
+                           Foreground="{DynamicResource Coffer.Neg}" FontSize="12" TextWrapping="Wrap"
+                           IsVisible="{Binding ModelLacksTools}" />
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
     <ScrollViewer>
         <StackPanel Margin="22" Spacing="20" MaxWidth="560" HorizontalAlignment="Left">
 
@@ -45,24 +82,97 @@
                 </StackPanel>
             </Border>
 
-            <!-- AI provider + model -->
+            <!-- AI providers + models, one block per role (Sprint 31-D) -->
             <Border Classes="panel">
                 <StackPanel Spacing="16">
-                    <TextBlock Text="{l:Localize Settings.Ai.Section}" Classes="title" />
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{l:Localize Settings.Ai.Section}" Classes="title" />
+                        <TextBlock Text="{l:Localize Settings.Ai.Hint}" Classes="muted" TextWrapping="Wrap" />
+                    </StackPanel>
 
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="{l:Localize Settings.Ai.Provider}" Classes="muted" />
-                        <ComboBox HorizontalAlignment="Stretch"
-                                  ItemsSource="{Binding Providers}"
-                                  SelectedItem="{Binding SelectedProvider, Mode=TwoWay}" />
+                    <Border Background="{DynamicResource Coffer.Panel2}" CornerRadius="10" Padding="14,12">
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{l:Localize Settings.Ai.Role.Categorization}"
+                                           FontWeight="SemiBold" Foreground="{DynamicResource Coffer.Tx}" />
+                                <TextBlock Text="{l:Localize Settings.Ai.Role.CategorizationHint}"
+                                           Classes="muted" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ContentControl Content="{Binding Categorization}"
+                                            ContentTemplate="{StaticResource AiRoleRouteTemplate}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{DynamicResource Coffer.Panel2}" CornerRadius="10" Padding="14,12">
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{l:Localize Settings.Ai.Role.Analysis}"
+                                           FontWeight="SemiBold" Foreground="{DynamicResource Coffer.Tx}" />
+                                <TextBlock Text="{l:Localize Settings.Ai.Role.AnalysisHint}"
+                                           Classes="muted" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ContentControl Content="{Binding Analysis}"
+                                            ContentTemplate="{StaticResource AiRoleRouteTemplate}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Ollama server: endpoint, connection test, model list -->
+            <Border Classes="panel">
+                <StackPanel Spacing="16">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{l:Localize Settings.Ai.Ollama.Section}" Classes="title" />
+                        <TextBlock Text="{l:Localize Settings.Ai.Ollama.Hint}" Classes="muted" TextWrapping="Wrap" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="{l:Localize Settings.Ai.Model}" Classes="muted" />
-                        <ComboBox HorizontalAlignment="Stretch"
-                                  ItemsSource="{Binding Models}"
-                                  SelectedItem="{Binding CategorizationModel, Mode=TwoWay}" />
+                        <TextBlock Text="{l:Localize Settings.Ai.Ollama.Endpoint}" Classes="muted" />
+                        <TextBox Text="{Binding OllamaEndpointText, Mode=TwoWay}"
+                                 Watermark="http://localhost:11434" />
+                        <TextBlock Text="{l:Localize Settings.Ai.Ollama.EndpointInvalid}"
+                                   Foreground="{DynamicResource Coffer.Neg}" FontSize="12" TextWrapping="Wrap"
+                                   IsVisible="{Binding IsEndpointInvalid}" />
                     </StackPanel>
+
+                    <Border Background="{DynamicResource Coffer.NegTint}"
+                            BorderBrush="{DynamicResource Coffer.Neg}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            IsVisible="{Binding IsEndpointRemote}">
+                        <TextBlock Text="{l:Localize Settings.Ai.Ollama.RemoteWarning}"
+                                   Foreground="{DynamicResource Coffer.Neg}"
+                                   TextWrapping="Wrap" />
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="{l:Localize Settings.Ai.Ollama.Test}"
+                                Classes="chip"
+                                Command="{Binding TestOllamaConnectionCommand}" />
+                        <Button Content="{l:Localize Settings.Ai.Ollama.Refresh}"
+                                Classes="chip"
+                                Command="{Binding RefreshOllamaModelsCommand}" />
+                    </StackPanel>
+
+                    <Border Background="{DynamicResource Coffer.PosTint}" CornerRadius="8" Padding="10"
+                            IsVisible="{Binding ConnectionSucceeded}">
+                        <TextBlock Text="{Binding ConnectionStatusText}" Foreground="{DynamicResource Coffer.Pos}"
+                                   FontSize="12" TextWrapping="Wrap" />
+                    </Border>
+                    <Border Background="{DynamicResource Coffer.NegTint}" CornerRadius="8" Padding="10"
+                            IsVisible="{Binding ConnectionFailed}">
+                        <TextBlock Text="{Binding ConnectionStatusText}" Foreground="{DynamicResource Coffer.Neg}"
+                                   FontSize="12" TextWrapping="Wrap" />
+                    </Border>
+
+                    <Panel IsVisible="{Binding OllamaModelsStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Text="{Binding OllamaModelsStatusText}" Classes="muted" TextWrapping="Wrap"
+                                   IsVisible="{Binding !OllamaModelsFailed}" />
+                        <TextBlock Text="{Binding OllamaModelsStatusText}" Foreground="{DynamicResource Coffer.Neg}"
+                                   FontSize="12" TextWrapping="Wrap"
+                                   IsVisible="{Binding OllamaModelsFailed}" />
+                    </Panel>
                 </StackPanel>
             </Border>
 
@@ -80,7 +190,7 @@
                         <TextBlock Text="{l:Localize Settings.ApiKey.Present}" Foreground="{DynamicResource Coffer.Pos}" FontSize="12" />
                     </Border>
                     <Border Background="{DynamicResource Coffer.NegTint}" CornerRadius="8" Padding="10"
-                            IsVisible="{Binding !HasApiKey}">
+                            IsVisible="{Binding ShowMissingApiKey}">
                         <TextBlock Text="{l:Localize Settings.ApiKey.Absent}" Foreground="{DynamicResource Coffer.Neg}" FontSize="12" />
                     </Border>
 

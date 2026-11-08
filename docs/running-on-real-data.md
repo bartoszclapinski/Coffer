@@ -45,7 +45,25 @@ Inside it: `coffer.db` (the SQLCipher-encrypted database), `dek.encrypted` (the 
 
 - **Account holder name** (Settings → *AI fallback parsing* → *Account holder name*, then **Save** at the bottom): every form of your name that appears on statements, comma-separated — with a middle name, a double surname, an inflected form ("Jana Kowalskiego"). Matching already ignores case, Polish characters and word order. It is replaced with `[OWNER]` in everything sent to an AI provider; other people's names, addresses, phone numbers, PESEL, e-mails and account numbers are redacted automatically.
 - **Monthly AI cap** (PLN). The app warns at 80% and pauses AI at 100%.
-- **AI API key:** optional. Without it, import, rules, dashboards and every deterministic feature still work; only AI categorization, chat and AI commentary are off. If you want to be cautious, run the first imports without a key and add it later.
+- **AI API key:** optional, and needed only for a role that runs on Claude. Without any AI, import, rules, dashboards and every deterministic feature still work; only AI categorization, chat and AI commentary are off. If you want to be cautious, run the first imports without a key and add it later — or use a local model (below), which needs no key at all.
+
+### Using a local Ollama model
+
+Coffer can run its AI on [Ollama](https://ollama.com) on this computer: nothing leaves the machine, nothing is billed (local calls count as 0 PLN against the cap), and prompts are still redacted exactly as for Claude.
+
+1. Install Ollama and pull the models you want, e.g.:
+   ```powershell
+   ollama pull qwen3.5
+   ollama pull qwen2.5:3b
+   ```
+2. Settings → *Ollama server*: leave the endpoint at `http://localhost:11434` (Ollama's default) and press **Test connection** — it shows the Ollama version, or why it cannot connect (is `ollama serve` running?). A successful test also loads the model list; **Refresh models** reloads it after an `ollama pull`.
+3. Settings → *AI providers and models*: for each role pick **Ollama (local)** and a model, then **Save** at the bottom.
+   - **Analysis & chat** needs a model with tool calling — chat answers by calling Coffer's data tools. Use a capable one such as `qwen3.5` (9.7B). A 3B model can do it but is weak at chat and reports; Settings warns when the chosen model does not report tool support.
+   - **Categorization** works with a small model (`qwen2.5:3b`); try a larger one if the categories look off.
+   - The roles are independent: e.g. categorization local, analysis on Claude.
+4. Check it: import a statement and look at the categories, then ask the chat a question. If Ollama is down, AI features degrade (uncategorised transactions, an "AI unavailable" chat banner) — nothing crashes and nothing falls back to Claude.
+
+Notes: local models are slower than Claude (seconds to tens of seconds per call, depending on your GPU/CPU). Coffer sends up to a 16K-token context; a very long statement for the AI fallback parser can exceed it, and the import then says so instead of silently dropping transactions. If you point the endpoint at another machine, Settings warns that data leaves this computer.
 
 ## 5. Backups — before you trust it
 

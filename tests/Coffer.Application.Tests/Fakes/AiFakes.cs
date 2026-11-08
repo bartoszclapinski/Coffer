@@ -116,3 +116,32 @@ internal sealed class FakeAiUsageLedger : IAiUsageLedger
     public Task<IReadOnlyList<AiSpendByPurpose>> GetCurrentMonthByPurposeAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<AiSpendByPurpose>>([]);
 }
+
+/// <summary>
+/// Scripted <see cref="IOllamaCatalog"/>: returns <see cref="Connection"/> and <see cref="Models"/> (or throws
+/// <see cref="ListFailure"/>) and records the endpoints it was asked about.
+/// </summary>
+internal sealed class FakeOllamaCatalog : IOllamaCatalog
+{
+    public OllamaConnectionResult Connection { get; set; } = OllamaConnectionResult.Connected("0.40.15");
+
+    public IReadOnlyList<OllamaModelInfo> Models { get; set; } = [];
+
+    public Exception? ListFailure { get; set; }
+
+    public List<Uri> TestedEndpoints { get; } = [];
+
+    public List<Uri> ListedEndpoints { get; } = [];
+
+    public Task<OllamaConnectionResult> TestConnectionAsync(Uri endpoint, CancellationToken ct)
+    {
+        TestedEndpoints.Add(endpoint);
+        return Task.FromResult(Connection);
+    }
+
+    public Task<IReadOnlyList<OllamaModelInfo>> ListModelsAsync(Uri endpoint, CancellationToken ct)
+    {
+        ListedEndpoints.Add(endpoint);
+        return ListFailure is null ? Task.FromResult(Models) : Task.FromException<IReadOnlyList<OllamaModelInfo>>(ListFailure);
+    }
+}

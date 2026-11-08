@@ -11,11 +11,11 @@
 | Statement parsing fallback | Claude Sonnet 5.5 | Structured JSON output, multilingual |
 | Risks/sugestions for goals | Claude Sonnet 5.5 | Context-rich reasoning |
 
-Defaults moved to the 5.5 generation in Sprint 31 (Haiku 5.5: $0.10 / $0.50 per MTok; Sonnet 5.5: $2 / $10). `claude-haiku-4-5` and `claude-sonnet-4-6` stay selectable and priced as a fallback.
+Defaults moved to the 5.5 generation in Sprint 31 (Haiku 5.5: $0.10 / $0.50 per MTok; Sonnet 5.5: $2 / $10). `claude-haiku-4-5` and `claude-sonnet-4-6` stay selectable and priced as a fallback. The models above are the Claude defaults: since Sprint 31 each role (categorization / analysis) can instead run on a local Ollama model — see "Providers and roles" below. Receipt vision is not built yet and has no role.
 
 ## Provider abstraction
 
-Use `Microsoft.Extensions.AI` to swap providers without touching call sites.
+Consumers depend on Coffer's own `IAiProvider` only, so providers swap without touching call sites. Claude sits behind `Microsoft.Extensions.AI`'s `IChatClient` (Anthropic.SDK); Ollama is called over its native HTTP API.
 
 The shape of the abstraction (simplified; the source of truth is `src/Coffer.Core/Ai/IAiProvider.cs`, `AiRequest.cs`, `AiToolRequest.cs` and `AiResult.cs` — tools go through a separate `AiToolRequest`, vision attachments are not built yet):
 
@@ -39,23 +39,47 @@ public sealed record AiRequest
 }
 ```
 
-Implemented today: `ClaudeProvider` (Anthropic.SDK over `IChatClient`) and `OllamaProvider` (Sprint 31-C: a local or self-hosted Ollama over its native `/api/chat`, endpoint from Settings, no key). **OpenAI is deferred** — it was offered in Settings without an implementation and was removed in Sprint 31; the OpenAI mentions below describe a possible future provider, not current behaviour.
+### Providers and roles (Sprint 31)
 
-Ollama request rules (verified against Ollama 0.40.15 with `qwen2.5:3b` and `qwen3.5`):
+Every AI call belongs to one of two **roles**, and each role runs on its own **provider + model**, chosen in Settings:
+
+| Role (`AiRole`) | Covers | Claude default | Typical local choice |
+|---|---|---|---|
+| `Categorization` | Batch transaction categorization | `claude-haiku-5-5` | `qwen2.5:3b` (small is fine for label-from-description) |
+| `Analysis` | Chat, advisor report, anomaly commentary, cash-flow explanation, AI fallback parsing | `claude-sonnet-5-5` | `qwen3.5` (needs tool calling for chat) |
+
+Two providers are implemented:
+
+| Provider | Where it runs | Cost | Needs | Implementation |
+|---|---|---|---|---|
+| **Claude** | Anthropic's cloud | Per token (`AiPricing`, PLN), budget-gated | API key (DPAPI-encrypted `ISecretStore`) | `ClaudeProvider` — Anthropic.SDK over `IChatClient` |
+| **Ollama** | Your machine (or a host you point it at) | **0 PLN** — the ledger still records tokens, provider and model | A running Ollama with the model pulled (`ollama pull`) | `OllamaProvider` — native `/api/chat` over `HttpClient`, no extra package |
+
+- **Redaction is the same for both.** Every call, local or remote, goes through the consumer's `IPromptAnonymizer` redaction session (Sprint 30): one code path, and an Ollama endpoint may be another machine. There is no "skip redaction for local models" switch.
+- **Endpoint.** Ollama's address is a setting (`ai.ollamaEndpoint`, default `http://localhost:11434`): an absolute `http`/`https` URI with no user info, query or fragment (a path prefix for a reverse proxy is allowed — `OllamaEndpoint`). Settings warns when it is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): prompts, redacted, then leave the computer.
+- **Context window.** Ollama's default context is small and it silently cuts long prompts, so every request sets `num_ctx` = 16384 and `truncate: false` (details below). A prompt that does not fit is refused with a clear error instead of losing its start; pick a model with a larger context (or a shorter statement period) if that happens.
+- **Mixing is fine.** E.g. categorization on Ollama (free, unlimited batches) and analysis on Claude (stronger reasoning), or everything local with no API key at all. The API key is needed only while a role uses Claude.
+- **OpenAI is deferred** — it was offered in Settings without an implementation and was removed in Sprint 31; the OpenAI mentions below describe a possible future provider, not current behaviour.
+
+**Settings screen (Sprint 31-D).** `SettingsViewModel` shows one block per role (`AiRoleRouteViewModel`): a provider picker ("Claude" / "Ollama (local)") and a model picker. Claude offers the fixed `AiDefaults.ClaudeModels`; Ollama offers what `IOllamaCatalog.ListModelsAsync` (`/api/tags`) returns for the typed endpoint, with a **Refresh models** action, and keeps a stored model even when the server does not list it right now (flagged, never silently replaced). The capabilities Ollama reports are shown under the picker, and the analysis role warns when the chosen model does not report `tools`. **Test connection** calls `/api/version` and shows the version or the reason (unreachable, timeout, not an Ollama server); a successful test also refreshes the model list. Loading and saving are asynchronous and failures show as text, never as exceptions. Save validates first (a valid endpoint; a model for every role switched to Ollama) and writes a role's route only when the owner changed it on the screen, so a stored route the pickers cannot show is not overwritten by saving another setting.
+
+### Ollama request rules
+
+Verified against Ollama 0.40.15 with `qwen2.5:3b` and `qwen3.5`:
 
 - **Non-streaming, explicit window, no silent truncation.** Every request sets `options.num_ctx` (16384), `num_predict` (= `MaxTokens`) and `temperature`, and sends `truncate: false`. Without it Ollama cuts an over-long prompt from the start — the system prompt and the first statement lines or chat turns — and still answers 200; with it the request fails with HTTP 400, surfaced as `AiProviderUnavailableException` (`ContextTooLong`). The import screen says the statement is too long for the chosen model; chat shows its "AI unavailable" banner.
 - **Thinking off for text and JSON** (`think: false`), so a thinking model cannot spend a small `num_predict` on reasoning and answer nothing; models without thinking accept the flag. Tool turns keep the model default. The answer is read from `message.content` only. An empty text or JSON answer, or a JSON answer cut off at `num_predict` (`done_reason: "length"`), is an error, not an empty or partial result.
 - **JSON as a schema.** `CompleteJsonAsync<T>` sends a JSON schema of `T` as `format` (not `"json"`, which forces an object and broke array answers).
 - **Failures** become `AiProviderUnavailableException` (`Unreachable`, `Timeout`, `ModelNotFound` — only Ollama's own "model … not found" 404 —, `ModelUnsupported`, `ContextTooLong`, `Rejected`), never retried; consumers degrade as for a missing key. The exception names provider, endpoint and model only, never server text. Redirects are not followed, so a prompt never leaves for a host other than the configured endpoint. Prompts reach Ollama through the same redaction session as Claude.
 
-Per-role routing (Sprint 31-B):
+### Per-role routing (Sprint 31-B)
 
 - **Two roles** (`AiRole`): `Categorization` and `Analysis` (chat, advisor report, anomaly commentary, cash-flow explanation, AI fallback parsing). Each has its own provider + model in `IAiSettings` (keys `ai.activeProvider` / `ai.categorizationModel` for categorization — the pre-31 keys — and `ai.analysisProvider` / `ai.analysisModel` for analysis; absent keys read as Claude with `claude-haiku-5-5` / `claude-sonnet-5-5`). A route is read (`GetRouteAsync`) and written (`SetRouteAsync`) as one provider + model pair, so the two never come from different saves. Only the retired `OpenAI` (offered before Sprint 31, never implemented — those calls really ran on Claude) reads as Claude; any other unknown provider name is kept and fails closed at the router, never silently moved to a remote vendor. `SetRouteAsync` accepts only `AiDefaults.Providers` and a non-empty model.
 - **Route per call.** Every consumer asks `IAiRouteResolver.ResolveAsync(role)` on each call and sends `AiRequest.Provider` / `AiToolRequest.Provider` + `Model` from the route; no consumer reads a default model. `Provider` is `required` on both requests, so a forgotten provider is a compile error rather than a silent fallback to a remote vendor. A stored route without a model (a local provider picked before any model was chosen) makes the resolver throw `AiRouteNotConfiguredException`, so nothing prices or sends an empty model.
 - **One routing provider.** The `IAiProvider` in DI is `AiProviderRouter`; concrete providers are registered as `IAiProviderBackend` and the router dispatches by name. An unknown provider throws `UnknownAiProviderException` before anything is sent. Consumers treat it, `AiRouteNotConfiguredException` and `MissingAiKeyException` as "not configured" (never retried): categorization leaves descriptions uncategorised, the advisor / anomaly / cash-flow features fall back to their engine-only or templated text, the fallback parser reports the bank as unsupported, and chat shows a "configure AI in Settings" banner (`ChatTurn.AiNotConfigured`, separate from the missing-key banner). Pricing and the budget check sit inside each consumer's guarded block, so a failure there degrades the same way. There is no automatic fallback to another provider.
 - **Provider-aware cost and readiness.** `IAiPricing` prices by provider + model (Ollama: 0 PLN); the budget gate always allows a call estimated at 0 PLN, even past the cap; the ledger still records local usage (tokens, provider, model). `IAiRouteReadiness` answers "usable without a call" (provider registered, model set, Claude key stored) — the AI fallback parser uses it.
 
-Claude request rules (`ClaudeModelRules`, Sprint 31):
+### Claude request rules (`ClaudeModelRules`, Sprint 31)
 
 - **No `temperature` on Claude 4.7+** (Opus 4.7/4.8, the 5.x family): those models return HTTP 400 for a non-default value. It is still sent to Haiku 4.5 / Sonnet 4.6.
 - **Thinking headroom.** The 5.x models think by default (adaptive) and thinking counts against `max_tokens`, so they get +8192 tokens on top of the answer cap; otherwise a categorization batch capped at 512 tokens could lose its JSON answer to thinking. Thinking is not switched off: Anthropic.SDK 5.10.0 cannot send `{"type":"disabled"}`, and Sonnet 5.5 rejects it. Thinking tokens are billed as output, so the budget gate's pre-call estimate (`IAiPricing.EstimateBeforeCall`) adds the full 8192-token headroom for these models — the estimate stays an upper bound on thinking; the ledger records the real usage afterwards.

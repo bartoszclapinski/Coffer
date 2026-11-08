@@ -11,6 +11,14 @@ namespace Coffer.Application.Tests.ViewModels.Settings;
 
 public class SettingsViewModelTests
 {
+    private static readonly IReadOnlyList<OllamaModelInfo> _localModels =
+    [
+        new("qwen2.5:3b", ["completion", "tools"]),
+        new("qwen3.5:latest", ["completion", "vision", "tools", "thinking"]),
+    ];
+
+    private static AiProviderOption Option(SettingsViewModel vm, string id) => vm.Providers.Single(p => p.Id == id);
+
     [Fact]
     public async Task Load_PopulatesFromSettingsLedgerAndSecretPresence()
     {
@@ -28,20 +36,98 @@ public class SettingsViewModelTests
         await vm.LoadCommand.ExecuteAsync(null);
 
         vm.MonthlyCapPln.Should().Be(30m);
-        vm.SelectedProvider.Should().Be(AiDefaults.ClaudeProvider);
-        vm.CategorizationModel.Should().Be("claude-sonnet-4-6");
+        vm.Categorization.SelectedProvider.Id.Should().Be(AiDefaults.ClaudeProvider);
+        vm.Categorization.SelectedModel.Should().Be("claude-sonnet-4-6");
         vm.CurrentMonthSpendPln.Should().Be(7.5m);
         vm.HasApiKey.Should().BeTrue();
+        vm.ShowMissingApiKey.Should().BeFalse();
     }
 
     [Fact]
-    public void ProviderAndModelLists_OfferOnlyClaude_CurrentGenerationFirst()
+    public void Providers_OfferClaudeAndOllama_AndClaudeModelsAreTheFixedList()
     {
         var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger());
 
-        vm.Providers.Should().Equal(AiDefaults.ClaudeProvider);
-        vm.Models.Should().Equal("claude-haiku-5-5", "claude-sonnet-5-5", "claude-haiku-4-5", "claude-sonnet-4-6");
-        vm.Models.Should().Contain(AiDefaults.CategorizationModel);
+        vm.Providers.Select(p => p.Id).Should().Equal(AiDefaults.ClaudeProvider, AiDefaults.OllamaProvider);
+        vm.Providers.Select(p => p.DisplayName)
+            .Should().Equal("Settings.Ai.Provider.Claude", "Settings.Ai.Provider.Ollama");
+        vm.Categorization.Models.Should().Equal("claude-haiku-5-5", "claude-sonnet-5-5", "claude-haiku-4-5", "claude-sonnet-4-6");
+        vm.Analysis.Models.Should().Equal(AiDefaults.ClaudeModels);
+        vm.Categorization.SelectedModel.Should().Be(AiDefaults.CategorizationModel);
+        vm.Analysis.SelectedModel.Should().Be(AiDefaults.AnalysisModel);
+    }
+
+    [Fact]
+    public async Task Load_BothRoles_ShowTheirStoredRoutes()
+    {
+        var settings = new FakeAiSettings
+        {
+            ActiveProvider = AiDefaults.ClaudeProvider,
+            CategorizationModel = "claude-haiku-4-5",
+            AnalysisProvider = AiDefaults.OllamaProvider,
+            AnalysisModel = "qwen3.5:latest",
+        };
+        var catalog = new FakeOllamaCatalog { Models = _localModels };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.Categorization.IsClaude.Should().BeTrue();
+        vm.Categorization.SelectedModel.Should().Be("claude-haiku-4-5");
+        vm.Analysis.IsOllama.Should().BeTrue();
+        vm.Analysis.SelectedModel.Should().Be("qwen3.5:latest");
+        vm.Analysis.Models.Should().Equal("qwen2.5:3b", "qwen3.5:latest");
+        vm.Analysis.CapabilitiesText.Should().Be("completion · vision · tools · thinking");
+        vm.Analysis.ModelNotListed.Should().BeFalse();
+        catalog.ListedEndpoints.Should().ContainSingle("a role on Ollama needs the server's model list");
+    }
+
+    [Fact]
+    public async Task Load_AllRolesOnClaude_DoesNotContactOllama()
+    {
+        var catalog = new FakeOllamaCatalog { Models = _localModels };
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        catalog.ListedEndpoints.Should().BeEmpty();
+        catalog.TestedEndpoints.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Load_StoredOllamaModelNotOnTheServer_IsKeptAndFlagged()
+    {
+        var settings = new FakeAiSettings { ActiveProvider = AiDefaults.OllamaProvider, CategorizationModel = "llama3.2:1b" };
+        var catalog = new FakeOllamaCatalog { Models = _localModels };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.Categorization.SelectedModel.Should().Be("llama3.2:1b");
+        vm.Categorization.Models.Should().Equal("qwen2.5:3b", "qwen3.5:latest", "llama3.2:1b");
+        vm.Categorization.ModelNotListed.Should().BeTrue();
+        vm.Categorization.IsEdited.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Load_OllamaDown_KeepsTheStoredModelAndShowsTheError()
+    {
+        var settings = new FakeAiSettings { AnalysisProvider = AiDefaults.OllamaProvider, AnalysisModel = "qwen3.5:latest" };
+        var catalog = new FakeOllamaCatalog
+        {
+            ListFailure = new AiProviderUnavailableException(
+                AiDefaults.OllamaProvider, AiDefaults.OllamaEndpoint, null, AiProviderUnavailableReason.Unreachable),
+        };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.Analysis.SelectedModel.Should().Be("qwen3.5:latest");
+        vm.Analysis.Models.Should().Equal("qwen3.5:latest");
+        vm.Analysis.ModelNotListed.Should().BeFalse("nothing is known about the server's models");
+        vm.OllamaModelsFailed.Should().BeTrue();
+        vm.OllamaModelsStatusText.Should().Be("Settings.Ai.Ollama.Error.Unreachable");
+        vm.StatusMessage.Should().BeEmpty("an unreachable Ollama is not a load failure");
     }
 
     [Fact]
@@ -52,58 +138,348 @@ public class SettingsViewModelTests
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        vm.SelectedProvider.Should().Be(AiDefaults.ClaudeProvider);
-        vm.CategorizationModel.Should().Be(AiDefaults.CategorizationModel);
+        vm.Categorization.SelectedProvider.Id.Should().Be(AiDefaults.ClaudeProvider);
+        vm.Categorization.SelectedModel.Should().Be(AiDefaults.CategorizationModel);
     }
 
     [Fact]
-    public async Task Save_PersistsCapProviderAndModel()
+    public async Task Load_ShowsTheStoredEndpoint()
     {
-        var settings = new FakeAiSettings();
+        var settings = new FakeAiSettings { OllamaEndpoint = new Uri("http://192.168.1.20:11434/") };
         var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
 
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.OllamaEndpointText.Should().Be("http://192.168.1.20:11434");
+        vm.IsEndpointRemote.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Save_PersistsBothRolesCapAndEndpoint()
+    {
+        var settings = new FakeAiSettings();
+        var catalog = new FakeOllamaCatalog { Models = _localModels };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+        await vm.LoadCommand.ExecuteAsync(null);
+
         vm.MonthlyCapPln = 42m;
-        vm.SelectedProvider = AiDefaults.ClaudeProvider;
-        vm.CategorizationModel = "claude-haiku-4-5";
+        vm.Categorization.SelectedModel = "claude-haiku-4-5";
+        vm.Analysis.SelectedProvider = Option(vm, AiDefaults.OllamaProvider);
+        vm.Analysis.SelectedModel = "qwen3.5:latest";
+        vm.OllamaEndpointText = " http://127.0.0.1:11434/ ";
 
         await vm.SaveCommand.ExecuteAsync(null);
 
         settings.MonthlyCapPln.Should().Be(42m);
         settings.ActiveProvider.Should().Be(AiDefaults.ClaudeProvider);
         settings.CategorizationModel.Should().Be("claude-haiku-4-5");
+        settings.AnalysisProvider.Should().Be(AiDefaults.OllamaProvider);
+        settings.AnalysisModel.Should().Be("qwen3.5:latest");
+        settings.OllamaEndpoint.Should().Be(new Uri("http://127.0.0.1:11434"));
+        vm.OllamaEndpointText.Should().Be("http://127.0.0.1:11434");
+        settings.SetRouteCalls.Should().Be(2);
+        vm.StatusMessage.Should().Be("Settings.Status.Saved");
+        vm.Categorization.IsEdited.Should().BeFalse();
+        vm.Analysis.IsEdited.Should().BeFalse();
     }
 
     [Fact]
-    public async Task Save_AfterLoad_WithoutRouteChange_LeavesAStoredLocalRouteUntouched()
+    public async Task Save_AfterLoad_WithoutRouteChange_LeavesStoredRoutesUntouched()
     {
-        // The pickers offer Claude only (until 31-D), so a stored Ollama route shows as Claude. Saving
-        // another setting must not switch the route to a remote vendor.
-        var settings = new FakeAiSettings { ActiveProvider = AiDefaults.OllamaProvider, CategorizationModel = "qwen2.5:3b" };
-        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
+        // An unknown stored provider shows as Claude; saving another setting must not rewrite it.
+        var settings = new FakeAiSettings
+        {
+            ActiveProvider = "SomethingNew",
+            CategorizationModel = "x-model",
+            AnalysisProvider = AiDefaults.OllamaProvider,
+            AnalysisModel = "qwen2.5:3b",
+        };
+        var catalog = new FakeOllamaCatalog { Models = _localModels };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
         await vm.LoadCommand.ExecuteAsync(null);
 
         vm.MonthlyCapPln = 50m;
         await vm.SaveCommand.ExecuteAsync(null);
 
         settings.MonthlyCapPln.Should().Be(50m);
-        settings.ActiveProvider.Should().Be(AiDefaults.OllamaProvider);
-        settings.CategorizationModel.Should().Be("qwen2.5:3b");
+        settings.ActiveProvider.Should().Be("SomethingNew");
+        settings.CategorizationModel.Should().Be("x-model");
+        settings.AnalysisProvider.Should().Be(AiDefaults.OllamaProvider);
+        settings.AnalysisModel.Should().Be("qwen2.5:3b");
         settings.SetRouteCalls.Should().Be(0);
     }
 
     [Fact]
-    public async Task Save_AfterLoad_WithModelPicked_WritesTheRoute()
+    public async Task Save_OnlyTheEditedRoleIsWritten()
     {
         var settings = new FakeAiSettings { ActiveProvider = AiDefaults.OllamaProvider, CategorizationModel = "qwen2.5:3b" };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger(), new FakeOllamaCatalog { Models = _localModels });
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.Analysis.SelectedModel = "claude-haiku-5-5";
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        settings.SetRouteCalls.Should().Be(1);
+        settings.AnalysisModel.Should().Be("claude-haiku-5-5");
+        settings.ActiveProvider.Should().Be(AiDefaults.OllamaProvider);
+        settings.CategorizationModel.Should().Be("qwen2.5:3b");
+    }
+
+    [Fact]
+    public async Task Save_OllamaRoleWithoutModel_IsRefusedAndNothingIsWritten()
+    {
+        var settings = new FakeAiSettings();
+        var catalog = new FakeOllamaCatalog { Models = [] };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.Categorization.SelectedProvider = Option(vm, AiDefaults.OllamaProvider);
+        vm.MonthlyCapPln = 99m;
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        vm.Categorization.SelectedModel.Should().BeNull();
+        vm.StatusMessage.Should().Be("Settings.Ai.Model.Required");
+        settings.SetRouteCalls.Should().Be(0);
+        settings.MonthlyCapPln.Should().Be(AiDefaults.MonthlyCapPln);
+    }
+
+    [Fact]
+    public async Task Save_InvalidEndpoint_IsRefusedAndNothingIsWritten()
+    {
+        var settings = new FakeAiSettings();
         var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger());
         await vm.LoadCommand.ExecuteAsync(null);
 
-        vm.CategorizationModel = "claude-sonnet-5-5";
+        vm.OllamaEndpointText = "ftp://user:pw@host";
+        vm.MonthlyCapPln = 99m;
         await vm.SaveCommand.ExecuteAsync(null);
 
-        settings.ActiveProvider.Should().Be(AiDefaults.ClaudeProvider);
-        settings.CategorizationModel.Should().Be("claude-sonnet-5-5");
-        settings.SetRouteCalls.Should().Be(1);
+        vm.IsEndpointInvalid.Should().BeTrue();
+        vm.StatusMessage.Should().Be("Settings.Ai.Ollama.EndpointInvalid");
+        settings.OllamaEndpoint.Should().Be(OllamaEndpoint.Default);
+        settings.MonthlyCapPln.Should().Be(AiDefaults.MonthlyCapPln);
+    }
+
+    [Fact]
+    public async Task SwitchingProviderToOllama_ListsTheServerModels_AndPicksOne()
+    {
+        var catalog = new FakeOllamaCatalog { Models = _localModels };
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.Categorization.SelectedProvider = Option(vm, AiDefaults.OllamaProvider);
+
+        catalog.ListedEndpoints.Should().ContainSingle().Which.Should().Be(OllamaEndpoint.Default);
+        vm.Categorization.IsOllama.Should().BeTrue();
+        vm.Categorization.Models.Should().Equal("qwen2.5:3b", "qwen3.5:latest");
+        vm.Categorization.SelectedModel.Should().Be("qwen2.5:3b");
+        vm.Categorization.IsEdited.Should().BeTrue();
+        vm.Analysis.Models.Should().Equal(AiDefaults.ClaudeModels, "the other role is still on Claude");
+        vm.OllamaModelsStatusText.Should().Be("Settings.Ai.Ollama.ModelsFound");
+    }
+
+    [Fact]
+    public async Task SwitchingProviderBackToClaude_RestoresTheClaudeList()
+    {
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(),
+            new FakeOllamaCatalog { Models = _localModels });
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.Analysis.SelectedModel = "claude-sonnet-4-6";
+
+        vm.Analysis.SelectedProvider = Option(vm, AiDefaults.OllamaProvider);
+        vm.Analysis.SelectedProvider = Option(vm, AiDefaults.ClaudeProvider);
+
+        vm.Analysis.Models.Should().Equal(AiDefaults.ClaudeModels);
+        vm.Analysis.SelectedModel.Should().Be("claude-sonnet-4-6", "the model last picked for Claude comes back");
+    }
+
+    [Fact]
+    public async Task AnalysisOnOllama_PrefersAToolsCapableModel_AndFlagsOneWithoutTools()
+    {
+        var catalog = new FakeOllamaCatalog
+        {
+            Models = [new("gemma:2b", ["completion"]), new("qwen3.5:latest", ["completion", "tools"])],
+        };
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.Analysis.SelectedProvider = Option(vm, AiDefaults.OllamaProvider);
+
+        vm.Analysis.SelectedModel.Should().Be("qwen3.5:latest");
+        vm.Analysis.ModelLacksTools.Should().BeFalse();
+
+        vm.Analysis.SelectedModel = "gemma:2b";
+
+        vm.Analysis.ModelLacksTools.Should().BeTrue("chat needs tool calling");
+    }
+
+    [Fact]
+    public async Task UsesClaude_FollowsTheRoles_AndHidesTheMissingKeyWarning()
+    {
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(),
+            new FakeOllamaCatalog { Models = _localModels });
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.ShowMissingApiKey.Should().BeTrue();
+
+        vm.Categorization.SelectedProvider = Option(vm, AiDefaults.OllamaProvider);
+        vm.UsesClaude.Should().BeTrue();
+
+        vm.Analysis.SelectedProvider = Option(vm, AiDefaults.OllamaProvider);
+        vm.UsesClaude.Should().BeFalse();
+        vm.ShowMissingApiKey.Should().BeFalse("no role needs the key");
+    }
+
+    [Fact]
+    public async Task RefreshModels_UsesTheTypedEndpoint_AndKeepsTheCurrentPick()
+    {
+        var settings = new FakeAiSettings { ActiveProvider = AiDefaults.OllamaProvider, CategorizationModel = "qwen3.5:latest" };
+        var catalog = new FakeOllamaCatalog { Models = _localModels };
+        var vm = Create(settings, new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+        await vm.LoadCommand.ExecuteAsync(null);
+        catalog.Models = [.. _localModels, new("llama3.2:3b", ["completion", "tools"])];
+
+        vm.OllamaEndpointText = "http://localhost:11500";
+        await vm.RefreshOllamaModelsCommand.ExecuteAsync(null);
+
+        catalog.ListedEndpoints.Last().Should().Be(new Uri("http://localhost:11500"));
+        vm.Categorization.Models.Should().Equal("qwen2.5:3b", "qwen3.5:latest", "llama3.2:3b");
+        vm.Categorization.SelectedModel.Should().Be("qwen3.5:latest");
+        vm.Categorization.IsEdited.Should().BeFalse("a refresh is not an edit");
+        vm.OllamaModelsFailed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RefreshModels_EmptyServer_SaysSo()
+    {
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), new FakeOllamaCatalog());
+
+        await vm.RefreshOllamaModelsCommand.ExecuteAsync(null);
+
+        vm.OllamaModelsFailed.Should().BeTrue();
+        vm.OllamaModelsStatusText.Should().Be("Settings.Ai.Ollama.NoModels");
+    }
+
+    [Fact]
+    public async Task RefreshModels_UnexpectedFailure_IsShownNotThrown()
+    {
+        var catalog = new FakeOllamaCatalog { ListFailure = new InvalidOperationException("boom") };
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+
+        await vm.RefreshOllamaModelsCommand.ExecuteAsync(null);
+
+        vm.OllamaModelsFailed.Should().BeTrue();
+        vm.OllamaModelsStatusText.Should().Be("Settings.Ai.Ollama.Error.Rejected");
+        vm.IsRefreshingModels.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task TestConnection_Success_ShowsTheVersion_AndListsModels()
+    {
+        var catalog = new FakeOllamaCatalog { Models = _localModels };
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+
+        await vm.TestOllamaConnectionCommand.ExecuteAsync(null);
+
+        catalog.TestedEndpoints.Should().ContainSingle().Which.Should().Be(OllamaEndpoint.Default);
+        vm.ConnectionSucceeded.Should().BeTrue();
+        vm.ConnectionFailed.Should().BeFalse();
+        vm.ConnectionStatusText.Should().Be("Settings.Ai.Ollama.Connected");
+        catalog.ListedEndpoints.Should().ContainSingle();
+    }
+
+    [Theory]
+    [InlineData(AiProviderUnavailableReason.Unreachable, "Settings.Ai.Ollama.Error.Unreachable")]
+    [InlineData(AiProviderUnavailableReason.Timeout, "Settings.Ai.Ollama.Error.Timeout")]
+    [InlineData(AiProviderUnavailableReason.Rejected, "Settings.Ai.Ollama.Error.Rejected")]
+    public async Task TestConnection_Failure_ShowsTheReason(AiProviderUnavailableReason reason, string expected)
+    {
+        var catalog = new FakeOllamaCatalog { Connection = OllamaConnectionResult.Failed(reason) };
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+
+        await vm.TestOllamaConnectionCommand.ExecuteAsync(null);
+
+        vm.ConnectionFailed.Should().BeTrue();
+        vm.ConnectionSucceeded.Should().BeFalse();
+        vm.ConnectionStatusText.Should().Be(expected);
+        catalog.ListedEndpoints.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TestConnection_InvalidEndpoint_DoesNotCallTheServer()
+    {
+        var catalog = new FakeOllamaCatalog();
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), catalog);
+
+        vm.OllamaEndpointText = "not a url";
+        await vm.TestOllamaConnectionCommand.ExecuteAsync(null);
+
+        catalog.TestedEndpoints.Should().BeEmpty();
+        vm.ConnectionFailed.Should().BeTrue();
+        vm.ConnectionStatusText.Should().Be("Settings.Ai.Ollama.EndpointInvalid");
+    }
+
+    [Fact]
+    public async Task EditingTheEndpoint_ClearsAnEarlierTestResult()
+    {
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger(), new FakeOllamaCatalog());
+        await vm.TestOllamaConnectionCommand.ExecuteAsync(null);
+        vm.ConnectionSucceeded.Should().BeTrue();
+
+        vm.OllamaEndpointText = "http://localhost:11435";
+
+        vm.ConnectionSucceeded.Should().BeFalse();
+        vm.ConnectionStatusText.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("http://localhost:11434", false)]
+    [InlineData("http://127.0.0.1:11434", false)]
+    [InlineData("http://[::1]:11434", false)]
+    [InlineData("http://192.168.1.20:11434", true)]
+    [InlineData("https://ollama.example.com/proxy", true)]
+    [InlineData("not a url", false)]
+    public void LoopbackWarning_ShowsOnlyForAValidEndpointOffThisMachine(string text, bool remote)
+    {
+        var vm = Create(new FakeAiSettings(), new FakeSecretStore(), new FakeAiUsageLedger());
+
+        vm.OllamaEndpointText = text;
+
+        vm.IsEndpointRemote.Should().Be(remote);
+    }
+
+    [Fact]
+    public void LanguageSwitch_RelabelsTheProviders()
+    {
+        var localizer = new RecordingLocalizer();
+        var vm = new SettingsViewModel(
+            new FakeAiSettings(), new FakeOllamaCatalog(), new FakePlanningSettings(), new FakeAccountService(),
+            new FakeSecretStore(), new FakeAiUsageLedger(), new FakeBackupService(), new FakeArchiveExporter(),
+            new FakeFilePicker(), new FakeRestoreDialogService(), new FakeSeedRecoveryService(),
+            new FakeEnableSeedRecoveryDialog(), new FakeChangeMasterPasswordDialog(), localizer,
+            new FakeLanguageStore(), new FakeThemeSwitcher(), NullLogger<SettingsViewModel>.Instance);
+        vm.Providers[1].DisplayName.Should().Be("Polish:Settings.Ai.Provider.Ollama");
+
+        localizer.SetLanguage(AppLanguage.English);
+
+        vm.Providers[1].DisplayName.Should().Be("English:Settings.Ai.Provider.Ollama");
+    }
+
+    // Prefixes every string with the language, so a relabel is visible.
+    private sealed class RecordingLocalizer : Coffer.Application.Localization.ILocalizer
+    {
+        public AppLanguage Current { get; private set; } = AppLanguage.Polish;
+
+        public string this[string key] => $"{Current}:{key}";
+
+        public string Format(string key, params object[] args) => this[key];
+
+        public void SetLanguage(AppLanguage language)
+        {
+            Current = language;
+            LanguageChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public event EventHandler? LanguageChanged;
     }
 
     [Fact]
@@ -190,6 +566,7 @@ public class SettingsViewModelTests
         var store = new FakeLanguageStore();
         var vm = new SettingsViewModel(
             new FakeAiSettings(),
+            new FakeOllamaCatalog(),
             new FakePlanningSettings(),
             new FakeAccountService(),
             new FakeSecretStore(),
@@ -252,7 +629,7 @@ public class SettingsViewModelTests
     }
 
     private static SettingsViewModel CreateWithTheme(FakeThemeSwitcher switcher) =>
-        new(new FakeAiSettings(), new FakePlanningSettings(), new FakeAccountService(),
+        new(new FakeAiSettings(), new FakeOllamaCatalog(), new FakePlanningSettings(), new FakeAccountService(),
             new FakeSecretStore(), new FakeAiUsageLedger(), new FakeBackupService(),
             new FakeArchiveExporter(), new FakeFilePicker(), new FakeRestoreDialogService(),
             new FakeSeedRecoveryService(), new FakeEnableSeedRecoveryDialog(),
@@ -345,16 +722,18 @@ public class SettingsViewModelTests
     private static SettingsViewModel Create(
         FakeAiSettings settings,
         FakeSecretStore secrets,
-        FakeAiUsageLedger ledger) =>
-        Create(settings, secrets, ledger, new FakePlanningSettings(), new FakeAccountService());
+        FakeAiUsageLedger ledger,
+        FakeOllamaCatalog? catalog = null) =>
+        Create(settings, secrets, ledger, new FakePlanningSettings(), new FakeAccountService(), catalog);
 
     private static SettingsViewModel Create(
         FakeAiSettings settings,
         FakeSecretStore secrets,
         FakeAiUsageLedger ledger,
         FakePlanningSettings planning,
-        FakeAccountService accounts) =>
-        new(settings, planning, accounts, secrets, ledger,
+        FakeAccountService accounts,
+        FakeOllamaCatalog? catalog = null) =>
+        new(settings, catalog ?? new FakeOllamaCatalog(), planning, accounts, secrets, ledger,
             new FakeBackupService(), new FakeArchiveExporter(), new FakeFilePicker(),
             new FakeRestoreDialogService(), new FakeSeedRecoveryService(), new FakeEnableSeedRecoveryDialog(),
             new FakeChangeMasterPasswordDialog(), new FakeLocalizer(), new FakeLanguageStore(),
@@ -368,7 +747,7 @@ public class SettingsViewModelTests
         FakeSeedRecoveryService? seedRecovery = null,
         FakeEnableSeedRecoveryDialog? enableDialog = null,
         FakeChangeMasterPasswordDialog? changePasswordDialog = null) =>
-        new(new FakeAiSettings(), new FakePlanningSettings(), new FakeAccountService(),
+        new(new FakeAiSettings(), new FakeOllamaCatalog(), new FakePlanningSettings(), new FakeAccountService(),
             new FakeSecretStore(), new FakeAiUsageLedger(), backup, exporter, picker,
             restoreDialog ?? new FakeRestoreDialogService(),
             seedRecovery ?? new FakeSeedRecoveryService(),
