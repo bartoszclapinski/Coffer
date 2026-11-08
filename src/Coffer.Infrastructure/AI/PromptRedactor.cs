@@ -10,15 +10,18 @@ namespace Coffer.Infrastructure.AI;
 /// synchronous; <see cref="PromptAnonymizer"/> builds one per AI request with the owner's identity
 /// names and the known counterparty names loaded. Order of operations in <see cref="Redact"/>:
 /// <list type="number">
-/// <item>Learn counterparty names from the labelled name sub-fields of the text, so the same name is
-/// also caught where it appears without its label (e.g. repeated in a title).</item>
-/// <item>Replace the value of every personal labelled sub-field: names become pseudonyms, addresses /
-/// phones / identifiers / accounts / card numbers become fixed placeholders. The label stays, so the
-/// model still sees the structure; the title and location stay readable.</item>
+/// <item>Set GUIDs aside, so the digit patterns below cannot corrupt an id the model has to echo
+/// back (a goal id ending in <c>-a12345678901</c> looks like a PESEL).</item>
+/// <item>Learn person counterparty names from the labelled name sub-fields of the text, so the same
+/// name is also caught where it appears without its label (e.g. repeated in a title).</item>
+/// <item>Replace the value of every personal labelled sub-field: a person's name becomes a pseudonym
+/// (a legal entity's name stays), addresses / phones / identifiers / accounts / card numbers become
+/// fixed placeholders. The label stays, so the model still sees the structure. Outside the card
+/// location, street addresses and postal codes in free text become <c>[ADDRESS]</c>.</item>
 /// <item>Pattern redactions: IBAN before bare account runs (so <c>PL61…</c> is <c>[IBAN]</c>, not
 /// <c>PL[ACCOUNT]</c>), NIP, phone numbers before PESEL (an 11-digit <c>48…</c> run is a phone).</item>
 /// <item>Owner identity names → <c>[OWNER]</c>, then known counterparty names → <c>[PARTY_n]</c>.
-/// Both diacritic- and case-insensitive.</item>
+/// Both diacritic- and case-insensitive, and for two- or three-word names in any word order.</item>
 /// </list>
 /// </summary>
 public sealed partial class PromptRedactor : IPromptRedactionSession
@@ -40,8 +43,15 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
 
     // A name match must not touch a letter/digit on either side, and must not sit inside one of
     // our own placeholders ("[PARTY_1]" must not be re-matched by a counterparty called "PARTY").
+    // (A brand such as "ALLEGRO" in "allegro.pl" is never matched: one-word names are legal
+    // entities, see CounterpartyNames, and are not learnt.)
     private const string NameStartGuard = @"(?<![\p{L}\p{N}\[])";
     private const string NameEndGuard = @"(?![\p{L}\p{N}_\]])";
+
+    // GUIDs are swapped for private-use sentinels while the patterns run: open, index digits, close.
+    private const char GuidOpen = '';
+    private const char GuidClose = '';
+    private const char GuidDigitZero = '';
 
     private readonly Regex? _ownerRegex;
     private readonly Dictionary<string, string> _counterpartyNameByKey = new(StringComparer.Ordinal);
@@ -55,7 +65,7 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
         ArgumentNullException.ThrowIfNull(ownerNames);
         ArgumentNullException.ThrowIfNull(counterpartyNames);
 
-        _ownerRegex = BuildOwnerRegex(ownerNames);
+        _ownerRegex = BuildNameRegex(ownerNames.SelectMany(NamePatterns));
         foreach (var name in counterpartyNames)
         {
             AddCounterparty(name);
@@ -64,23 +74,38 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
 
     public bool HasOwnerNames => _ownerRegex is not null;
 
-    public string Redact(string text)
+    public string Redact(string text) => RedactCore(text, StatementTextMode.Description);
+
+    public string RedactDocument(string text) => RedactCore(text, StatementTextMode.RawDocument);
+
+    public string Restore(string text)
+    {
+        if (string.IsNullOrEmpty(text) || _nameByToken.Count == 0)
+        {
+            return text;
+        }
+
+        return PartyTokenRegex().Replace(
+            text,
+            m => _nameByToken.TryGetValue(m.Value, out var name) ? name : m.Value);
+    }
+
+    private string RedactCore(string text, StatementTextMode mode)
     {
         if (string.IsNullOrEmpty(text))
         {
             return text;
         }
 
-        var fields = StatementDescriptionFields.Parse(text);
+        var masked = MaskGuids(text, out var guids);
+
+        var fields = StatementDescriptionFields.Parse(masked, mode);
         foreach (var field in fields)
         {
-            if (field.Kind == DescriptionFieldKind.CounterpartyName)
-            {
-                AddCounterparty(text.Substring(field.ValueStart, field.ValueLength));
-            }
+            AddCounterparty(StatementDescriptionFields.CounterpartyNameOf(masked, field));
         }
 
-        var result = fields.Count > 0 ? ReplaceLabelledValues(text, fields) : text;
+        var result = ReplaceLabelledValues(masked, fields);
 
         result = IbanRegex().Replace(result, IbanPlaceholder);
         result = NipRegex().Replace(result, NipPlaceholder);
@@ -101,57 +126,92 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
             result = counterparties.Replace(result, m => TokenFor(m.Value));
         }
 
-        return result;
+        return UnmaskGuids(result, guids);
     }
 
-    public string Restore(string text)
-    {
-        if (string.IsNullOrEmpty(text) || _nameByToken.Count == 0)
-        {
-            return text;
-        }
-
-        return PartyTokenRegex().Replace(
-            text,
-            m => _nameByToken.TryGetValue(m.Value, out var name) ? name : m.Value);
-    }
-
+    /// <summary>
+    /// Rebuilds the text with the personal labelled values replaced. Everything except a card
+    /// location's value is free text, where street addresses and postal codes are redacted too.
+    /// </summary>
     private string ReplaceLabelledValues(string text, IReadOnlyList<DescriptionField> fields)
     {
         var sb = new StringBuilder(text.Length);
         var cursor = 0;
         foreach (var field in fields)
         {
-            var placeholder = PlaceholderFor(field, text);
-            if (placeholder is null || field.ValueLength == 0)
+            AppendFreeText(sb, text.AsSpan(cursor, field.ValueStart - cursor));
+            var value = text.Substring(field.ValueStart, field.ValueLength);
+            if (field.Kind == DescriptionFieldKind.Location)
             {
-                continue;
+                sb.Append(value); // the merchant's location (BIEDRONKA 1234, UL. ...) is signal, not personal
+            }
+            else if (ReplacementFor(field, value) is { } replacement)
+            {
+                sb.Append(replacement);
+            }
+            else
+            {
+                AppendFreeText(sb, value);
             }
 
-            sb.Append(text, cursor, field.ValueStart - cursor);
-            sb.Append(placeholder);
             cursor = field.ValueEnd;
         }
 
-        sb.Append(text, cursor, text.Length - cursor);
+        AppendFreeText(sb, text.AsSpan(cursor));
         return sb.ToString();
     }
 
-    private string? PlaceholderFor(DescriptionField field, string text) => field.Kind switch
+    private static void AppendFreeText(StringBuilder sb, ReadOnlySpan<char> segment)
     {
-        DescriptionFieldKind.CounterpartyName => TokenFor(text.Substring(field.ValueStart, field.ValueLength)),
-        DescriptionFieldKind.Address => AddressPlaceholder,
-        DescriptionFieldKind.Phone => PhonePlaceholder,
-        DescriptionFieldKind.Identifier => IdentifierPlaceholder,
-        DescriptionFieldKind.Account => AccountPlaceholder,
-        DescriptionFieldKind.Card => CardPlaceholder,
-        _ => null,
-    };
+        if (segment.IsEmpty)
+        {
+            return;
+        }
+
+        sb.Append(PolishAddress.Pattern.Replace(segment.ToString(), AddressPlaceholder));
+    }
+
+    /// <summary>The replacement for a labelled value, or <c>null</c> to keep it as free text.</summary>
+    private string? ReplacementFor(DescriptionField field, string value)
+    {
+        if (value.Length == 0)
+        {
+            return null;
+        }
+
+        switch (field.Kind)
+        {
+            case DescriptionFieldKind.CounterpartyName:
+                return CounterpartyNames.IsLegalEntity(Unescape(value)) ? null : TokenFor(Unescape(value));
+
+            case DescriptionFieldKind.CounterpartyNameAndAddress:
+            {
+                var (name, address) = StatementDescriptionFields.SplitNameAndAddress(value);
+                var nameOut = name.Length == 0 || CounterpartyNames.IsLegalEntity(Unescape(name))
+                    ? name
+                    : TokenFor(Unescape(name));
+                return address.Length == 0 ? nameOut : string.Join(' ', nameOut, AddressPlaceholder).Trim();
+            }
+
+            case DescriptionFieldKind.Address:
+                return AddressPlaceholder;
+            case DescriptionFieldKind.Phone:
+                return PhonePlaceholder;
+            case DescriptionFieldKind.Identifier:
+                return IdentifierPlaceholder;
+            case DescriptionFieldKind.Account:
+                return AccountPlaceholder;
+            case DescriptionFieldKind.Card:
+                return CardPlaceholder;
+            default:
+                return null;
+        }
+    }
 
     /// <summary>
     /// The placeholder for a counterparty name: <c>[OWNER]</c> when it is the owner (a transfer
     /// between the owner's own accounts), an already-issued placeholder value unchanged, otherwise a
-    /// stable per-session <c>[PARTY_n]</c> pseudonym.
+    /// stable per-session <c>[PARTY_n]</c> pseudonym shared by every word order of the name.
     /// </summary>
     private string TokenFor(string name)
     {
@@ -170,7 +230,7 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
             }
         }
 
-        var key = PolishText.Key(trimmed);
+        var key = NameKey(trimmed);
         if (_tokenByKey.TryGetValue(key, out var token))
         {
             return token;
@@ -182,15 +242,22 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
         return token;
     }
 
+    /// <summary>
+    /// Remembers a person counterparty name for unlabelled matching. Legal entities are skipped: their
+    /// names are merchant signal (<c>ZUS</c>, <c>ALLEGRO</c>) and are not pseudonymised.
+    /// </summary>
     private void AddCounterparty(string? name)
     {
-        var trimmed = name?.Trim().TrimEnd(',', '.', ';');
-        if (string.IsNullOrEmpty(trimmed) || IsPlaceholder(trimmed) || trimmed.Count(char.IsLetter) < MinNameLetters)
+        var trimmed = name?.Trim().TrimEnd(',', '.', ';').Trim();
+        if (string.IsNullOrEmpty(trimmed)
+            || IsPlaceholder(trimmed)
+            || trimmed.Count(char.IsLetter) < MinNameLetters
+            || CounterpartyNames.IsLegalEntity(trimmed))
         {
             return;
         }
 
-        if (_counterpartyNameByKey.TryAdd(PolishText.Key(trimmed), trimmed))
+        if (_counterpartyNameByKey.TryAdd(NameKey(trimmed), trimmed))
         {
             _counterpartyRegexStale = true;
         }
@@ -200,32 +267,32 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
     {
         if (_counterpartyRegexStale)
         {
-            _counterpartyRegex = BuildNameRegex(_counterpartyNameByKey.Values.Select(PolishText.DiacriticInsensitivePattern));
+            _counterpartyRegex = BuildNameRegex(_counterpartyNameByKey.Values.SelectMany(NamePatterns));
             _counterpartyRegexStale = false;
         }
 
         return _counterpartyRegex;
     }
 
-    private static Regex? BuildOwnerRegex(IEnumerable<string> ownerNames)
+    /// <summary>
+    /// Regex fragments for a name. Statements print names in either order ("JAN KOWALSKI" /
+    /// "KOWALSKI JAN"), so a two- or three-word name also yields its word permutations.
+    /// </summary>
+    private static IEnumerable<string> NamePatterns(string? name)
     {
-        // Statements print names in either order ("JAN KOWALSKI" / "KOWALSKI JAN"), so a two- or
-        // three-word owner name also matches its word permutations.
-        var patterns = new List<string>();
-        foreach (var raw in ownerNames)
+        var words = PolishText.Fold(name ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0 || string.Concat(words).Count(char.IsLetter) < MinNameLetters)
         {
-            var words = PolishText.Fold(raw ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (words.Length == 0 || string.Concat(words).Count(char.IsLetter) < MinNameLetters)
-            {
-                continue;
-            }
-
-            var orders = words.Length is 2 or 3 ? Permutations(words) : [words];
-            patterns.AddRange(orders.Select(order => PolishText.DiacriticInsensitivePattern(string.Join(' ', order))));
+            return [];
         }
 
-        return BuildNameRegex(patterns);
+        var orders = words.Length is 2 or 3 ? Permutations(words) : [words];
+        return orders.Select(order => PolishText.DiacriticInsensitivePattern(string.Join(' ', order)));
     }
+
+    /// <summary>Case-, diacritic- and word-order-insensitive key: the folded upper-case words, sorted.</summary>
+    private static string NameKey(string name) =>
+        string.Join(' ', PolishText.Key(name).Split(' ', StringSplitOptions.RemoveEmptyEntries).Order(StringComparer.Ordinal));
 
     private static Regex? BuildNameRegex(IEnumerable<string> patterns)
     {
@@ -264,6 +331,53 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
     private static bool IsPlaceholder(string value) =>
         value.Length > 2 && value[0] == '[' && value[^1] == ']';
 
+    private static string Unescape(string value) => value.Replace("\"\"", "\"", StringComparison.Ordinal);
+
+    private static string MaskGuids(string text, out List<string>? guids)
+    {
+        guids = null;
+        if (text.Contains(GuidOpen, StringComparison.Ordinal))
+        {
+            return text; // cannot mask unambiguously; the id may be redacted, which is the safe side
+        }
+
+        List<string>? found = null;
+        var masked = GuidRegex().Replace(text, m =>
+        {
+            found ??= [];
+            found.Add(m.Value);
+            var index = (found.Count - 1).ToString(CultureInfo.InvariantCulture);
+            return GuidOpen + string.Concat(index.Select(d => (char)(GuidDigitZero + (d - '0')))) + GuidClose;
+        });
+        guids = found;
+        return masked;
+    }
+
+    private static string UnmaskGuids(string text, List<string>? guids)
+    {
+        if (guids is null)
+        {
+            return text;
+        }
+
+        return MaskedGuidRegex().Replace(text, m =>
+        {
+            var index = 0;
+            foreach (var c in m.Groups[1].Value)
+            {
+                index = (index * 10) + (c - GuidDigitZero);
+            }
+
+            return index < guids.Count ? guids[index] : m.Value;
+        });
+    }
+
+    [GeneratedRegex(@"(?<![0-9A-Fa-f-])[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}(?![0-9A-Fa-f-])")]
+    private static partial Regex GuidRegex();
+
+    [GeneratedRegex("([-]+)")]
+    private static partial Regex MaskedGuidRegex();
+
     // Polish IBAN: "PL" + 26 digits, optionally grouped in spaces (as bank exports show it).
     [GeneratedRegex(@"\bPL[\s]?(?:\d[\s]?){26}", RegexOptions.IgnoreCase)]
     private static partial Regex IbanRegex();
@@ -294,7 +408,8 @@ public sealed partial class PromptRedactor : IPromptRedactionSession
 
     // PESEL: exactly 11 digits not part of a longer number or a decimal ("/TI/P44051401458/" in a tax
     // transfer title still matches; "12345678901.50" does not). No checksum check on purpose: an
-    // 11-digit reference number that happens to be redacted carries no categorisation signal.
+    // 11-digit reference number that happens to be redacted carries no categorisation signal. GUIDs
+    // are masked before this runs, so a hex segment such as "a12345678901" is not touched.
     [GeneratedRegex(@"(?<!\d)(?<!\d[.,])\d{11}(?!\d)(?![.,]\d)")]
     private static partial Regex PeselRegex();
 

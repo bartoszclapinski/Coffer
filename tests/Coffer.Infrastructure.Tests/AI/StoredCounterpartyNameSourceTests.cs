@@ -25,6 +25,22 @@ public class StoredCounterpartyNameSourceTests : CategorizationDbTest
     }
 
     [Fact]
+    public async Task GetKnownCounterpartyNames_ReadsWholeQuotedNamesAndOtherBanksLabels()
+    {
+        await SeedAsync(
+            ("Nazwa odbiorcy: P.H.U. \"ANEX\" ANNA FIKCYJNA Adres odbiorcy: UL. POLNA 1; 87-100 TORUN Tytuł: FV", "x"),
+            ("Odbiorca: PIOTR TESTOWY ul. Polna 1 00-001 TESTOWO Tytuł: Zwrot", "x"),
+            ("DANE NADAWCY: MARIA TESTOWA TYTUL: ZWROT", "x"),
+            ("Kontrahent: JAN FIKCYJNY", "x"));
+
+        var names = await new StoredCounterpartyNameSource(Factory).GetKnownCounterpartyNamesAsync(CancellationToken.None);
+
+        names.Should().BeEquivalentTo(
+            ["P.H.U. \"ANEX\" ANNA FIKCYJNA", "PIOTR TESTOWY", "MARIA TESTOWA", "JAN FIKCYJNY"],
+            "a value runs to the next label (not to a quote or semicolon) and the address part is not a name");
+    }
+
+    [Fact]
     public async Task GetKnownCounterpartyNames_EmptyDatabase_ReturnsEmpty()
     {
         await (await MigratedContextAsync()).DisposeAsync();

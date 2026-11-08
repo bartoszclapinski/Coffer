@@ -33,6 +33,29 @@ public class CategorizationPromptInputTests
     }
 
     [Theory]
+    [InlineData(
+        "Platnosc karta Nazwa nadawcy/odbiorcy: KAWIARNIA CENTRUM Tytul: Kawa",
+        "Platnosc karta Nazwa nadawcy/odbiorcy: KAWIARNIA CENTRUM Tytul: Kawa")]
+    [InlineData("Przelew Nazwa nadawcy: ZUS Tytuł: 12345", "Przelew Nazwa nadawcy: ZUS Tytuł: 12345")]
+    [InlineData(
+        "Przelew Odbiorca: TESTOWA ENERGIA S.A. ul. Polna 1 Tytuł: FV 01/2026",
+        "Przelew Odbiorca: TESTOWA ENERGIA S.A. Tytuł: FV 01/2026")]
+    public void Build_LegalEntityCounterparty_IsKept(string description, string expected)
+    {
+        CategorizationPromptInput.Build(description).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("Przelew Nazwa odbiorcy: [PARTY_1] Tytuł: zwrot", "Przelew Tytuł: zwrot")]
+    [InlineData("Przelew Nazwa nadawcy: [OWNER] Tytuł: własny", "Przelew Tytuł: własny")]
+    [InlineData("Przelew Odbiorca: [PARTY_2] [ADDRESS] Tytuł: zwrot", "Przelew Tytuł: zwrot")]
+    [InlineData("Przelew Nazwa odbiorcy: P.H.U. \"ANEX\" ANNA FIKCYJNA Tytuł: FV", "Przelew Tytuł: FV")]
+    public void Build_PersonCounterpartyOrItsPseudonym_IsDropped(string description, string expected)
+    {
+        CategorizationPromptInput.Build(description).Should().Be(expected);
+    }
+
+    [Theory]
     [InlineData("BIEDRONKA 1234 TORUN", "BIEDRONKA 1234 TORUN")]
     [InlineData("  ORLEN STACJA NR 7 ", "ORLEN STACJA NR 7")]
     [InlineData("", "")]

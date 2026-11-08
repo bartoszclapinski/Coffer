@@ -126,7 +126,7 @@ public sealed class AiAssistedParser : IStatementParser
             warnings.Add(OwnerNameUnsetWarning);
         }
 
-        var prompt = redaction.Redact(text);
+        var prompt = redaction.RedactDocument(text);
         var model = AiDefaults.ChatModel;
 
         var estInputTokens = (SystemPrompt.Length + prompt.Length) / CharsPerToken;

@@ -65,13 +65,19 @@ public class PromptPrivacyTests : CategorizationDbTest
         "\"2026-02-07\",\"2026-02-07\",\"Przelew na rachunek\",\"+500.00\",\"PLN\",\"+3900.01\","
             + "\"Nazwa nadawcy: LUKASZ ZDZBLO\",\"Adres nadawcy: UL. PRZYKLADOWA 7 TORUN\","
             + "\"Tytuł: Przelew własny Łukasz Źdźbło\",\"\",\"\"",
+
+        // Rent to a sole trader: a quoted business name holding the person's name, an address with
+        // a semicolon, a street address in the title and an earlier payee named in reversed order.
+        "\"2026-02-08\",\"2026-02-08\",\"Przelew z rachunku\",\"-250.00\",\"PLN\",\"+3650.01\","
+            + "\"Nazwa odbiorcy: P.H.U. \"\"ANEX\"\" EWA FIKCYJNA\",\"Adres odbiorcy: UL. POLNA 1; 87-100 TESTOWO\","
+            + "\"Tytuł: CZYNSZ UL. KWIATOWA 5/3 87-100 TORUN dla PRZYKLADOWA ANNA\",\"\",\"\"",
     ];
 
     /// <summary>Personal data that must never reach a provider (compared case-insensitively).</summary>
     private static readonly string[] _forbidden =
     [
-        "JAN TESTOWY", "ANNA PRZYKLADOWA", "URZAD SKARBOWY",
-        "FIKCYJNA", "00-001", "TESTOWO", "UL. PRZYKLADOWA",
+        "JAN TESTOWY", "ANNA PRZYKLADOWA", "PRZYKLADOWA", "EWA FIKCYJNA", "ANEX",
+        "FIKCYJNA", "00-001", "TESTOWO", "POLNA", "KWIATOWA", "87-100",
         "500600700", "501234567", "501 234 567",
         "44051401458",
         "1111 1111", "2222 2222", "3333 3333", "425125",
@@ -100,9 +106,12 @@ public class PromptPrivacyTests : CategorizationDbTest
 
         var prompt = provider.Prompts.Should().ContainSingle().Subject;
         AssertNoPersonalData(prompt);
-        prompt.Should().ContainAll("BIEDRONKA 1234", "TORUN", "ZWROT ZA BILETY", "PIZZA", "PIT37");
-        prompt.Should().NotContainAny("NAZWA ODBIORCY", "ADRES ODBIORCY", "NUMER TELEFONU", "IDENTYFIKATORA", "NUMER KARTY")
-            .And.NotContain("[PARTY_", "the categoriser does not even receive the counterparty field");
+        prompt.Should().ContainAll("BIEDRONKA 1234", "TORUN", "ZWROT ZA BILETY", "PIZZA", "PIT37", "CZYNSZ [ADDRESS] TORUN");
+        prompt.Should().Contain(
+            "NAZWA ODBIORCY: URZAD SKARBOWY W TESTOWIE", "a legal-entity counterparty is the category signal and is kept");
+        prompt.Should().NotContainAny("ADRES ODBIORCY", "NUMER TELEFONU", "IDENTYFIKATORA", "NUMER KARTY")
+            .And.NotContain("NAZWA ODBIORCY: [PARTY_", "a person counterparty's name field is not sent to the categoriser")
+            .And.Contain("DLA [PARTY_", "a payee named (in reversed order) in a kept title is pseudonymised");
     }
 
     [Fact]

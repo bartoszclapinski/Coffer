@@ -142,6 +142,25 @@ public class AdvisorReportGeneratorTests
     }
 
     [Fact]
+    public async Task Generate_DigitHeavyGoalId_SurvivesRedactionAndKeepsItsRisks()
+    {
+        // The last GUID segment holds 11 consecutive digits, which on its own looks like a PESEL.
+        var goalId = Guid.Parse("3f2a9c1e-7b4d-4e2a-9c3b-a12345678901");
+        var provider = new ScriptedProvider(request =>
+        {
+            var echoed = System.Text.RegularExpressions.Regex.Match(request.Prompt, @"- goal (\S+):").Groups[1].Value;
+            return $$"""{"perGoalRisks":{"{{echoed}}":["Napięty termin."]},"suggestions":[]}""";
+        });
+        var generator = Generator(provider, anonymizer: new FixedPromptAnonymizer(["Jan Testowy"]));
+
+        var report = await generator.GenerateAsync(
+            [Result() with { GoalId = goalId }], Ctx(), [Spend()], _day, CancellationToken.None);
+
+        provider.Requests.Single().Prompt.Should().Contain(goalId.ToString()).And.NotContain("[PESEL]");
+        report.Entries.Should().ContainSingle(e => e.Kind == AdvisorEntryKind.Risk && e.GoalId == goalId);
+    }
+
+    [Fact]
     public async Task Generate_NoResults_ReturnsEmptyEngineReport_WithoutCallingProvider()
     {
         var provider = new ScriptedProvider("""{"perGoalRisks":{},"suggestions":[]}""");
@@ -199,10 +218,13 @@ public class AdvisorReportGeneratorTests
     {
         private readonly string? _json;
         private readonly bool _throws;
+        private readonly Func<AiRequest, string>? _respond;
 
         public ScriptedProvider(string json) => _json = json;
 
         public ScriptedProvider(bool throws) => _throws = throws;
+
+        public ScriptedProvider(Func<AiRequest, string> respond) => _respond = respond;
 
         public string ProviderName => "Scripted";
 
@@ -217,7 +239,7 @@ public class AdvisorReportGeneratorTests
             }
 
             var value = System.Text.Json.JsonSerializer.Deserialize<TResult>(
-                _json!, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+                _respond?.Invoke(request) ?? _json!, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
             var usage = new AiUsage(ProviderName, request.Model, 100, 20);
             return Task.FromResult(new AiResult<TResult>(value, usage));
         }

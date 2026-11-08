@@ -57,12 +57,12 @@ public class PromptJsonTests
     [Fact]
     public void Restore_NameWithQuote_StaysValidJson()
     {
-        var redactor = new PromptRedactor([], ["SKLEP \"POD LIPĄ\""]);
-        redactor.Redact("SKLEP \"POD LIPĄ\"");
+        var redactor = new PromptRedactor([], ["ANNA \"ANKA\" TESTOWA"]);
+        redactor.Redact("ANNA \"ANKA\" TESTOWA");
 
         var restored = PromptJson.Restore("""{"merchantPattern":"[PARTY_1]"}""", redactor);
 
         JsonDocument.Parse(restored).RootElement.GetProperty("merchantPattern").GetString()
-            .Should().Be("SKLEP \"POD LIPĄ\"");
+            .Should().Be("ANNA \"ANKA\" TESTOWA");
     }
 }

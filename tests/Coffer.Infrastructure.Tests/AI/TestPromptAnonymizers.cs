@@ -15,6 +15,8 @@ public sealed class PassthroughPromptAnonymizer : IPromptAnonymizer
 
         public string Redact(string text) => text;
 
+        public string RedactDocument(string text) => text;
+
         public string Restore(string text) => text;
     }
 }
@@ -30,6 +32,8 @@ public sealed class MarkingPromptAnonymizer : IPromptAnonymizer
         public bool HasOwnerNames => true;
 
         public string Redact(string text) => "ANON:" + text;
+
+        public string RedactDocument(string text) => "ANON:" + text;
 
         public string Restore(string text) => text;
     }
